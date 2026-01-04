@@ -670,6 +670,7 @@ function updateStats() {
 }
 
 // ===== INICIALIZACIÓN =====
+// ===== INICIALIZACIÓN =====
 document.addEventListener('DOMContentLoaded', () => {
     loadData();
     updateStats();
@@ -693,6 +694,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const adminPanel = document.getElementById('adminPanel');
         if (event.target == adminPanel) {
             closeAdminPanel();
+        }
+        
+        const passwordModal = document.getElementById('passwordModal');
+        if (event.target == passwordModal) {
+            closePasswordModal();
         }
     };
     
