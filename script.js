@@ -314,16 +314,14 @@ function openAdminPanel() {
         return;
     }
     
-    // Mostrar modal de contraseña
-    document.getElementById('passwordModal').style.display = 'block';
-    
-    // Resetear mensaje de error
-    document.getElementById('passwordError').textContent = '';
-    document.getElementById('adminPassword').value = '';
-}
-
-function closeAdminPanel() {
-    document.getElementById('adminPanel').style.display = 'none';
+    // Si admin.js está cargado, usar su función
+    if (typeof window.openAdminPanelFromAdmin === 'function') {
+        window.openAdminPanelFromAdmin();
+    } else {
+        // Fallback: mostrar directamente el panel
+        document.getElementById('adminPanel').style.display = 'block';
+        updateStats();
+    }
 }
 
 // ===== LOGIN =====

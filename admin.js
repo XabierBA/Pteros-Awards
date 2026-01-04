@@ -415,41 +415,78 @@ function importData() {
     input.click();
 }
 
+// ===== FUNCIÓN CORREGIDA: REINICIAR VOTOS =====
 function resetVotes() {
-    if (!window.appData) return;
+    if (!window.appData || !window.appData.categories) {
+        alert('Error: No se pueden cargar los datos');
+        return;
+    }
     
-    if (confirm('⚠️ ¿ESTÁS SEGURO DE REINICIAR TODOS LOS VOTOS?\n\nEsto eliminará:\n• Todos los votos de nominados\n• Historial de votantes\n• Fotos de nominados\n\nEsta acción NO se puede deshacer.')) {
+    if (confirm('⚠️ ¿ESTÁS SEGURO DE REINICIAR TODOS LOS VOTOS?\n\nEsto eliminará:\n• Todos los votos de nominados\n• Historial de votantes\n\nLas fotos de nominados NO se eliminarán.\n\nEsta acción NO se puede deshacer.')) {
+        
+        // Reiniciar votos en todas las categorías
         window.appData.categories.forEach(category => {
             category.nominees.forEach(nominee => {
                 nominee.votes = 0;
                 nominee.voters = [];
+                // NOTA: Mantenemos la foto (nominee.photo) intacta
             });
         });
         
+        // Reiniciar votos de todos los usuarios
         if (window.appData.users) {
             window.appData.users.forEach(user => {
-                user.votes = {};
+                user.votes = {}; // Objeto vacío
             });
         }
         
+        // Guardar los cambios
         if (typeof window.saveData === 'function') {
             window.saveData();
         }
+        
         if (typeof window.saveUsers === 'function') {
             window.saveUsers();
         }
+        
+        // Actualizar la interfaz
         if (typeof window.renderCategories === 'function') {
             window.renderCategories();
         }
+        
         if (typeof window.updateVotersList === 'function') {
             window.updateVotersList();
         }
+        
         if (typeof window.updateStats === 'function') {
             window.updateStats();
         }
         
+        // También actualizar las estadísticas en el panel admin
+        updateAdminStats();
+        
         alert('✅ ¡Todos los votos han sido reiniciados!');
     }
+}
+
+// ===== FUNCIÓN AUXILIAR PARA ACTUALIZAR ESTADÍSTICAS EN PANEL ADMIN =====
+function updateAdminStats() {
+    if (!window.appData) return;
+    
+    const totalVoters = window.appData.users ? 
+        window.appData.users.filter(u => Object.keys(u.votes).length > 0).length : 0;
+    const totalCategories = window.appData.categories ? window.appData.categories.length : 0;
+    const totalVotes = window.appData.categories ? 
+        window.appData.categories.reduce((sum, cat) => 
+            sum + cat.nominees.reduce((catSum, nom) => catSum + nom.votes, 0), 0) : 0;
+    
+    const votersElement = document.getElementById('totalVoters');
+    const categoriesElement = document.getElementById('totalCategories');
+    const votesElement = document.getElementById('totalVotes');
+    
+    if (votersElement) votersElement.textContent = totalVoters;
+    if (categoriesElement) categoriesElement.textContent = totalCategories;
+    if (votesElement) votesElement.textContent = totalVotes;
 }
 
 // ===== INICIALIZACIÓN =====
