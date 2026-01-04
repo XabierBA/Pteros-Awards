@@ -1,7 +1,96 @@
 {
-  "note": "Este archivo es solo para backup. Los datos reales están en localStorage.",
-  "categories_count": 15,
-  "people_count": 13,
+  "photoUrls": {
+    "Brais": "https://ejemplo.com/fotos/brais.jpg",
+    "Amalia": "https://ejemplo.com/fotos/amalia.jpg",
+    "Carlita": "https://ejemplo.com/fotos/carlita.jpg",
+    "Daniel": "https://ejemplo.com/fotos/daniel.jpg",
+    "Guillemor": "https://ejemplo.com/fotos/guillemor.jpg",
+    "Iker": "https://ejemplo.com/fotos/iker.jpg",
+    "Joel": "https://ejemplo.com/fotos/joel.jpg",
+    "Jose": "https://ejemplo.com/fotos/jose.jpg",
+    "Nico": "https://ejemplo.com/fotos/nico.jpg",
+    "Ruchiti": "https://ejemplo.com/fotos/ruchiti.jpg",
+    "Sara": "https://ejemplo.com/fotos/sara.jpg",
+    "Tiago": "https://ejemplo.com/fotos/tiago.jpg",
+    "Xabi": "https://ejemplo.com/fotos/xabi.jpg"
+  },
+  "categories": [
+    {
+      "id": 1,
+      "name": "👑 Rey/Reyna del Grupo",
+      "description": "La persona más \"influyente\" y respetada del grupo"
+    },
+    {
+      "id": 2,
+      "name": "⚽ MVP ESEI FUT",
+      "description": "El q vote Iker se lleva una ostia (Avisado estas Iker)"
+    },
+    {
+      "id": 3,
+      "name": "😂 Payaso Oficial",
+      "description": "Es facil reirse con el, o de el jsjsj"
+    },
+    {
+      "id": 4,
+      "name": "🎨 Talento Artístico",
+      "description": "En este grupo? poco y regular"
+    },
+    {
+      "id": 5,
+      "name": "💖 Corazón del Grupo",
+      "description": "El/la más empático/a, cariñoso/a y buen rollo"
+    },
+    {
+      "id": 6,
+      "name": "🍻 El alma de la fiesta",
+      "description": "Si no hay ganas el las trae"
+    },
+    {
+      "id": 7,
+      "name": "📱 Cerebro dopamínico de niño de tiktok",
+      "description": "Si deja el movil 10 segundos, se convierte en nani"
+    },
+    {
+      "id": 8,
+      "name": "🍕 Pizza-p",
+      "description": "Come mas pizzas q pijas Joel"
+    },
+    {
+      "id": 9,
+      "name": "🎮 Gamer del Año",
+      "description": "Ni pareja ni pollas, total esta jugando todo el dia"
+    },
+    {
+      "id": 10,
+      "name": "🏆 El bromitas",
+      "description": "Si no hace coñas, le da un jamacuco al cabrón"
+    },
+    {
+      "id": 11,
+      "name": "👨‍💻 Admin Legendario",
+      "description": "Obvio Xabi"
+    },
+    {
+      "id": 12,
+      "name": "💃 Reina del Baile",
+      "description": "Baila baila baila"
+    },
+    {
+      "id": 13,
+      "name": "🎤 Karaoke Star",
+      "description": "Se cree Bisbal o algo así"
+    },
+    {
+      "id": 14,
+      "name": "📸 Fotógrafo",
+      "description": "A ver si para de sacar fotos de una puta vez"
+    },
+    {
+      "id": 15,
+      "name": "😴 Narcolepsico",
+      "description": "Quien es el subnormal que siempre se duerme, o duerme infinito"
+    }
+  ],
   "people": [
     "Brais", "Amalia", "Carlita", "Daniel", "Guillemor",
     "Iker", "Joel", "Jose", "Nico", "Ruchiti", "Sara", "Tiago", "Xabi"

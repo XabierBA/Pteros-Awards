@@ -1269,3 +1269,98 @@ footer {
 .shake {
     animation: shake 0.5s ease-in-out;
 }
+/* ===== ESTILOS PARA GESTIÓN DE FOTOS ===== */
+.photo-management {
+    margin-top: 20px;
+}
+
+.photo-input-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.photo-select {
+    flex: 1;
+    min-width: 150px;
+    padding: 10px;
+    border: 2px solid var(--gold);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    color: white;
+    font-size: 1rem;
+}
+
+.photo-url-input {
+    flex: 2;
+    min-width: 200px;
+    padding: 10px;
+    border: 2px solid var(--gold);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    color: white;
+    font-size: 1rem;
+}
+
+.current-photos {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+
+.current-photos h4 {
+    color: var(--gold);
+    margin-bottom: 10px;
+}
+
+.photos-list {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.photo-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    margin: 5px 0;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border-left: 3px solid var(--gold);
+}
+
+.photo-info {
+    flex: 1;
+}
+
+.photo-info a {
+    color: var(--neon-blue);
+    text-decoration: none;
+    font-size: 0.9rem;
+    word-break: break-all;
+}
+
+.photo-info a:hover {
+    text-decoration: underline;
+}
+
+.photo-thumbnail {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--gold);
+    margin-left: 10px;
+}
+
+/* Descripción de categoría */
+.category-description {
+    color: var(--silver);
+    font-size: 0.9rem;
+    text-align: center;
+    margin: 10px 0;
+    font-style: italic;
+    min-height: 40px;
+}
