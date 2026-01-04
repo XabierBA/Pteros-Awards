@@ -23,7 +23,7 @@
                 <button onclick="login()" class="login-btn">
                     <i class="fas fa-sign-in-alt"></i> Entrar a votar
                 </button>
-                <p class="login-note">Tu voto queda registrado con este nombre. Solo puedes votar una vez por categoría.</p>
+                <p class="login-note">Tu voto será registrado con este nombre</p>
             </div>
             
             <div class="current-voters">
@@ -130,20 +130,18 @@
 
             <div class="admin-section">
                 <h3>Resultados y Datos</h3>
-                <div class="admin-buttons">
-                    <button onclick="showResults()" class="btn-results">
-                        <i class="fas fa-chart-bar"></i> Ver Resultados
-                    </button>
-                    <button onclick="exportData()" class="btn-export">
-                        <i class="fas fa-download"></i> Exportar Datos
-                    </button>
-                    <button onclick="importData()" class="btn-import">
-                        <i class="fas fa-upload"></i> Importar Datos
-                    </button>
-                    <button onclick="resetVotes()" class="btn-reset">
-                        <i class="fas fa-redo"></i> Reiniciar Votos
-                    </button>
-                </div>
+                <button onclick="showResults()" class="btn-results">
+                    <i class="fas fa-chart-bar"></i> Ver Resultados
+                </button>
+                <button onclick="exportData()" class="btn-export">
+                    <i class="fas fa-download"></i> Exportar Datos
+                </button>
+                <button onclick="importData()" class="btn-import">
+                    <i class="fas fa-upload"></i> Importar Datos
+                </button>
+                <button onclick="resetVotes()" class="btn-reset">
+                    <i class="fas fa-redo"></i> Reiniciar Votos
+                </button>
             </div>
 
             <div class="admin-section">
@@ -156,35 +154,8 @@
             </div>
 
             <button onclick="closeAdminPanel()" class="btn-close-admin">
-                <i class="fas fa-times"></i> Cerrar Panel
+                Cerrar Panel
             </button>
-        </div>
-    </div>
-
-    <!-- Modal de contraseña para admin -->
-    <div id="passwordModal" class="modal password-modal">
-        <div class="modal-content password-content">
-            <span class="close-modal" onclick="closePasswordModal()">&times;</span>
-            <h2><i class="fas fa-lock"></i> Acceso Administrador</h2>
-            
-            <div class="password-form">
-                <div class="password-input-group">
-                    <label for="adminPassword"><i class="fas fa-key"></i> Contraseña de administración:</label>
-                    <input type="password" id="adminPassword" placeholder="Introduce la contraseña..." class="password-input">
-                    <button onclick="togglePasswordVisibility()" class="show-password-btn">
-                        <i class="fas fa-eye" id="passwordEye"></i>
-                    </button>
-                </div>
-                
-                <button onclick="checkAdminPassword()" class="password-submit-btn">
-                    <i class="fas fa-unlock-alt"></i> Acceder al Panel
-                </button>
-                
-                <div class="password-hint">
-                    <p><i class="fas fa-info-circle"></i> Solo para administradores del evento</p>
-                    <p id="passwordError" class="error-message"></p>
-                </div>
-            </div>
         </div>
     </div>
 

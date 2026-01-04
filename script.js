@@ -307,21 +307,39 @@ let appData = {
     users: []
 };
 
-// ===== FUNCIONES DEL PANEL ADMIN =====
-function openAdminPanel() {
-    if (!appData.currentUser) {
-        alert('Debes estar logueado para acceder al panel admin');
-        return;
+// ===== FUNCIONES DE APOYO =====
+
+// Cargar datos guardados
+function loadData() {
+    const savedData = localStorage.getItem('premiosData');
+    const savedUsers = localStorage.getItem('premiosUsers');
+    
+    if (savedData) {
+        const parsed = JSON.parse(savedData);
+        appData.categories = parsed.categories || appData.categories;
+        appData.phase = parsed.phase || 'nominations';
     }
     
-    // Si admin.js está cargado, usar su función
-    if (typeof window.openAdminPanelFromAdmin === 'function') {
-        window.openAdminPanelFromAdmin();
-    } else {
-        // Fallback: mostrar directamente el panel
-        document.getElementById('adminPanel').style.display = 'block';
-        updateStats();
-    }
+    appData.users = savedUsers ? JSON.parse(savedUsers) : [];
+    
+    updatePhaseBanner();
+    updateVotersList();
+    updateStats();
+}
+
+// Guardar datos
+function saveData() {
+    const dataToSave = {
+        categories: appData.categories,
+        phase: appData.phase
+    };
+    localStorage.setItem('premiosData', JSON.stringify(dataToSave));
+    updateStats();
+}
+
+function saveUsers() {
+    localStorage.setItem('premiosUsers', JSON.stringify(appData.users));
+    updateVotersList();
 }
 
 // ===== LOGIN =====
@@ -648,45 +666,9 @@ function updateStats() {
     const totalVotes = appData.categories.reduce((sum, cat) => 
         sum + cat.nominees.reduce((catSum, nom) => catSum + nom.votes, 0), 0);
     
-    const votersElement = document.getElementById('totalVoters');
-    const categoriesElement = document.getElementById('totalCategories');
-    const votesElement = document.getElementById('totalVotes');
-    
-    if (votersElement) votersElement.textContent = totalVoters;
-    if (categoriesElement) categoriesElement.textContent = totalCategories;
-    if (votesElement) votesElement.textContent = totalVotes;
-}
-
-// ===== FUNCIONES DE DATOS =====
-function loadData() {
-    const savedData = localStorage.getItem('premiosData');
-    const savedUsers = localStorage.getItem('premiosUsers');
-    
-    if (savedData) {
-        const parsed = JSON.parse(savedData);
-        appData.categories = parsed.categories || appData.categories;
-        appData.phase = parsed.phase || 'nominations';
-    }
-    
-    appData.users = savedUsers ? JSON.parse(savedUsers) : [];
-    
-    updatePhaseBanner();
-    updateVotersList();
-    updateStats();
-}
-
-function saveData() {
-    const dataToSave = {
-        categories: appData.categories,
-        phase: appData.phase
-    };
-    localStorage.setItem('premiosData', JSON.stringify(dataToSave));
-    updateStats();
-}
-
-function saveUsers() {
-    localStorage.setItem('premiosUsers', JSON.stringify(appData.users));
-    updateVotersList();
+    document.getElementById('totalVoters').textContent = totalVoters;
+    document.getElementById('totalCategories').textContent = totalCategories;
+    document.getElementById('totalVotes').textContent = totalVotes;
 }
 
 // ===== INICIALIZACIÓN =====
@@ -694,7 +676,16 @@ document.addEventListener('DOMContentLoaded', () => {
     loadData();
     updateStats();
     
-    // Cerrar modales al hacer clic fuera
+    // Verificar si hay usuario en localStorage
+    const lastUserId = localStorage.getItem('lastUserId');
+    if (lastUserId && appData.users.length > 0) {
+        const lastUser = appData.users.find(u => u.id == lastUserId);
+        if (lastUser) {
+            document.getElementById('userName').value = lastUser.name;
+        }
+    }
+    
+    // Cerrar modal al hacer clic fuera
     window.onclick = function(event) {
         const modal = document.getElementById('voteModal');
         if (event.target == modal) {
@@ -704,11 +695,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const adminPanel = document.getElementById('adminPanel');
         if (event.target == adminPanel) {
             closeAdminPanel();
-        }
-        
-        const passwordModal = document.getElementById('passwordModal');
-        if (event.target == passwordModal) {
-            closePasswordModal();
         }
     };
     
