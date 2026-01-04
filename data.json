@@ -1,54 +1,9 @@
 {
-  "categories": [
-    {
-      "id": 1,
-      "name": "🏆 Mejor Meme Viviente",
-      "nominees": [
-        {
-          "name": "Juan",
-          "votes": 0,
-          "voters": [],
-          "photo": null
-        },
-        {
-          "name": "Ana",
-          "votes": 0,
-          "voters": [],
-          "photo": null
-        },
-        {
-          "name": "Carlos",
-          "votes": 0,
-          "voters": [],
-          "photo": null
-        }
-      ]
-    },
-    {
-      "id": 2,
-      "name": "🎮 Jugón/a del Año",
-      "nominees": [
-        {
-          "name": "Luis",
-          "votes": 0,
-          "voters": [],
-          "photo": null
-        },
-        {
-          "name": "María",
-          "votes": 0,
-          "voters": [],
-          "photo": null
-        },
-        {
-          "name": "Pedro",
-          "votes": 0,
-          "voters": [],
-          "photo": null
-        }
-      ]
-    }
-  ],
-  "users": [],
-  "phase": "nominations"
+  "note": "Este archivo es solo para backup. Los datos reales están en localStorage.",
+  "categories_count": 15,
+  "people_count": 13,
+  "people": [
+    "Brais", "Amalia", "Carlita", "Daniel", "Guillemor",
+    "Iker", "Joel", "Jose", "Nico", "Ruchiti", "Sara", "Tiago", "Xabi"
+  ]
 }

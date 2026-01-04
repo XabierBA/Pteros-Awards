@@ -1,42 +1,307 @@
 // ===== SISTEMA DE USUARIOS Y VOTOS =====
+// ===== SISTEMA DE USUARIOS Y VOTOS =====
 let appData = {
     currentUser: null,
     phase: 'nominations',
     categories: [
         {
             id: 1,
-            name: "🏆 Mejor Meme Viviente",
+            name: "👑 Rey/Reyna del Grupo",
+            description: "La persona más \"influyente\" y respetada del grupo",
             nominees: [
-                { name: "Juan", votes: 0, voters: [], photo: null },
-                { name: "Ana", votes: 0, voters: [], photo: null },
-                { name: "Carlos", votes: 0, voters: [], photo: null }
+                { name: "Brais", votes: 0, voters: [], photo: null },
+                { name: "Amalia", votes: 0, voters: [], photo: null },
+                { name: "Carlita", votes: 0, voters: [], photo: null },
+                { name: "Daniel", votes: 0, voters: [], photo: null },
+                { name: "Guillemor", votes: 0, voters: [], photo: null },
+                { name: "Iker", votes: 0, voters: [], photo: null },
+                { name: "Joel", votes: 0, voters: [], photo: null },
+                { name: "Jose", votes: 0, voters: [], photo: null },
+                { name: "Nico", votes: 0, voters: [], photo: null },
+                { name: "Ruchiti", votes: 0, voters: [], photo: null },
+                { name: "Sara", votes: 0, voters: [], photo: null },
+                { name: "Tiago", votes: 0, voters: [], photo: null },
+                { name: "Xabi", votes: 0, voters: [], photo: null }
             ]
         },
         {
             id: 2,
-            name: "🎮 Jugón/a del Año",
+            name: "⚽ MVP ESEI FUT",
+            description: "El q vote Iker se lleva una ostia (Avisado estas Iker)",
             nominees: [
-                { name: "Luis", votes: 0, voters: [], photo: null },
-                { name: "María", votes: 0, voters: [], photo: null },
-                { name: "Pedro", votes: 0, voters: [], photo: null }
+                { name: "Brais", votes: 0, voters: [], photo: null },
+                { name: "Amalia", votes: 0, voters: [], photo: null },
+                { name: "Carlita", votes: 0, voters: [], photo: null },
+                { name: "Daniel", votes: 0, voters: [], photo: null },
+                { name: "Guillemor", votes: 0, voters: [], photo: null },
+                { name: "Iker", votes: 0, voters: [], photo: null },
+                { name: "Joel", votes: 0, voters: [], photo: null },
+                { name: "Jose", votes: 0, voters: [], photo: null },
+                { name: "Nico", votes: 0, voters: [], photo: null },
+                { name: "Ruchiti", votes: 0, voters: [], photo: null },
+                { name: "Sara", votes: 0, voters: [], photo: null },
+                { name: "Tiago", votes: 0, voters: [], photo: null },
+                { name: "Xabi", votes: 0, voters: [], photo: null }
             ]
         },
         {
             id: 3,
-            name: "😂 Bromista Oficial",
+            name: "😂 Payaso Oficial",
+            description: "Es facil reirse con el, o de el jsjsj",
             nominees: [
-                { name: "Sofía", votes: 0, voters: [], photo: null },
-                { name: "Diego", votes: 0, voters: [], photo: null },
-                { name: "Laura", votes: 0, voters: [], photo: null }
+                { name: "Brais", votes: 0, voters: [], photo: null },
+                { name: "Amalia", votes: 0, voters: [], photo: null },
+                { name: "Carlita", votes: 0, voters: [], photo: null },
+                { name: "Daniel", votes: 0, voters: [], photo: null },
+                { name: "Guillemor", votes: 0, voters: [], photo: null },
+                { name: "Iker", votes: 0, voters: [], photo: null },
+                { name: "Joel", votes: 0, voters: [], photo: null },
+                { name: "Jose", votes: 0, voters: [], photo: null },
+                { name: "Nico", votes: 0, voters: [], photo: null },
+                { name: "Ruchiti", votes: 0, voters: [], photo: null },
+                { name: "Sara", votes: 0, voters: [], photo: null },
+                { name: "Tiago", votes: 0, voters: [], photo: null },
+                { name: "Xabi", votes: 0, voters: [], photo: null }
             ]
         },
         {
             id: 4,
-            name: "🍕 Devorador/a de Pizzas",
+            name: "🎨 Talento Artístico",
+            description: "En este grupo? poco y regular",
             nominees: [
-                { name: "Miguel", votes: 0, voters: [], photo: null },
-                { name: "Elena", votes: 0, voters: [], photo: null },
-                { name: "Jorge", votes: 0, voters: [], photo: null }
+                { name: "Brais", votes: 0, voters: [], photo: null },
+                { name: "Amalia", votes: 0, voters: [], photo: null },
+                { name: "Carlita", votes: 0, voters: [], photo: null },
+                { name: "Daniel", votes: 0, voters: [], photo: null },
+                { name: "Guillemor", votes: 0, voters: [], photo: null },
+                { name: "Iker", votes: 0, voters: [], photo: null },
+                { name: "Joel", votes: 0, voters: [], photo: null },
+                { name: "Jose", votes: 0, voters: [], photo: null },
+                { name: "Nico", votes: 0, voters: [], photo: null },
+                { name: "Ruchiti", votes: 0, voters: [], photo: null },
+                { name: "Sara", votes: 0, voters: [], photo: null },
+                { name: "Tiago", votes: 0, voters: [], photo: null },
+                { name: "Xabi", votes: 0, voters: [], photo: null }
+            ]
+        },
+        {
+            id: 5,
+            name: "💖 Corazón del Grupo",
+            description: "El/la más empático/a, cariñoso/a y buen rollo",
+            nominees: [
+                { name: "Brais", votes: 0, voters: [], photo: null },
+                { name: "Amalia", votes: 0, voters: [], photo: null },
+                { name: "Carlita", votes: 0, voters: [], photo: null },
+                { name: "Daniel", votes: 0, voters: [], photo: null },
+                { name: "Guillemor", votes: 0, voters: [], photo: null },
+                { name: "Iker", votes: 0, voters: [], photo: null },
+                { name: "Joel", votes: 0, voters: [], photo: null },
+                { name: "Jose", votes: 0, voters: [], photo: null },
+                { name: "Nico", votes: 0, voters: [], photo: null },
+                { name: "Ruchiti", votes: 0, voters: [], photo: null },
+                { name: "Sara", votes: 0, voters: [], photo: null },
+                { name: "Tiago", votes: 0, voters: [], photo: null },
+                { name: "Xabi", votes: 0, voters: [], photo: null }
+            ]
+        },
+        {
+            id: 6,
+            name: "🍻 El alma de la fiesta",
+            description: "Si no hay ganas el las trae",
+            nominees: [
+                { name: "Brais", votes: 0, voters: [], photo: null },
+                { name: "Amalia", votes: 0, voters: [], photo: null },
+                { name: "Carlita", votes: 0, voters: [], photo: null },
+                { name: "Daniel", votes: 0, voters: [], photo: null },
+                { name: "Guillemor", votes: 0, voters: [], photo: null },
+                { name: "Iker", votes: 0, voters: [], photo: null },
+                { name: "Joel", votes: 0, voters: [], photo: null },
+                { name: "Jose", votes: 0, voters: [], photo: null },
+                { name: "Nico", votes: 0, voters: [], photo: null },
+                { name: "Ruchiti", votes: 0, voters: [], photo: null },
+                { name: "Sara", votes: 0, voters: [], photo: null },
+                { name: "Tiago", votes: 0, voters: [], photo: null },
+                { name: "Xabi", votes: 0, voters: [], photo: null }
+            ]
+        },
+        {
+            id: 7,
+            name: "📱 Cerebro dopamínico de niño de tiktok",
+            description: "Si deja el movil 10 segundos, se convierte en nani",
+            nominees: [
+                { name: "Brais", votes: 0, voters: [], photo: null },
+                { name: "Amalia", votes: 0, voters: [], photo: null },
+                { name: "Carlita", votes: 0, voters: [], photo: null },
+                { name: "Daniel", votes: 0, voters: [], photo: null },
+                { name: "Guillemor", votes: 0, voters: [], photo: null },
+                { name: "Iker", votes: 0, voters: [], photo: null },
+                { name: "Joel", votes: 0, voters: [], photo: null },
+                { name: "Jose", votes: 0, voters: [], photo: null },
+                { name: "Nico", votes: 0, voters: [], photo: null },
+                { name: "Ruchiti", votes: 0, voters: [], photo: null },
+                { name: "Sara", votes: 0, voters: [], photo: null },
+                { name: "Tiago", votes: 0, voters: [], photo: null },
+                { name: "Xabi", votes: 0, voters: [], photo: null }
+            ]
+        },
+        {
+            id: 8,
+            name: "🍕 Pizza-p",
+            description: "Come mas pizzas q pijas Joel",
+            nominees: [
+                { name: "Brais", votes: 0, voters: [], photo: null },
+                { name: "Amalia", votes: 0, voters: [], photo: null },
+                { name: "Carlita", votes: 0, voters: [], photo: null },
+                { name: "Daniel", votes: 0, voters: [], photo: null },
+                { name: "Guillemor", votes: 0, voters: [], photo: null },
+                { name: "Iker", votes: 0, voters: [], photo: null },
+                { name: "Joel", votes: 0, voters: [], photo: null },
+                { name: "Jose", votes: 0, voters: [], photo: null },
+                { name: "Nico", votes: 0, voters: [], photo: null },
+                { name: "Ruchiti", votes: 0, voters: [], photo: null },
+                { name: "Sara", votes: 0, voters: [], photo: null },
+                { name: "Tiago", votes: 0, voters: [], photo: null },
+                { name: "Xabi", votes: 0, voters: [], photo: null }
+            ]
+        },
+        {
+            id: 9,
+            name: "🎮 Gamer del Año",
+            description: "Ni pareja ni pollas, total esta jugando todo el dia",
+            nominees: [
+                { name: "Brais", votes: 0, voters: [], photo: null },
+                { name: "Amalia", votes: 0, voters: [], photo: null },
+                { name: "Carlita", votes: 0, voters: [], photo: null },
+                { name: "Daniel", votes: 0, voters: [], photo: null },
+                { name: "Guillemor", votes: 0, voters: [], photo: null },
+                { name: "Iker", votes: 0, voters: [], photo: null },
+                { name: "Joel", votes: 0, voters: [], photo: null },
+                { name: "Jose", votes: 0, voters: [], photo: null },
+                { name: "Nico", votes: 0, voters: [], photo: null },
+                { name: "Ruchiti", votes: 0, voters: [], photo: null },
+                { name: "Sara", votes: 0, voters: [], photo: null },
+                { name: "Tiago", votes: 0, voters: [], photo: null },
+                { name: "Xabi", votes: 0, voters: [], photo: null }
+            ]
+        },
+        {
+            id: 10,
+            name: "🏆 El bromitas",
+            description: "Si no hace coñas, le da un jamacuco al cabrón",
+            nominees: [
+                { name: "Brais", votes: 0, voters: [], photo: null },
+                { name: "Amalia", votes: 0, voters: [], photo: null },
+                { name: "Carlita", votes: 0, voters: [], photo: null },
+                { name: "Daniel", votes: 0, voters: [], photo: null },
+                { name: "Guillemor", votes: 0, voters: [], photo: null },
+                { name: "Iker", votes: 0, voters: [], photo: null },
+                { name: "Joel", votes: 0, voters: [], photo: null },
+                { name: "Jose", votes: 0, voters: [], photo: null },
+                { name: "Nico", votes: 0, voters: [], photo: null },
+                { name: "Ruchiti", votes: 0, voters: [], photo: null },
+                { name: "Sara", votes: 0, voters: [], photo: null },
+                { name: "Tiago", votes: 0, voters: [], photo: null },
+                { name: "Xabi", votes: 0, voters: [], photo: null }
+            ]
+        },
+        {
+            id: 11,
+            name: "👨‍💻 Admin Legendario",
+            description: "Obvio Xabi",
+            nominees: [
+                { name: "Brais", votes: 0, voters: [], photo: null },
+                { name: "Amalia", votes: 0, voters: [], photo: null },
+                { name: "Carlita", votes: 0, voters: [], photo: null },
+                { name: "Daniel", votes: 0, voters: [], photo: null },
+                { name: "Guillemor", votes: 0, voters: [], photo: null },
+                { name: "Iker", votes: 0, voters: [], photo: null },
+                { name: "Joel", votes: 0, voters: [], photo: null },
+                { name: "Jose", votes: 0, voters: [], photo: null },
+                { name: "Nico", votes: 0, voters: [], photo: null },
+                { name: "Ruchiti", votes: 0, voters: [], photo: null },
+                { name: "Sara", votes: 0, voters: [], photo: null },
+                { name: "Tiago", votes: 0, voters: [], photo: null },
+                { name: "Xabi", votes: 0, voters: [], photo: null }
+            ]
+        },
+        {
+            id: 12,
+            name: "💃 Reina del Baile",
+            description: "Baila baila baila",
+            nominees: [
+                { name: "Brais", votes: 0, voters: [], photo: null },
+                { name: "Amalia", votes: 0, voters: [], photo: null },
+                { name: "Carlita", votes: 0, voters: [], photo: null },
+                { name: "Daniel", votes: 0, voters: [], photo: null },
+                { name: "Guillemor", votes: 0, voters: [], photo: null },
+                { name: "Iker", votes: 0, voters: [], photo: null },
+                { name: "Joel", votes: 0, voters: [], photo: null },
+                { name: "Jose", votes: 0, voters: [], photo: null },
+                { name: "Nico", votes: 0, voters: [], photo: null },
+                { name: "Ruchiti", votes: 0, voters: [], photo: null },
+                { name: "Sara", votes: 0, voters: [], photo: null },
+                { name: "Tiago", votes: 0, voters: [], photo: null },
+                { name: "Xabi", votes: 0, voters: [], photo: null }
+            ]
+        },
+        {
+            id: 13,
+            name: "🎤 Karaoke Star",
+            description: "Se cree Bisbal o algo así",
+            nominees: [
+                { name: "Brais", votes: 0, voters: [], photo: null },
+                { name: "Amalia", votes: 0, voters: [], photo: null },
+                { name: "Carlita", votes: 0, voters: [], photo: null },
+                { name: "Daniel", votes: 0, voters: [], photo: null },
+                { name: "Guillemor", votes: 0, voters: [], photo: null },
+                { name: "Iker", votes: 0, voters: [], photo: null },
+                { name: "Joel", votes: 0, voters: [], photo: null },
+                { name: "Jose", votes: 0, voters: [], photo: null },
+                { name: "Nico", votes: 0, voters: [], photo: null },
+                { name: "Ruchiti", votes: 0, voters: [], photo: null },
+                { name: "Sara", votes: 0, voters: [], photo: null },
+                { name: "Tiago", votes: 0, voters: [], photo: null },
+                { name: "Xabi", votes: 0, voters: [], photo: null }
+            ]
+        },
+        {
+            id: 14,
+            name: "📸 Fotógrafo",
+            description: "A ver si para de sacar fotos de una puta vez",
+            nominees: [
+                { name: "Brais", votes: 0, voters: [], photo: null },
+                { name: "Amalia", votes: 0, voters: [], photo: null },
+                { name: "Carlita", votes: 0, voters: [], photo: null },
+                { name: "Daniel", votes: 0, voters: [], photo: null },
+                { name: "Guillemor", votes: 0, voters: [], photo: null },
+                { name: "Iker", votes: 0, voters: [], photo: null },
+                { name: "Joel", votes: 0, voters: [], photo: null },
+                { name: "Jose", votes: 0, voters: [], photo: null },
+                { name: "Nico", votes: 0, voters: [], photo: null },
+                { name: "Ruchiti", votes: 0, voters: [], photo: null },
+                { name: "Sara", votes: 0, voters: [], photo: null },
+                { name: "Tiago", votes: 0, voters: [], photo: null },
+                { name: "Xabi", votes: 0, voters: [], photo: null }
+            ]
+        },
+        {
+            id: 15,
+            name: "😴 Narcolepsico",
+            description: "Quien es el subnormal que siempre se duerme, o duerme infinito",
+            nominees: [
+                { name: "Brais", votes: 0, voters: [], photo: null },
+                { name: "Amalia", votes: 0, voters: [], photo: null },
+                { name: "Carlita", votes: 0, voters: [], photo: null },
+                { name: "Daniel", votes: 0, voters: [], photo: null },
+                { name: "Guillemor", votes: 0, voters: [], photo: null },
+                { name: "Iker", votes: 0, voters: [], photo: null },
+                { name: "Joel", votes: 0, voters: [], photo: null },
+                { name: "Jose", votes: 0, voters: [], photo: null },
+                { name: "Nico", votes: 0, voters: [], photo: null },
+                { name: "Ruchiti", votes: 0, voters: [], photo: null },
+                { name: "Sara", votes: 0, voters: [], photo: null },
+                { name: "Tiago", votes: 0, voters: [], photo: null },
+                { name: "Xabi", votes: 0, voters: [], photo: null }
             ]
         }
     ]
