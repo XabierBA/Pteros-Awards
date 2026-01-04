@@ -704,4 +704,44 @@ document.addEventListener('DOMContentLoaded', () => {
             login();
         }
     });
+    // ===== INICIALIZACIÓN =====
+document.addEventListener('DOMContentLoaded', () => {
+    loadData();
+    updateStats();
+    
+    // Verificar si hay usuario en localStorage
+    const lastUserId = localStorage.getItem('lastUserId');
+    if (lastUserId && appData.users.length > 0) {
+        const lastUser = appData.users.find(u => u.id == lastUserId);
+        if (lastUser) {
+            document.getElementById('userName').value = lastUser.name;
+        }
+    }
+    
+    // Cerrar modal al hacer clic fuera
+    window.onclick = function(event) {
+        const modal = document.getElementById('voteModal');
+        if (event.target == modal) {
+            closeModal();
+        }
+        
+        const adminPanel = document.getElementById('adminPanel');
+        if (event.target == adminPanel) {
+            closeAdminPanel();
+        }
+        
+        // AÑADE ESTA LÍNEA:
+        const passwordModal = document.getElementById('passwordModal');
+        if (event.target == passwordModal) {
+            closePasswordModal();
+        }
+    };
+    
+    // Enter para login
+    document.getElementById('userName').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            login();
+        }
+    });
+});
 });

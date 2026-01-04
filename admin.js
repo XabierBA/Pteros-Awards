@@ -1,19 +1,103 @@
-// ===== PANEL ADMIN =====
+// ===== SISTEMA DE CONTRASEÑA SIMPLE =====
+const ADMIN_PASSWORD = "qwerty123456";
+let passwordAttempts = 0;
+const MAX_ATTEMPTS = 3;
+
+// ===== PANEL ADMIN CON CONTRASEÑA =====
 function openAdminPanel() {
     if (!appData.currentUser) {
         alert('Debes estar logueado para acceder al panel admin');
         return;
     }
     
-    updateStats();
-    document.getElementById('adminPanel').style.display = 'block';
+    // Mostrar modal de contraseña
+    document.getElementById('passwordModal').style.display = 'block';
+    document.getElementById('adminPassword').value = '';
+    document.getElementById('passwordError').textContent = '';
+    document.getElementById('adminPassword').focus();
+}
+
+function closePasswordModal() {
+    document.getElementById('passwordModal').style.display = 'none';
+    document.getElementById('adminPassword').value = '';
+    document.getElementById('passwordError').textContent = '';
+    document.getElementById('adminPassword').type = 'password';
+    const eyeIcon = document.getElementById('passwordEye');
+    if (eyeIcon) {
+        eyeIcon.className = 'fas fa-eye';
+    }
+}
+
+function togglePasswordVisibility() {
+    const passwordInput = document.getElementById('adminPassword');
+    const eyeIcon = document.getElementById('passwordEye');
+    
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        eyeIcon.className = 'fas fa-eye-slash';
+    } else {
+        passwordInput.type = 'password';
+        eyeIcon.className = 'fas fa-eye';
+    }
+}
+
+function checkAdminPassword() {
+    const inputPassword = document.getElementById('adminPassword').value;
+    const errorElement = document.getElementById('passwordError');
+    
+    if (!inputPassword) {
+        errorElement.textContent = 'Por favor, introduce la contraseña';
+        shakePasswordInput();
+        return;
+    }
+    
+    if (inputPassword === ADMIN_PASSWORD) {
+        // Contraseña correcta
+        passwordAttempts = 0; // Resetear intentos
+        errorElement.textContent = '';
+        errorElement.style.color = '#4CAF50';
+        errorElement.textContent = '✅ Contraseña correcta';
+        
+        // Cerrar modal y abrir panel después de un breve delay
+        setTimeout(() => {
+            closePasswordModal();
+            document.getElementById('adminPanel').style.display = 'block';
+            updateStats();
+        }, 500);
+        
+    } else {
+        // Contraseña incorrecta
+        passwordAttempts++;
+        
+        if (passwordAttempts >= MAX_ATTEMPTS) {
+            errorElement.textContent = '❌ Demasiados intentos fallidos. Intenta más tarde.';
+            setTimeout(() => {
+                closePasswordModal();
+            }, 2000);
+        } else {
+            const remaining = MAX_ATTEMPTS - passwordAttempts;
+            errorElement.textContent = `❌ Contraseña incorrecta. Intentos restantes: ${remaining}`;
+            shakePasswordInput();
+        }
+    }
+}
+
+function shakePasswordInput() {
+    const passwordInput = document.getElementById('adminPassword');
+    passwordInput.classList.remove('shake');
+    void passwordInput.offsetWidth; // Trigger reflow
+    passwordInput.classList.add('shake');
+    
+    setTimeout(() => {
+        passwordInput.classList.remove('shake');
+    }, 500);
 }
 
 function closeAdminPanel() {
     document.getElementById('adminPanel').style.display = 'none';
 }
 
-// ===== CAMBIAR FASE =====
+// ===== FUNCIONES DEL PANEL ADMIN =====
 function setPhase(phase) {
     appData.phase = phase;
     saveData();
@@ -36,7 +120,6 @@ function getPhaseName(phase) {
     return phases[phase] || phase;
 }
 
-// ===== GESTIÓN DE CATEGORÍAS =====
 function addCategory() {
     const input = document.getElementById('newCategory');
     const name = input.value.trim();
@@ -62,7 +145,6 @@ function addCategory() {
     alert('✅ ¡Categoría añadida!');
 }
 
-// ===== MOSTRAR RESULTADOS =====
 function showResults() {
     const modal = document.getElementById('voteModal');
     const modalCategory = document.getElementById('modalCategory');
@@ -72,7 +154,6 @@ function showResults() {
     nomineesList.innerHTML = '';
     
     appData.categories.forEach(category => {
-        // Ordenar por votos
         const sortedNominees = [...category.nominees].sort((a, b) => b.votes - a.votes);
         const winner = sortedNominees[0];
         const second = sortedNominees[1];
@@ -127,7 +208,6 @@ function showResults() {
     modal.style.display = 'block';
 }
 
-// ===== EXPORTAR/IMPORTAR DATOS =====
 function exportData() {
     const dataToExport = {
         categories: appData.categories,
@@ -186,10 +266,8 @@ function importData() {
     input.click();
 }
 
-// ===== REINICIAR VOTOS =====
 function resetVotes() {
     if (confirm('⚠️ ¿ESTÁS SEGURO DE REINICIAR TODOS LOS VOTOS?\n\nEsto eliminará:\n• Todos los votos de nominados\n• Historial de votantes\n• Fotos de nominados\n\nEsta acción NO se puede deshacer.')) {
-        // Reiniciar votos de nominados
         appData.categories.forEach(category => {
             category.nominees.forEach(nominee => {
                 nominee.votes = 0;
@@ -197,7 +275,6 @@ function resetVotes() {
             });
         });
         
-        // Reiniciar votos de usuarios
         appData.users.forEach(user => {
             user.votes = {};
         });
@@ -212,9 +289,31 @@ function resetVotes() {
     }
 }
 
+// ===== FUNCIONES DE APOYO =====
+function updateStats() {
+    const totalVoters = appData.users.filter(u => Object.keys(u.votes).length > 0).length;
+    const totalCategories = appData.categories.length;
+    const totalVotes = appData.categories.reduce((sum, cat) => 
+        sum + cat.nominees.reduce((catSum, nom) => catSum + nom.votes, 0), 0);
+    
+    document.getElementById('totalVoters').textContent = totalVoters;
+    document.getElementById('totalCategories').textContent = totalCategories;
+    document.getElementById('totalVotes').textContent = totalVotes;
+}
+
 // ===== INICIALIZACIÓN =====
 document.addEventListener('DOMContentLoaded', () => {
-    // Enter para enviar en campos de admin
+    // Enter para enviar contraseña
+    const adminPasswordInput = document.getElementById('adminPassword');
+    if (adminPasswordInput) {
+        adminPasswordInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                checkAdminPassword();
+            }
+        });
+    }
+    
+    // Enter para añadir categoría
     const newCategoryInput = document.getElementById('newCategory');
     if (newCategoryInput) {
         newCategoryInput.addEventListener('keypress', function(e) {
@@ -223,4 +322,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+    
+    // Cerrar modal al hacer clic fuera
+    window.addEventListener('click', function(event) {
+        const passwordModal = document.getElementById('passwordModal');
+        if (event.target === passwordModal) {
+            closePasswordModal();
+        }
+    });
 });

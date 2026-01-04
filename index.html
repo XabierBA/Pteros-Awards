@@ -161,5 +161,35 @@
 
     <script src="script.js"></script>
     <script src="admin.js"></script>
+    <!-- Añade esto ANTES del cierre de </body> -->
+
+<!-- Modal de contraseña para admin -->
+<div id="passwordModal" class="modal">
+    <div class="modal-content password-modal">
+        <span class="close-modal" onclick="closePasswordModal()">&times;</span>
+        <h2><i class="fas fa-lock"></i> Acceso Administrador</h2>
+        
+        <div class="password-form">
+            <div class="password-input-group">
+                <input type="password" id="adminPassword" placeholder="Contraseña de administración..." class="password-input">
+                <button onclick="togglePasswordVisibility()" class="show-password-btn">
+                    <i class="fas fa-eye" id="passwordEye"></i>
+                </button>
+            </div>
+            
+            <button onclick="checkAdminPassword()" class="password-submit-btn">
+                <i class="fas fa-unlock-alt"></i> Acceder al Panel
+            </button>
+            
+            <div class="password-hint">
+                <p id="passwordError" class="error-message"></p>
+                <p class="hint-text">Contraseña: <strong>qwerty123456</strong></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="script.js"></script>
+<script src="admin.js"></script>
 </body>
 </html>

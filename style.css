@@ -1159,4 +1159,113 @@ footer {
     .btn-phase, .btn-results, .btn-export, .btn-import, .btn-reset {
         min-width: 100%;
     }
+    
+}
+/* ===== ESTILOS PARA MODAL DE CONTRASEÑA ===== */
+.password-modal {
+    max-width: 400px;
+    text-align: center;
+}
+
+.password-form {
+    padding: 20px 0;
+}
+
+.password-input-group {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.password-input {
+    width: 100%;
+    padding: 15px 50px 15px 20px;
+    font-size: 1.1rem;
+    border: 2px solid var(--gold);
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.3);
+    color: white;
+    transition: all 0.3s ease;
+    outline: none;
+}
+
+.password-input:focus {
+    border-color: var(--neon-blue);
+    box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
+}
+
+.show-password-btn {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--silver);
+    cursor: pointer;
+    padding: 5px;
+    font-size: 1.2rem;
+}
+
+.show-password-btn:hover {
+    color: var(--gold);
+}
+
+.password-submit-btn {
+    width: 100%;
+    padding: 15px;
+    font-size: 1.2rem;
+    background: linear-gradient(45deg, var(--gold), var(--gold-dark));
+    color: black;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: bold;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.password-submit-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 20px rgba(255, 215, 0, 0.4);
+}
+
+.password-hint {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+
+.error-message {
+    color: #ff4757;
+    margin-bottom: 10px;
+    min-height: 20px;
+    font-weight: bold;
+}
+
+.hint-text {
+    color: var(--silver);
+    font-size: 0.9rem;
+    margin-top: 10px;
+}
+
+.hint-text strong {
+    color: var(--gold);
+    font-family: monospace;
+    letter-spacing: 1px;
+}
+
+/* Animación de shake para error */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.shake {
+    animation: shake 0.5s ease-in-out;
 }
