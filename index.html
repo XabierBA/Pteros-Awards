@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premios Entre Amigos</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-trophy trophy-icon"></i>
+                <h1>🎮 Premios Entre Amigos 🏆</h1>
+            </div>
+            <p class="subtitle">¡Vota por los premios más divertidos del año!</p>
+        </header>
+
+        <div class="phase-banner" id="phaseBanner">
+            <span id="phaseText">FASE DE NOMINACIONES</span>
+        </div>
+
+        <main>
+            <div class="categories-container">
+                <!-- Las categorías se cargarán dinámicamente con JavaScript -->
+            </div>
+
+            <div class="instructions">
+                <h3><i class="fas fa-info-circle"></i> Cómo funciona:</h3>
+                <p>1. <strong>Fase de Nominaciones:</strong> Vota por tus amigos en cada categoría divertida</p>
+                <p>2. <strong>Fase Final:</strong> Los 3 más votados pasan a la ronda final</p>
+                <p>3. <strong>Resultados:</strong> ¡Se revelan los ganadores en la fiesta de premios!</p>
+            </div>
+        </main>
+
+        <footer>
+            <button class="btn-admin" onclick="openAdminPanel()">
+                <i class="fas fa-cog"></i> Panel Admin
+            </button>
+            <p class="footer-text">© 2024 Premios Entre Amigos - ¡Diversión garantizada!</p>
+        </footer>
+    </div>
+
+    <!-- Modal de votación -->
+    <div id="voteModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <h2 id="modalCategory"></h2>
+            <div class="nominees-container" id="nomineesList">
+                <!-- Nominados se cargan aquí -->
+            </div>
+            <div class="add-nominee">
+                <input type="text" id="newNominee" placeholder="Añadir nuevo nominado...">
+                <button onclick="addNominee()" class="btn-add">
+                    <i class="fas fa-plus"></i> Añadir
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel de administración -->
+    <div id="adminPanel" class="admin-panel">
+        <div class="admin-content">
+            <h2><i class="fas fa-cog"></i> Panel de Administración</h2>
+            
+            <div class="admin-section">
+                <h3>Fase Actual</h3>
+                <div class="phase-controls">
+                    <button onclick="setPhase('nominations')" class="btn-phase">
+                        <i class="fas fa-vote-yea"></i> Fase Nominaciones
+                    </button>
+                    <button onclick="setPhase('voting')" class="btn-phase">
+                        <i class="fas fa-star"></i> Fase Votación Final
+                    </button>
+                    <button onclick="setPhase('results')" class="btn-phase">
+                        <i class="fas fa-trophy"></i> Mostrar Resultados
+                    </button>
+                </div>
+            </div>
+
+            <div class="admin-section">
+                <h3>Gestionar Categorías</h3>
+                <div class="add-category">
+                    <input type="text" id="newCategory" placeholder="Nueva categoría divertida...">
+                    <button onclick="addCategory()" class="btn-add">
+                        <i class="fas fa-plus"></i> Añadir Categoría
+                    </button>
+                </div>
+            </div>
+
+            <div class="admin-section">
+                <h3>Resultados</h3>
+                <button onclick="showResults()" class="btn-results">
+                    <i class="fas fa-chart-bar"></i> Ver Resultados
+                </button>
+                <button onclick="resetVotes()" class="btn-reset">
+                    <i class="fas fa-redo"></i> Reiniciar Votos
+                </button>
+            </div>
+
+            <button onclick="closeAdminPanel()" class="btn-close-admin">
+                Cerrar Panel
+            </button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>
