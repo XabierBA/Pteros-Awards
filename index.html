@@ -3,18 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Premios Entre Amigos</title>
+    <title>Pteros Awards</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <div class="container">
+    <!-- Pantalla de Login -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-container">
+            <div class="logo-login">
+                <i class="fas fa-trophy trophy-login"></i>
+                <h1>🎮 PTEROS AWARDS 🏆</h1>
+                <p class="subtitle-login">Los premios más divertidos del grupo</p>
+            </div>
+            
+            <div class="login-form">
+                <h2><i class="fas fa-user"></i> Identifícate para votar</h2>
+                <input type="text" id="userName" placeholder="Tu nombre o apodo..." class="login-input">
+                <button onclick="login()" class="login-btn">
+                    <i class="fas fa-sign-in-alt"></i> Entrar a votar
+                </button>
+                <p class="login-note">Tu voto será registrado con este nombre</p>
+            </div>
+            
+            <div class="current-voters">
+                <h3>👥 Ya han votado:</h3>
+                <div id="votersList" class="voters-list">
+                    <!-- Lista de votantes se carga aquí -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenido principal (oculto hasta login) -->
+    <div id="mainContent" class="container" style="display: none;">
         <header class="header">
             <div class="logo">
                 <i class="fas fa-trophy trophy-icon"></i>
-                <h1>🎮 Premios Entre Amigos 🏆</h1>
+                <h1>🎮 PTEROS AWARDS 🏆</h1>
+                <p class="subtitle">¡Vota por los premios más divertidos del año!</p>
             </div>
-            <p class="subtitle">¡Vota por los premios más divertidos del año!</p>
         </header>
 
         <div class="phase-banner" id="phaseBanner">
@@ -28,9 +56,10 @@
 
             <div class="instructions">
                 <h3><i class="fas fa-info-circle"></i> Cómo funciona:</h3>
-                <p>1. <strong>Fase de Nominaciones:</strong> Vota por tus amigos en cada categoría divertida</p>
+                <p>1. <strong>Fase de Nominaciones:</strong> Vota por tus amigos en cada categoría (1 voto por categoría)</p>
                 <p>2. <strong>Fase Final:</strong> Los 3 más votados pasan a la ronda final</p>
                 <p>3. <strong>Resultados:</strong> ¡Se revelan los ganadores en la fiesta de premios!</p>
+                <p class="highlight">⚠️ Tu voto queda registrado con tu nombre. Solo puedes votar una vez por categoría.</p>
             </div>
         </main>
 
@@ -38,7 +67,7 @@
             <button class="btn-admin" onclick="openAdminPanel()">
                 <i class="fas fa-cog"></i> Panel Admin
             </button>
-            <p class="footer-text">© 2024 Premios Entre Amigos - ¡Diversión garantizada!</p>
+            <p class="footer-text">© 2024 Pteros Awards - ¡Diversión garantizada!</p>
         </footer>
     </div>
 
@@ -50,11 +79,21 @@
             <div class="nominees-container" id="nomineesList">
                 <!-- Nominados se cargan aquí -->
             </div>
-            <div class="add-nominee">
-                <input type="text" id="newNominee" placeholder="Añadir nuevo nominado...">
-                <button onclick="addNominee()" class="btn-add">
-                    <i class="fas fa-plus"></i> Añadir
-                </button>
+            <div class="add-nominee-section">
+                <div class="upload-section">
+                    <label class="upload-label">Añadir nuevo nominado con foto:</label>
+                    <div class="upload-controls">
+                        <input type="text" id="newNomineeName" placeholder="Nombre del nominado..." class="nominee-input">
+                        <input type="file" id="photoUpload" accept="image/*" class="file-input" onchange="previewPhoto()">
+                        <label for="photoUpload" class="file-label">
+                            <i class="fas fa-camera"></i> Elegir Foto
+                        </label>
+                        <div id="photoPreview" class="photo-preview"></div>
+                        <button onclick="addNomineeWithPhoto()" class="btn-add">
+                            <i class="fas fa-plus"></i> Añadir Nominado
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -90,13 +129,28 @@
             </div>
 
             <div class="admin-section">
-                <h3>Resultados</h3>
+                <h3>Resultados y Datos</h3>
                 <button onclick="showResults()" class="btn-results">
                     <i class="fas fa-chart-bar"></i> Ver Resultados
+                </button>
+                <button onclick="exportData()" class="btn-export">
+                    <i class="fas fa-download"></i> Exportar Datos
+                </button>
+                <button onclick="importData()" class="btn-import">
+                    <i class="fas fa-upload"></i> Importar Datos
                 </button>
                 <button onclick="resetVotes()" class="btn-reset">
                     <i class="fas fa-redo"></i> Reiniciar Votos
                 </button>
+            </div>
+
+            <div class="admin-section">
+                <h3>Estadísticas</h3>
+                <div class="stats">
+                    <p>Total votantes: <span id="totalVoters">0</span></p>
+                    <p>Categorías: <span id="totalCategories">0</span></p>
+                    <p>Votos totales: <span id="totalVotes">0</span></p>
+                </div>
             </div>
 
             <button onclick="closeAdminPanel()" class="btn-close-admin">
