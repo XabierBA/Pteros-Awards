@@ -1,5 +1,4 @@
 // ===== SISTEMA DE USUARIOS Y VOTOS =====
-// ===== SISTEMA DE USUARIOS Y VOTOS =====
 let appData = {
     currentUser: null,
     phase: 'nominations',
@@ -669,7 +668,17 @@ function updateStats() {
     document.getElementById('totalVotes').textContent = totalVotes;
 }
 
-// ===== INICIALIZACIÓN =====
+// ===== FUNCIONES DE APOYO =====
+function updateStats() {
+    const totalVoters = appData.users ? appData.users.filter(u => Object.keys(u.votes).length > 0).length : 0;
+    const totalCategories = appData.categories ? appData.categories.length : 0;
+    const totalVotes = appData.categories ? appData.categories.reduce((sum, cat) => 
+        sum + cat.nominees.reduce((catSum, nom) => catSum + nom.votes, 0), 0) : 0;
+    
+    document.getElementById('totalVoters').textContent = totalVoters;
+    document.getElementById('totalCategories').textContent = totalCategories;
+    document.getElementById('totalVotes').textContent = totalVotes;
+}
 // ===== INICIALIZACIÓN =====
 document.addEventListener('DOMContentLoaded', () => {
     loadData();
