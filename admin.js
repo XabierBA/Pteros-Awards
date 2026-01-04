@@ -1,36 +1,42 @@
-// ===== SISTEMA DE CONTRASEÑA SIMPLE =====
+// ===== CONTRASEÑA DE ADMIN =====
 const ADMIN_PASSWORD = "qwerty123456";
-let passwordAttempts = 0;
-const MAX_ATTEMPTS = 3;
 
-// ===== PANEL ADMIN CON CONTRASEÑA =====
+// ===== FUNCIÓN PRINCIPAL PARA ABRIR PANEL =====
 function openAdminPanel() {
-    if (!appData.currentUser) {
+    console.log("openAdminPanel llamada"); // Para debug
+    
+    if (!appData || !appData.currentUser) {
         alert('Debes estar logueado para acceder al panel admin');
         return;
     }
     
     // Mostrar modal de contraseña
-    document.getElementById('passwordModal').style.display = 'block';
-    document.getElementById('adminPassword').value = '';
-    document.getElementById('passwordError').textContent = '';
-    document.getElementById('adminPassword').focus();
+    const passwordModal = document.getElementById('passwordModal');
+    if (passwordModal) {
+        passwordModal.style.display = 'block';
+        document.getElementById('adminPassword').value = '';
+        document.getElementById('passwordError').textContent = '';
+        document.getElementById('adminPassword').focus();
+    } else {
+        console.error("No se encontró el modal de contraseña");
+    }
 }
 
+// ===== FUNCIONES DEL MODAL DE CONTRASEÑA =====
 function closePasswordModal() {
-    document.getElementById('passwordModal').style.display = 'none';
+    const passwordModal = document.getElementById('passwordModal');
+    if (passwordModal) {
+        passwordModal.style.display = 'none';
+    }
     document.getElementById('adminPassword').value = '';
     document.getElementById('passwordError').textContent = '';
-    document.getElementById('adminPassword').type = 'password';
-    const eyeIcon = document.getElementById('passwordEye');
-    if (eyeIcon) {
-        eyeIcon.className = 'fas fa-eye';
-    }
 }
 
 function togglePasswordVisibility() {
     const passwordInput = document.getElementById('adminPassword');
     const eyeIcon = document.getElementById('passwordEye');
+    
+    if (!passwordInput || !eyeIcon) return;
     
     if (passwordInput.type === 'password') {
         passwordInput.type = 'text';
@@ -42,63 +48,51 @@ function togglePasswordVisibility() {
 }
 
 function checkAdminPassword() {
-    const inputPassword = document.getElementById('adminPassword').value;
+    const passwordInput = document.getElementById('adminPassword');
     const errorElement = document.getElementById('passwordError');
+    
+    if (!passwordInput || !errorElement) return;
+    
+    const inputPassword = passwordInput.value.trim();
     
     if (!inputPassword) {
         errorElement.textContent = 'Por favor, introduce la contraseña';
-        shakePasswordInput();
         return;
     }
     
     if (inputPassword === ADMIN_PASSWORD) {
         // Contraseña correcta
-        passwordAttempts = 0; // Resetear intentos
-        errorElement.textContent = '';
+        errorElement.textContent = '✅ Acceso concedido...';
         errorElement.style.color = '#4CAF50';
-        errorElement.textContent = '✅ Contraseña correcta';
         
-        // Cerrar modal y abrir panel después de un breve delay
         setTimeout(() => {
             closePasswordModal();
+            // Abrir panel admin
             document.getElementById('adminPanel').style.display = 'block';
             updateStats();
         }, 500);
         
     } else {
         // Contraseña incorrecta
-        passwordAttempts++;
+        errorElement.textContent = '❌ Contraseña incorrecta. Prueba con: qwerty123456';
+        errorElement.style.color = '#ff4757';
         
-        if (passwordAttempts >= MAX_ATTEMPTS) {
-            errorElement.textContent = '❌ Demasiados intentos fallidos. Intenta más tarde.';
-            setTimeout(() => {
-                closePasswordModal();
-            }, 2000);
-        } else {
-            const remaining = MAX_ATTEMPTS - passwordAttempts;
-            errorElement.textContent = `❌ Contraseña incorrecta. Intentos restantes: ${remaining}`;
-            shakePasswordInput();
-        }
+        // Animación de shake
+        passwordInput.classList.add('shake');
+        setTimeout(() => {
+            passwordInput.classList.remove('shake');
+        }, 500);
     }
 }
 
-function shakePasswordInput() {
-    const passwordInput = document.getElementById('adminPassword');
-    passwordInput.classList.remove('shake');
-    void passwordInput.offsetWidth; // Trigger reflow
-    passwordInput.classList.add('shake');
-    
-    setTimeout(() => {
-        passwordInput.classList.remove('shake');
-    }, 500);
-}
-
+// ===== FUNCIONES DEL PANEL ADMIN =====
 function closeAdminPanel() {
     document.getElementById('adminPanel').style.display = 'none';
 }
 
-// ===== FUNCIONES DEL PANEL ADMIN =====
 function setPhase(phase) {
+    if (!appData) return;
+    
     appData.phase = phase;
     saveData();
     updatePhaseBanner();
@@ -122,6 +116,8 @@ function getPhaseName(phase) {
 
 function addCategory() {
     const input = document.getElementById('newCategory');
+    if (!input || !appData) return;
+    
     const name = input.value.trim();
     
     if (!name) {
@@ -149,6 +145,8 @@ function showResults() {
     const modal = document.getElementById('voteModal');
     const modalCategory = document.getElementById('modalCategory');
     const nomineesList = document.getElementById('nomineesList');
+    
+    if (!modal || !modalCategory || !nomineesList || !appData) return;
     
     modalCategory.textContent = '🏆 RESULTADOS FINALES 🏆';
     nomineesList.innerHTML = '';
@@ -209,9 +207,11 @@ function showResults() {
 }
 
 function exportData() {
+    if (!appData) return;
+    
     const dataToExport = {
         categories: appData.categories,
-        users: appData.users,
+        users: appData.users || [],
         phase: appData.phase,
         exportDate: new Date().toISOString()
     };
@@ -267,6 +267,8 @@ function importData() {
 }
 
 function resetVotes() {
+    if (!appData) return;
+    
     if (confirm('⚠️ ¿ESTÁS SEGURO DE REINICIAR TODOS LOS VOTOS?\n\nEsto eliminará:\n• Todos los votos de nominados\n• Historial de votantes\n• Fotos de nominados\n\nEsta acción NO se puede deshacer.')) {
         appData.categories.forEach(category => {
             category.nominees.forEach(nominee => {
@@ -275,9 +277,11 @@ function resetVotes() {
             });
         });
         
-        appData.users.forEach(user => {
-            user.votes = {};
-        });
+        if (appData.users) {
+            appData.users.forEach(user => {
+                user.votes = {};
+            });
+        }
         
         saveData();
         saveUsers();
@@ -289,20 +293,27 @@ function resetVotes() {
     }
 }
 
-// ===== FUNCIONES DE APOYO =====
 function updateStats() {
-    const totalVoters = appData.users.filter(u => Object.keys(u.votes).length > 0).length;
-    const totalCategories = appData.categories.length;
-    const totalVotes = appData.categories.reduce((sum, cat) => 
-        sum + cat.nominees.reduce((catSum, nom) => catSum + nom.votes, 0), 0);
+    if (!appData) return;
     
-    document.getElementById('totalVoters').textContent = totalVoters;
-    document.getElementById('totalCategories').textContent = totalCategories;
-    document.getElementById('totalVotes').textContent = totalVotes;
+    const totalVoters = appData.users ? appData.users.filter(u => u.votes && Object.keys(u.votes).length > 0).length : 0;
+    const totalCategories = appData.categories ? appData.categories.length : 0;
+    const totalVotes = appData.categories ? appData.categories.reduce((sum, cat) => 
+        sum + cat.nominees.reduce((catSum, nom) => catSum + nom.votes, 0), 0) : 0;
+    
+    const votersElement = document.getElementById('totalVoters');
+    const categoriesElement = document.getElementById('totalCategories');
+    const votesElement = document.getElementById('totalVotes');
+    
+    if (votersElement) votersElement.textContent = totalVoters;
+    if (categoriesElement) categoriesElement.textContent = totalCategories;
+    if (votesElement) votesElement.textContent = totalVotes;
 }
 
 // ===== INICIALIZACIÓN =====
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("admin.js cargado");
+    
     // Enter para enviar contraseña
     const adminPasswordInput = document.getElementById('adminPassword');
     if (adminPasswordInput) {

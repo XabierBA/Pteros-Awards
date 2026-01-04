@@ -704,7 +704,7 @@ document.addEventListener('DOMContentLoaded', () => {
             login();
         }
     });
-    // ===== INICIALIZACIÓN =====
+// ===== INICIALIZACIÓN =====
 document.addEventListener('DOMContentLoaded', () => {
     loadData();
     updateStats();
@@ -730,7 +730,6 @@ document.addEventListener('DOMContentLoaded', () => {
             closeAdminPanel();
         }
         
-        // AÑADE ESTA LÍNEA:
         const passwordModal = document.getElementById('passwordModal');
         if (event.target == passwordModal) {
             closePasswordModal();
