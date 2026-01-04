@@ -214,6 +214,12 @@ body {
     box-shadow: 0 5px 15px rgba(255, 215, 0, 0.2);
 }
 
+.no-voters {
+    color: var(--silver);
+    font-style: italic;
+    padding: 20px;
+}
+
 /* ===== CONTENIDO PRINCIPAL ===== */
 .container {
     max-width: 1400px;
@@ -1078,6 +1084,10 @@ footer {
     transition: all 0.3s ease;
     font-weight: bold;
     letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
 }
 
 .btn-close-admin:hover {
@@ -1085,84 +1095,9 @@ footer {
     transform: scale(1.02);
 }
 
-/* ===== RESPONSIVE ===== */
-@media (max-width: 768px) {
-    .login-container {
-        padding: 30px;
-    }
-    
-    .logo-login h1 {
-        font-size: 2.5rem;
-    }
-    
-    h1 {
-        font-size: 2.5rem;
-    }
-    
-    .categories-container {
-        grid-template-columns: 1fr;
-        padding: 20px;
-    }
-    
-    .modal-content {
-        padding: 25px;
-        width: 95%;
-    }
-    
-    .nominees-container {
-        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    }
-    
-    .admin-content {
-        padding: 30px;
-        width: 95%;
-    }
-    
-    .phase-controls {
-        grid-template-columns: 1fr;
-    }
-    
-    #newCategory {
-        min-width: 100%;
-    }
-    
-    .user-info {
-        top: 15px;
-        right: 15px;
-        padding: 12px 20px;
-        font-size: 0.9rem;
-    }
-}
-
-@media (max-width: 480px) {
-    .logo-login h1 {
-        font-size: 2rem;
-    }
-    
-    h1 {
-        font-size: 2rem;
-    }
-    
-    .trophy-login {
-        font-size: 3.5rem;
-    }
-    
-    .nominee-photo {
-        width: 100px;
-        height: 100px;
-    }
-    
-    .admin-section {
-        padding: 20px;
-    }
-    
-    .btn-phase, .btn-results, .btn-export, .btn-import, .btn-reset {
-        min-width: 100%;
-    }
-}
 /* ===== MODAL DE CONTRASEÑA ===== */
 .password-modal {
-    z-index: 1002; /* Por encima de todo */
+    z-index: 1002;
 }
 
 .password-content {
@@ -1279,42 +1214,7 @@ footer {
     margin-top: 10px;
     font-weight: bold;
     min-height: 24px;
-}
-
-.admin-options {
-    margin-top: 30px;
-    padding-top: 20px;
-    border-top: 1px solid rgba(255, 215, 0, 0.2);
-}
-
-.admin-options h3 {
-    color: var(--gold);
-    margin-bottom: 15px;
     text-align: center;
-    font-size: 1.2rem;
-}
-
-.quick-option-btn {
-    width: 100%;
-    padding: 15px;
-    margin: 10px 0;
-    background: linear-gradient(45deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: white;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-size: 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-}
-
-.quick-option-btn:hover {
-    background: linear-gradient(45deg, rgba(255, 215, 0, 0.2), rgba(192, 192, 192, 0.2));
-    border-color: var(--gold);
-    transform: translateY(-2px);
 }
 
 /* Animación de error en contraseña */
@@ -1343,4 +1243,94 @@ footer {
     color: #aaa;
     font-size: 0.8rem;
     margin-top: 10px;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .login-container {
+        padding: 30px;
+    }
+    
+    .logo-login h1 {
+        font-size: 2.5rem;
+    }
+    
+    h1 {
+        font-size: 2.5rem;
+    }
+    
+    .categories-container {
+        grid-template-columns: 1fr;
+        padding: 20px;
+    }
+    
+    .modal-content {
+        padding: 25px;
+        width: 95%;
+    }
+    
+    .nominees-container {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    }
+    
+    .admin-content {
+        padding: 30px;
+        width: 95%;
+    }
+    
+    .phase-controls {
+        grid-template-columns: 1fr;
+    }
+    
+    #newCategory {
+        min-width: 100%;
+    }
+    
+    .user-info {
+        top: 15px;
+        right: 15px;
+        padding: 12px 20px;
+        font-size: 0.9rem;
+    }
+    
+    .admin-buttons {
+        flex-direction: column;
+    }
+    
+    .btn-results, .btn-export, .btn-import, .btn-reset {
+        min-width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .logo-login h1 {
+        font-size: 2rem;
+    }
+    
+    h1 {
+        font-size: 2rem;
+    }
+    
+    .trophy-login {
+        font-size: 3.5rem;
+    }
+    
+    .nominee-photo {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .admin-section {
+        padding: 20px;
+    }
+    
+    .btn-phase, .btn-results, .btn-export, .btn-import, .btn-reset {
+        min-width: 100%;
+    }
+    
+    .user-info {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
 }

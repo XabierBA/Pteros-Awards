@@ -303,40 +303,27 @@ let appData = {
                 { name: "Xabi", votes: 0, voters: [], photo: null }
             ]
         }
-    ]
+    ],
+    users: []
 };
 
-// Cargar datos guardados
-function loadData() {
-    const savedData = localStorage.getItem('premiosData');
-    const savedUsers = localStorage.getItem('premiosUsers');
-    
-    if (savedData) {
-        const parsed = JSON.parse(savedData);
-        appData.categories = parsed.categories || appData.categories;
-        appData.phase = parsed.phase || 'nominations';
+// ===== FUNCIONES DEL PANEL ADMIN =====
+function openAdminPanel() {
+    if (!appData.currentUser) {
+        alert('Debes estar logueado para acceder al panel admin');
+        return;
     }
     
-    appData.users = savedUsers ? JSON.parse(savedUsers) : [];
+    // Mostrar modal de contraseña
+    document.getElementById('passwordModal').style.display = 'block';
     
-    updatePhaseBanner();
-    updateVotersList();
-    updateStats();
+    // Resetear mensaje de error
+    document.getElementById('passwordError').textContent = '';
+    document.getElementById('adminPassword').value = '';
 }
 
-// Guardar datos
-function saveData() {
-    const dataToSave = {
-        categories: appData.categories,
-        phase: appData.phase
-    };
-    localStorage.setItem('premiosData', JSON.stringify(dataToSave));
-    updateStats();
-}
-
-function saveUsers() {
-    localStorage.setItem('premiosUsers', JSON.stringify(appData.users));
-    updateVotersList();
+function closeAdminPanel() {
+    document.getElementById('adminPanel').style.display = 'none';
 }
 
 // ===== LOGIN =====
@@ -663,37 +650,53 @@ function updateStats() {
     const totalVotes = appData.categories.reduce((sum, cat) => 
         sum + cat.nominees.reduce((catSum, nom) => catSum + nom.votes, 0), 0);
     
-    document.getElementById('totalVoters').textContent = totalVoters;
-    document.getElementById('totalCategories').textContent = totalCategories;
-    document.getElementById('totalVotes').textContent = totalVotes;
+    const votersElement = document.getElementById('totalVoters');
+    const categoriesElement = document.getElementById('totalCategories');
+    const votesElement = document.getElementById('totalVotes');
+    
+    if (votersElement) votersElement.textContent = totalVoters;
+    if (categoriesElement) categoriesElement.textContent = totalCategories;
+    if (votesElement) votesElement.textContent = totalVotes;
 }
 
-// ===== FUNCIONES DE APOYO =====
-function updateStats() {
-    const totalVoters = appData.users ? appData.users.filter(u => Object.keys(u.votes).length > 0).length : 0;
-    const totalCategories = appData.categories ? appData.categories.length : 0;
-    const totalVotes = appData.categories ? appData.categories.reduce((sum, cat) => 
-        sum + cat.nominees.reduce((catSum, nom) => catSum + nom.votes, 0), 0) : 0;
+// ===== FUNCIONES DE DATOS =====
+function loadData() {
+    const savedData = localStorage.getItem('premiosData');
+    const savedUsers = localStorage.getItem('premiosUsers');
     
-    document.getElementById('totalVoters').textContent = totalVoters;
-    document.getElementById('totalCategories').textContent = totalCategories;
-    document.getElementById('totalVotes').textContent = totalVotes;
+    if (savedData) {
+        const parsed = JSON.parse(savedData);
+        appData.categories = parsed.categories || appData.categories;
+        appData.phase = parsed.phase || 'nominations';
+    }
+    
+    appData.users = savedUsers ? JSON.parse(savedUsers) : [];
+    
+    updatePhaseBanner();
+    updateVotersList();
+    updateStats();
 }
+
+function saveData() {
+    const dataToSave = {
+        categories: appData.categories,
+        phase: appData.phase
+    };
+    localStorage.setItem('premiosData', JSON.stringify(dataToSave));
+    updateStats();
+}
+
+function saveUsers() {
+    localStorage.setItem('premiosUsers', JSON.stringify(appData.users));
+    updateVotersList();
+}
+
 // ===== INICIALIZACIÓN =====
 document.addEventListener('DOMContentLoaded', () => {
     loadData();
     updateStats();
     
-    // Verificar si hay usuario en localStorage
-    const lastUserId = localStorage.getItem('lastUserId');
-    if (lastUserId && appData.users.length > 0) {
-        const lastUser = appData.users.find(u => u.id == lastUserId);
-        if (lastUser) {
-            document.getElementById('userName').value = lastUser.name;
-        }
-    }
-    
-    // Cerrar modal al hacer clic fuera
+    // Cerrar modales al hacer clic fuera
     window.onclick = function(event) {
         const modal = document.getElementById('voteModal');
         if (event.target == modal) {

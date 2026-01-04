@@ -56,9 +56,9 @@ function saveLockState() {
     localStorage.setItem('adminLockState', JSON.stringify(lockState));
 }
 
-// ===== MODIFICAR LA FUNCIÓN openAdminPanel =====
-function openAdminPanel() {
-    if (!appData || !appData.currentUser) {
+// ===== MODAL DE CONTRASEÑA =====
+function openPasswordModal() {
+    if (!window.appData || !window.appData.currentUser) {
         alert('Debes estar logueado para acceder al panel admin');
         return;
     }
@@ -86,11 +86,6 @@ function openAdminPanel() {
     updateAttemptsDisplay();
 }
 
-function closeAdminPanel() {
-    document.getElementById('adminPanel').style.display = 'none';
-}
-
-// ===== FUNCIONES DEL MODAL DE CONTRASEÑA =====
 function closePasswordModal() {
     document.getElementById('passwordModal').style.display = 'none';
     document.getElementById('adminPassword').value = '';
@@ -154,7 +149,9 @@ function checkAdminPassword() {
         setTimeout(() => {
             closePasswordModal();
             document.getElementById('adminPanel').style.display = 'block';
-            updateStats();
+            if (typeof window.updateStats === 'function') {
+                window.updateStats();
+            }
             errorElement.className = 'error-message';
         }, 1000);
         
@@ -220,15 +217,20 @@ function updateAttemptsDisplay() {
     }
 }
 
-// ===== FUNCIONES DEL PANEL ADMIN ORIGINALES =====
-
+// ===== FUNCIONES DEL PANEL ADMIN =====
 function setPhase(phase) {
-    if (!appData) return;
+    if (!window.appData) return;
     
-    appData.phase = phase;
-    saveData();
-    updatePhaseBanner();
-    renderCategories();
+    window.appData.phase = phase;
+    if (typeof window.saveData === 'function') {
+        window.saveData();
+    }
+    if (typeof window.updatePhaseBanner === 'function') {
+        window.updatePhaseBanner();
+    }
+    if (typeof window.renderCategories === 'function') {
+        window.renderCategories();
+    }
     
     if (phase === 'results') {
         showResults();
@@ -248,7 +250,7 @@ function getPhaseName(phase) {
 
 function addCategory() {
     const input = document.getElementById('newCategory');
-    if (!input || !appData) return;
+    if (!input || !window.appData) return;
     
     const name = input.value.trim();
     
@@ -257,18 +259,23 @@ function addCategory() {
         return;
     }
     
-    const newId = appData.categories.length > 0 
-        ? Math.max(...appData.categories.map(c => c.id)) + 1 
+    const newId = window.appData.categories.length > 0 
+        ? Math.max(...window.appData.categories.map(c => c.id)) + 1 
         : 1;
     
-    appData.categories.push({
+    window.appData.categories.push({
         id: newId,
         name: name,
         nominees: []
     });
     
-    saveData();
-    renderCategories();
+    if (typeof window.saveData === 'function') {
+        window.saveData();
+    }
+    if (typeof window.renderCategories === 'function') {
+        window.renderCategories();
+    }
+    
     input.value = '';
     alert('✅ ¡Categoría añadida!');
 }
@@ -278,12 +285,12 @@ function showResults() {
     const modalCategory = document.getElementById('modalCategory');
     const nomineesList = document.getElementById('nomineesList');
     
-    if (!modal || !modalCategory || !nomineesList || !appData) return;
+    if (!modal || !modalCategory || !nomineesList || !window.appData) return;
     
     modalCategory.textContent = '🏆 RESULTADOS FINALES 🏆';
     nomineesList.innerHTML = '';
     
-    appData.categories.forEach(category => {
+    window.appData.categories.forEach(category => {
         const sortedNominees = [...category.nominees].sort((a, b) => b.votes - a.votes);
         const winner = sortedNominees[0];
         const second = sortedNominees[1];
@@ -339,12 +346,12 @@ function showResults() {
 }
 
 function exportData() {
-    if (!appData) return;
+    if (!window.appData) return;
     
     const dataToExport = {
-        categories: appData.categories,
-        users: appData.users || [],
-        phase: appData.phase,
+        categories: window.appData.categories,
+        users: window.appData.users || [],
+        phase: window.appData.phase,
         exportDate: new Date().toISOString()
     };
     
@@ -375,15 +382,23 @@ function importData() {
                 const imported = JSON.parse(event.target.result);
                 
                 if (confirm('⚠️ Esto sobrescribirá todos los datos actuales. ¿Continuar?')) {
-                    if (appData) {
-                        appData.categories = imported.categories || appData.categories;
-                        appData.users = imported.users || appData.users;
-                        appData.phase = imported.phase || 'nominations';
+                    if (window.appData) {
+                        window.appData.categories = imported.categories || window.appData.categories;
+                        window.appData.users = imported.users || window.appData.users;
+                        window.appData.phase = imported.phase || 'nominations';
                         
-                        saveData();
-                        saveUsers();
-                        loadData();
-                        renderCategories();
+                        if (typeof window.saveData === 'function') {
+                            window.saveData();
+                        }
+                        if (typeof window.saveUsers === 'function') {
+                            window.saveUsers();
+                        }
+                        if (typeof window.loadData === 'function') {
+                            window.loadData();
+                        }
+                        if (typeof window.renderCategories === 'function') {
+                            window.renderCategories();
+                        }
                         
                         alert('✅ Datos importados correctamente');
                     }
@@ -401,54 +416,51 @@ function importData() {
 }
 
 function resetVotes() {
-    if (!appData) return;
+    if (!window.appData) return;
     
     if (confirm('⚠️ ¿ESTÁS SEGURO DE REINICIAR TODOS LOS VOTOS?\n\nEsto eliminará:\n• Todos los votos de nominados\n• Historial de votantes\n• Fotos de nominados\n\nEsta acción NO se puede deshacer.')) {
-        appData.categories.forEach(category => {
+        window.appData.categories.forEach(category => {
             category.nominees.forEach(nominee => {
                 nominee.votes = 0;
                 nominee.voters = [];
             });
         });
         
-        if (appData.users) {
-            appData.users.forEach(user => {
+        if (window.appData.users) {
+            window.appData.users.forEach(user => {
                 user.votes = {};
             });
         }
         
-        saveData();
-        saveUsers();
-        renderCategories();
-        updateVotersList();
-        updateStats();
+        if (typeof window.saveData === 'function') {
+            window.saveData();
+        }
+        if (typeof window.saveUsers === 'function') {
+            window.saveUsers();
+        }
+        if (typeof window.renderCategories === 'function') {
+            window.renderCategories();
+        }
+        if (typeof window.updateVotersList === 'function') {
+            window.updateVotersList();
+        }
+        if (typeof window.updateStats === 'function') {
+            window.updateStats();
+        }
         
         alert('✅ ¡Todos los votos han sido reiniciados!');
     }
-}
-
-// ===== FUNCIONES DE APOYO =====
-function updateStats() {
-    if (!appData) return;
-    
-    const totalVoters = appData.users ? appData.users.filter(u => Object.keys(u.votes).length > 0).length : 0;
-    const totalCategories = appData.categories ? appData.categories.length : 0;
-    const totalVotes = appData.categories ? appData.categories.reduce((sum, cat) => 
-        sum + cat.nominees.reduce((catSum, nom) => catSum + nom.votes, 0), 0) : 0;
-    
-    const votersElement = document.getElementById('totalVoters');
-    const categoriesElement = document.getElementById('totalCategories');
-    const votesElement = document.getElementById('totalVotes');
-    
-    if (votersElement) votersElement.textContent = totalVoters;
-    if (categoriesElement) categoriesElement.textContent = totalCategories;
-    if (votesElement) votesElement.textContent = totalVotes;
 }
 
 // ===== INICIALIZACIÓN =====
 document.addEventListener('DOMContentLoaded', () => {
     // Cargar configuración de contraseña
     loadAdminPassword();
+    
+    // Sobreescribir la función openAdminPanel del script principal
+    window.openAdminPanelFromAdmin = function() {
+        openPasswordModal();
+    };
     
     // Enter para enviar contraseña
     const adminPasswordInput = document.getElementById('adminPassword');
@@ -459,12 +471,4 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-    
-    // Cerrar modal al hacer clic fuera
-    window.addEventListener('click', function(event) {
-        const modal = document.getElementById('passwordModal');
-        if (event.target === modal) {
-            closePasswordModal();
-        }
-    });
 });
