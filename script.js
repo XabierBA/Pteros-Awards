@@ -36,14 +36,14 @@ async function loadAppData() {
                 "Amalia": null,
                 "Carlita": null,
                 "Daniel": null,
-                "Guillemor": null,
-                "Iker": null,
-                "Joel": null,
+                "Guille": null,
+                "Iker": "Imagenes\\Iker.png",
+                "Joel": "Imagenes\\Joel.png",
                 "Jose": null,
                 "Nico": null,
                 "Ruchiti": null,
                 "Sara": null,
-                "Tiago": null,
+                "Tiago": "Imagenes\\Tiago.png",
                 "Xabi": null
             };
         }
@@ -69,7 +69,7 @@ async function loadAppData() {
 }
 
 function createDefaultCategories() {
-    const people = ["Brais", "Amalia", "Carlita", "Daniel", "Guillemor", "Iker", "Joel", "Jose", "Nico", "Ruchiti", "Sara", "Tiago", "Xabi"];
+    const people = ["Brais", "Amalia", "Carlita", "Daniel", "Guille", "Iker", "Joel", "Jose", "Nico", "Ruchiti", "Sara", "Tiago", "Xabi"];
     
     return [
         {
@@ -241,7 +241,7 @@ function createDefaultCategories() {
 }
 
 function ensureAllNomineesInCategories() {
-    const allPeople = ["Brais", "Amalia", "Carlita", "Daniel", "Guillemor", "Iker", "Joel", "Jose", "Nico", "Ruchiti", "Sara", "Tiago", "Xabi"];
+    const allPeople = ["Brais", "Amalia", "Carlita", "Daniel", "Guille", "Iker", "Joel", "Jose", "Nico", "Ruchiti", "Sara", "Tiago", "Xabi"];
     
     appData.categories.forEach(category => {
         allPeople.forEach(person => {
