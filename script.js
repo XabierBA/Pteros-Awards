@@ -32,7 +32,7 @@ async function loadAppData() {
         } else {
             // Fotos por defecto (puedes cambiarlas en el panel admin)
             appData.photoUrls = {
-                "Brais": null,
+                "Brais": "Imagenes\\Cajide.png",
                 "Amalia": null,
                 "Carlita": null,
                 "Daniel": null,
