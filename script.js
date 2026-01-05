@@ -37,13 +37,13 @@ async function loadAppData() {
                 "Carlita": null,
                 "Daniel": null,
                 "Guille": null,
-                "Iker": "Imagenes\\Iker.png",
-                "Joel": "Imagenes\\Joel.png",
+                "Iker": "Imagenes\\Iker.jpg",
+                "Joel": "Imagenes\\Joel.jpg",
                 "Jose": null,
                 "Nico": null,
                 "Ruchiti": null,
                 "Sara": null,
-                "Tiago": "Imagenes\\Tiago.png",
+                "Tiago": "Imagenes\\Tiago.jpg",
                 "Xabi": null
             };
         }
