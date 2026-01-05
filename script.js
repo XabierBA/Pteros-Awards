@@ -4,15 +4,19 @@ let appData = {
     phase: 'nominations',
     categories: [],
     users: [],
-    photoUrls: {} // Nuevo: almacenará las URLs de fotos
+    photoUrls: {}
 };
+
+let currentCategoryId = null;
+let photoPreviewFile = null;
 
 // ===== CARGAR DATOS Y FOTOS =====
 async function loadAppData() {
     try {
-        // Cargar datos de localStorage primero
+        // Cargar datos de localStorage
         const savedData = localStorage.getItem('premiosData');
         const savedUsers = localStorage.getItem('premiosUsers');
+        const savedPhotos = localStorage.getItem('premiosPhotos');
         
         if (savedData) {
             const parsed = JSON.parse(savedData);
@@ -22,37 +26,34 @@ async function loadAppData() {
         
         appData.users = savedUsers ? JSON.parse(savedUsers) : [];
         
-        // Cargar fotos desde data.json
-        const response = await fetch('data.json');
-        if (response.ok) {
-            const data = await response.json();
-            appData.photoUrls = data.photoUrls || {};
-            
-            // Si no hay categorías cargadas, crear desde JSON
-            if (appData.categories.length === 0 && data.categories) {
-                appData.categories = data.categories.map(category => ({
-                    ...category,
-                    nominees: data.people ? data.people.map(person => ({
-                        name: person,
-                        votes: 0,
-                        voters: [],
-                        photo: appData.photoUrls[person] || null
-                    })) : []
-                }));
-            } else {
-                // Actualizar fotos en categorías existentes
-                appData.categories.forEach(category => {
-                    category.nominees.forEach(nominee => {
-                        nominee.photo = appData.photoUrls[nominee.name] || nominee.photo;
-                    });
-                });
-            }
+        // Cargar fotos desde localStorage o crear defaults
+        if (savedPhotos) {
+            appData.photoUrls = JSON.parse(savedPhotos);
+        } else {
+            // Fotos por defecto (puedes cambiarlas en el panel admin)
+            appData.photoUrls = {
+                "Brais": null,
+                "Amalia": null,
+                "Carlita": null,
+                "Daniel": null,
+                "Guillemor": null,
+                "Iker": null,
+                "Joel": null,
+                "Jose": null,
+                "Nico": null,
+                "Ruchiti": null,
+                "Sara": null,
+                "Tiago": null,
+                "Xabi": null
+            };
         }
         
-        // Si aún no hay categorías, usar las predeterminadas
+        // Si no hay categorías, crear desde estructura por defecto
         if (appData.categories.length === 0) {
-            // Tu estructura original de categorías aquí
-            appData.categories = [/* tu estructura original */];
+            appData.categories = createDefaultCategories();
+        } else {
+            // Asegurar que todas las categorías tengan todos los nominados
+            ensureAllNomineesInCategories();
         }
         
         updatePhaseBanner();
@@ -61,14 +62,205 @@ async function loadAppData() {
         
     } catch (error) {
         console.error("Error cargando datos:", error);
-        // Cargar datos predeterminados si hay error
-        loadDefaultData();
+        // Crear datos por defecto si hay error
+        appData.categories = createDefaultCategories();
+        appData.users = [];
     }
 }
 
-function loadDefaultData() {
-    // Tu estructura original de appData.categories aquí
-    // (la que me mostraste con todas las categorías)
+function createDefaultCategories() {
+    const people = ["Brais", "Amalia", "Carlita", "Daniel", "Guillemor", "Iker", "Joel", "Jose", "Nico", "Ruchiti", "Sara", "Tiago", "Xabi"];
+    
+    return [
+        {
+            id: 1,
+            name: "👑 Rey/Reyna del Grupo",
+            description: "La persona más \"influyente\" y respetada del grupo",
+            nominees: people.map(person => ({
+                name: person,
+                votes: 0,
+                voters: [],
+                photo: appData.photoUrls[person] || null
+            }))
+        },
+        {
+            id: 2,
+            name: "⚽ MVP ESEI FUT",
+            description: "El q vote Iker se lleva una ostia (Avisado estas Iker)",
+            nominees: people.map(person => ({
+                name: person,
+                votes: 0,
+                voters: [],
+                photo: appData.photoUrls[person] || null
+            }))
+        },
+        {
+            id: 3,
+            name: "😂 Payaso Oficial",
+            description: "Es facil reirse con el, o de el jsjsj",
+            nominees: people.map(person => ({
+                name: person,
+                votes: 0,
+                voters: [],
+                photo: appData.photoUrls[person] || null
+            }))
+        },
+        {
+            id: 4,
+            name: "🎨 Talento Artístico",
+            description: "En este grupo? poco y regular",
+            nominees: people.map(person => ({
+                name: person,
+                votes: 0,
+                voters: [],
+                photo: appData.photoUrls[person] || null
+            }))
+        },
+        {
+            id: 5,
+            name: "💖 Corazón del Grupo",
+            description: "El/la más empático/a, cariñoso/a y buen rollo",
+            nominees: people.map(person => ({
+                name: person,
+                votes: 0,
+                voters: [],
+                photo: appData.photoUrls[person] || null
+            }))
+        },
+        {
+            id: 6,
+            name: "🍻 El alma de la fiesta",
+            description: "Si no hay ganas el las trae",
+            nominees: people.map(person => ({
+                name: person,
+                votes: 0,
+                voters: [],
+                photo: appData.photoUrls[person] || null
+            }))
+        },
+        {
+            id: 7,
+            name: "📱 Cerebro dopamínico de niño de tiktok",
+            description: "Si deja el movil 10 segundos, se convierte en nani",
+            nominees: people.map(person => ({
+                name: person,
+                votes: 0,
+                voters: [],
+                photo: appData.photoUrls[person] || null
+            }))
+        },
+        {
+            id: 8,
+            name: "🍕 Pizza-p",
+            description: "Come mas pizzas q pijas Joel",
+            nominees: people.map(person => ({
+                name: person,
+                votes: 0,
+                voters: [],
+                photo: appData.photoUrls[person] || null
+            }))
+        },
+        {
+            id: 9,
+            name: "🎮 Gamer del Año",
+            description: "Ni pareja ni pollas, total esta jugando todo el dia",
+            nominees: people.map(person => ({
+                name: person,
+                votes: 0,
+                voters: [],
+                photo: appData.photoUrls[person] || null
+            }))
+        },
+        {
+            id: 10,
+            name: "🏆 El bromitas",
+            description: "Si no hace coñas, le da un jamacuco al cabrón",
+            nominees: people.map(person => ({
+                name: person,
+                votes: 0,
+                voters: [],
+                photo: appData.photoUrls[person] || null
+            }))
+        },
+        {
+            id: 11,
+            name: "👨‍💻 Admin Legendario",
+            description: "Obvio Xabi",
+            nominees: people.map(person => ({
+                name: person,
+                votes: 0,
+                voters: [],
+                photo: appData.photoUrls[person] || null
+            }))
+        },
+        {
+            id: 12,
+            name: "💃 Reina del Baile",
+            description: "Baila baila baila",
+            nominees: people.map(person => ({
+                name: person,
+                votes: 0,
+                voters: [],
+                photo: appData.photoUrls[person] || null
+            }))
+        },
+        {
+            id: 13,
+            name: "🎤 Karaoke Star",
+            description: "Se cree Bisbal o algo así",
+            nominees: people.map(person => ({
+                name: person,
+                votes: 0,
+                voters: [],
+                photo: appData.photoUrls[person] || null
+            }))
+        },
+        {
+            id: 14,
+            name: "📸 Fotógrafo",
+            description: "A ver si para de sacar fotos de una puta vez",
+            nominees: people.map(person => ({
+                name: person,
+                votes: 0,
+                voters: [],
+                photo: appData.photoUrls[person] || null
+            }))
+        },
+        {
+            id: 15,
+            name: "😴 Narcolepsico",
+            description: "Quien es el subnormal que siempre se duerme, o duerme infinito",
+            nominees: people.map(person => ({
+                name: person,
+                votes: 0,
+                voters: [],
+                photo: appData.photoUrls[person] || null
+            }))
+        }
+    ];
+}
+
+function ensureAllNomineesInCategories() {
+    const allPeople = ["Brais", "Amalia", "Carlita", "Daniel", "Guillemor", "Iker", "Joel", "Jose", "Nico", "Ruchiti", "Sara", "Tiago", "Xabi"];
+    
+    appData.categories.forEach(category => {
+        allPeople.forEach(person => {
+            if (!category.nominees.some(n => n.name === person)) {
+                category.nominees.push({
+                    name: person,
+                    votes: 0,
+                    voters: [],
+                    photo: appData.photoUrls[person] || null
+                });
+            } else {
+                // Actualizar foto si no está definida
+                const nominee = category.nominees.find(n => n.name === person);
+                if (nominee && !nominee.photo && appData.photoUrls[person]) {
+                    nominee.photo = appData.photoUrls[person];
+                }
+            }
+        });
+    });
 }
 
 // ===== GUARDAR DATOS =====
@@ -81,9 +273,13 @@ function saveData() {
     updateStats();
 }
 
-// ===== OBTENER FOTO DE PERSONA =====
-function getPersonPhoto(personName) {
-    return appData.photoUrls[personName] || null;
+function saveUsers() {
+    localStorage.setItem('premiosUsers', JSON.stringify(appData.users));
+    updateVotersList();
+}
+
+function savePhotos() {
+    localStorage.setItem('premiosPhotos', JSON.stringify(appData.photoUrls));
 }
 
 // ===== ACTUALIZAR FOTO DE PERSONA =====
@@ -99,20 +295,96 @@ function updatePersonPhoto(personName, photoUrl) {
             }
         });
         
-        // Guardar en data.json (opcional)
-        savePhotoUrls();
+        savePhotos();
         saveData();
         renderCategories();
     }
 }
 
-// ===== GUARDAR FOTOS EN JSON (opcional - para persistencia) =====
-function savePhotoUrls() {
-    // Esto guardaría las fotos en localStorage
-    localStorage.setItem('premiosPhotos', JSON.stringify(appData.photoUrls));
+// ===== LOGIN =====
+function login() {
+    const userName = document.getElementById('userName').value.trim();
+    
+    if (!userName) {
+        alert('Por favor, introduce tu nombre');
+        return;
+    }
+    
+    if (userName.length < 2) {
+        alert('El nombre debe tener al menos 2 caracteres');
+        return;
+    }
+    
+    // Verificar si el usuario ya existe
+    let user = appData.users.find(u => u.name.toLowerCase() === userName.toLowerCase());
+    
+    if (!user) {
+        // Crear nuevo usuario
+        user = {
+            id: Date.now(),
+            name: userName,
+            votes: {},
+            votedAt: new Date().toISOString()
+        };
+        appData.users.push(user);
+        saveUsers();
+    }
+    
+    appData.currentUser = user;
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('mainContent').style.display = 'block';
+    
+    // Mostrar info del usuario
+    showUserInfo();
+    renderCategories();
+    
+    // Animar aparición
+    const mainContent = document.getElementById('mainContent');
+    mainContent.style.animation = 'fadeIn 0.5s ease forwards';
 }
 
-// ===== RENDERIZAR CATEGORÍAS (MODIFICADO) =====
+function logout() {
+    if (confirm('¿Estás seguro de que quieres salir?')) {
+        appData.currentUser = null;
+        document.getElementById('loginScreen').style.display = 'flex';
+        document.getElementById('mainContent').style.display = 'none';
+        document.querySelector('.user-info')?.remove();
+    }
+}
+
+function showUserInfo() {
+    // Remover info anterior si existe
+    const oldInfo = document.querySelector('.user-info');
+    if (oldInfo) oldInfo.remove();
+    
+    const userInfo = document.createElement('div');
+    userInfo.className = 'user-info';
+    userInfo.innerHTML = `
+        <i class="fas fa-user-circle"></i>
+        <span class="user-name">${appData.currentUser.name}</span>
+        <button onclick="logout()" class="logout-btn">
+            <i class="fas fa-sign-out-alt"></i> Salir
+        </button>
+    `;
+    
+    document.body.appendChild(userInfo);
+}
+
+// ===== LISTA DE VOTANTES =====
+function updateVotersList() {
+    const votersList = document.getElementById('votersList');
+    const activeUsers = appData.users.filter(u => 
+        Object.keys(u.votes).length > 0
+    );
+    
+    votersList.innerHTML = activeUsers.length > 0 
+        ? activeUsers
+            .map(user => `<div class="voter-tag">${user.name}</div>`)
+            .join('')
+        : '<div class="no-voters">Aún no hay votantes</div>';
+}
+
+// ===== RENDERIZAR CATEGORÍAS =====
 function renderCategories() {
     const container = document.querySelector('.categories-container');
     if (!container) return;
@@ -150,7 +422,6 @@ function renderCategories() {
     });
 }
 
-// ===== FUNCIÓN AUXILIAR PARA MOSTRAR FOTOS =====
 function getNomineePhotoHTML(nominee) {
     const photoUrl = nominee.photo || appData.photoUrls[nominee.name];
     if (photoUrl) {
@@ -159,7 +430,7 @@ function getNomineePhotoHTML(nominee) {
     return '👤';
 }
 
-// ===== MODAL DE VOTACIÓN (MODIFICADO) =====
+// ===== MODAL DE VOTACIÓN =====
 function openVoteModal(categoryId) {
     if (!appData.currentUser) {
         alert('Por favor, identifícate primero');
@@ -172,7 +443,6 @@ function openVoteModal(categoryId) {
     const modalCategory = document.getElementById('modalCategory');
     const nomineesList = document.getElementById('nomineesList');
     
-    modalCategory.textContent = category.name;
     modalCategory.innerHTML = `${category.name}<br><small>${category.description || ''}</small>`;
     nomineesList.innerHTML = '';
     
@@ -214,7 +484,159 @@ function openVoteModal(categoryId) {
     modal.style.display = 'block';
 }
 
-// ===== INICIALIZACIÓN MODIFICADA =====
+// ===== VOTAR POR UN NOMINADO =====
+function voteForNominee(nomineeName) {
+    if (!appData.currentUser) {
+        alert('Por favor, identifícate primero');
+        return;
+    }
+    
+    const category = appData.categories.find(c => c.id === currentCategoryId);
+    const nominee = category.nominees.find(n => n.name === nomineeName);
+    
+    if (!nominee) return;
+    
+    // Verificar si ya votó en esta categoría
+    if (appData.currentUser.votes[category.id]) {
+        const previousVote = appData.currentUser.votes[category.id];
+        
+        // Restar voto anterior
+        const previousNominee = category.nominees.find(n => n.name === previousVote);
+        if (previousNominee) {
+            previousNominee.votes--;
+            previousNominee.voters = previousNominee.voters.filter(v => v !== appData.currentUser.id);
+        }
+    }
+    
+    // Registrar nuevo voto
+    appData.currentUser.votes[category.id] = nomineeName;
+    nominee.votes++;
+    
+    // Añadir usuario a la lista de votantes si no está
+    if (!nominee.voters.includes(appData.currentUser.id)) {
+        nominee.voters.push(appData.currentUser.id);
+    }
+    
+    // Guardar cambios
+    saveData();
+    saveUsers();
+    
+    // Actualizar UI
+    renderCategories();
+    openVoteModal(currentCategoryId);
+    updateVotersList();
+}
+
+// ===== SUBIR FOTOS =====
+function previewPhoto() {
+    const fileInput = document.getElementById('photoUpload');
+    const preview = document.getElementById('photoPreview');
+    
+    if (fileInput.files && fileInput.files[0]) {
+        photoPreviewFile = fileInput.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+        };
+        
+        reader.readAsDataURL(photoPreviewFile);
+    }
+}
+
+function addNomineeWithPhoto() {
+    const nameInput = document.getElementById('newNomineeName');
+    const name = nameInput.value.trim();
+    
+    if (!name) {
+        alert('Por favor, introduce un nombre');
+        return;
+    }
+    
+    if (!currentCategoryId) {
+        alert('Selecciona una categoría primero');
+        return;
+    }
+    
+    const category = appData.categories.find(c => c.id === currentCategoryId);
+    
+    // Verificar si ya existe
+    if (category.nominees.some(n => n.name.toLowerCase() === name.toLowerCase())) {
+        alert('Este nominado ya existe en la categoría');
+        return;
+    }
+    
+    const newNominee = {
+        name: name,
+        votes: 0,
+        voters: [],
+        photo: null
+    };
+    
+    // Subir foto si hay
+    if (photoPreviewFile) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            newNominee.photo = e.target.result;
+            updatePersonPhoto(name, e.target.result);
+            addNomineeToCategory(newNominee, category);
+        };
+        reader.readAsDataURL(photoPreviewFile);
+    } else {
+        addNomineeToCategory(newNominee, category);
+    }
+}
+
+function addNomineeToCategory(nominee, category) {
+    category.nominees.push(nominee);
+    saveData();
+    openVoteModal(currentCategoryId);
+    
+    // Limpiar formulario
+    document.getElementById('newNomineeName').value = '';
+    document.getElementById('photoPreview').innerHTML = '';
+    photoPreviewFile = null;
+}
+
+// ===== UTILIDADES =====
+function closeModal() {
+    document.getElementById('voteModal').style.display = 'none';
+}
+
+function updatePhaseBanner() {
+    const banner = document.getElementById('phaseBanner');
+    const text = document.getElementById('phaseText');
+    
+    if (!banner || !text) return;
+    
+    switch(appData.phase) {
+        case 'nominations':
+            banner.style.background = 'linear-gradient(90deg, #FF416C, #FF4B2B)';
+            text.textContent = '🎯 FASE DE NOMINACIONES - Vota por tus amigos';
+            break;
+        case 'voting':
+            banner.style.background = 'linear-gradient(90deg, #2196F3, #21CBF3)';
+            text.textContent = '⭐ FASE FINAL - Vota entre los 3 más nominados';
+            break;
+        case 'results':
+            banner.style.background = 'linear-gradient(90deg, #4CAF50, #8BC34A)';
+            text.textContent = '🏆 RESULTADOS FINALES - ¡Ganadores revelados!';
+            break;
+    }
+}
+
+function updateStats() {
+    const totalVoters = appData.users.filter(u => Object.keys(u.votes).length > 0).length;
+    const totalCategories = appData.categories.length;
+    const totalVotes = appData.categories.reduce((sum, cat) => 
+        sum + cat.nominees.reduce((catSum, nom) => catSum + nom.votes, 0), 0);
+    
+    document.getElementById('totalVoters').textContent = totalVoters;
+    document.getElementById('totalCategories').textContent = totalCategories;
+    document.getElementById('totalVotes').textContent = totalVotes;
+}
+
+// ===== INICIALIZACIÓN =====
 document.addEventListener('DOMContentLoaded', async () => {
     await loadAppData();
     updateStats();

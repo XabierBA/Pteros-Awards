@@ -412,13 +412,22 @@ h1 {
 .category-card h3 {
     color: var(--gold);
     font-size: 1.6rem;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     text-align: center;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 15px;
     font-weight: 600;
+}
+
+.category-description {
+    color: var(--silver);
+    font-size: 0.9rem;
+    text-align: center;
+    margin: 10px 0 15px;
+    font-style: italic;
+    min-height: 40px;
 }
 
 .nominees-preview {
@@ -617,6 +626,14 @@ footer {
     margin-bottom: 30px;
     font-size: 2.2rem;
     letter-spacing: 1px;
+}
+
+.modal-content h2 small {
+    display: block;
+    font-size: 1rem;
+    color: var(--silver);
+    margin-top: 10px;
+    font-style: italic;
 }
 
 .nominees-container {
@@ -990,6 +1007,93 @@ footer {
     box-shadow: 0 0 20px rgba(0, 243, 255, 0.3);
 }
 
+/* ===== GESTIÓN DE FOTOS ===== */
+.photo-management {
+    margin-top: 20px;
+}
+
+.photo-input-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.photo-select {
+    flex: 1;
+    min-width: 150px;
+    padding: 12px;
+    border: 2px solid var(--gold);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    color: white;
+    font-size: 1rem;
+}
+
+.photo-url-input {
+    flex: 2;
+    min-width: 200px;
+    padding: 12px;
+    border: 2px solid var(--gold);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    color: white;
+    font-size: 1rem;
+}
+
+.current-photos {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+
+.current-photos h4 {
+    color: var(--gold);
+    margin-bottom: 10px;
+}
+
+.photos-list {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.photo-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    margin: 5px 0;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border-left: 3px solid var(--gold);
+}
+
+.photo-info {
+    flex: 1;
+}
+
+.photo-info a {
+    color: var(--neon-blue);
+    text-decoration: none;
+    font-size: 0.9rem;
+    word-break: break-all;
+}
+
+.photo-info a:hover {
+    text-decoration: underline;
+}
+
+.photo-thumbnail {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--gold);
+    margin-left: 10px;
+}
+
+/* ===== BOTONES ADMIN ===== */
 .admin-buttons {
     display: flex;
     flex-wrap: wrap;
@@ -1085,83 +1189,7 @@ footer {
     transform: scale(1.02);
 }
 
-/* ===== RESPONSIVE ===== */
-@media (max-width: 768px) {
-    .login-container {
-        padding: 30px;
-    }
-    
-    .logo-login h1 {
-        font-size: 2.5rem;
-    }
-    
-    h1 {
-        font-size: 2.5rem;
-    }
-    
-    .categories-container {
-        grid-template-columns: 1fr;
-        padding: 20px;
-    }
-    
-    .modal-content {
-        padding: 25px;
-        width: 95%;
-    }
-    
-    .nominees-container {
-        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    }
-    
-    .admin-content {
-        padding: 30px;
-        width: 95%;
-    }
-    
-    .phase-controls {
-        grid-template-columns: 1fr;
-    }
-    
-    #newCategory {
-        min-width: 100%;
-    }
-    
-    .user-info {
-        top: 15px;
-        right: 15px;
-        padding: 12px 20px;
-        font-size: 0.9rem;
-    }
-}
-
-@media (max-width: 480px) {
-    .logo-login h1 {
-        font-size: 2rem;
-    }
-    
-    h1 {
-        font-size: 2rem;
-    }
-    
-    .trophy-login {
-        font-size: 3.5rem;
-    }
-    
-    .nominee-photo {
-        width: 100px;
-        height: 100px;
-    }
-    
-    .admin-section {
-        padding: 20px;
-    }
-    
-    .btn-phase, .btn-results, .btn-export, .btn-import, .btn-reset {
-        min-width: 100%;
-    }
-    
-}
-/* ===== ESTILOS PARA MODAL DE CONTRASEÑA ===== */
+/* ===== MODAL DE CONTRASEÑA ===== */
 .password-modal {
     max-width: 400px;
     text-align: center;
@@ -1269,98 +1297,87 @@ footer {
 .shake {
     animation: shake 0.5s ease-in-out;
 }
-/* ===== ESTILOS PARA GESTIÓN DE FOTOS ===== */
-.photo-management {
-    margin-top: 20px;
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .login-container {
+        padding: 30px;
+    }
+    
+    .logo-login h1 {
+        font-size: 2.5rem;
+    }
+    
+    h1 {
+        font-size: 2.5rem;
+    }
+    
+    .categories-container {
+        grid-template-columns: 1fr;
+        padding: 20px;
+    }
+    
+    .modal-content {
+        padding: 25px;
+        width: 95%;
+    }
+    
+    .nominees-container {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    }
+    
+    .admin-content {
+        padding: 30px;
+        width: 95%;
+    }
+    
+    .phase-controls {
+        grid-template-columns: 1fr;
+    }
+    
+    #newCategory {
+        min-width: 100%;
+    }
+    
+    .user-info {
+        top: 15px;
+        right: 15px;
+        padding: 12px 20px;
+        font-size: 0.9rem;
+    }
+    
+    .photo-input-group {
+        flex-direction: column;
+    }
+    
+    .photo-select, .photo-url-input {
+        width: 100%;
+    }
+    
+    .btn-phase, .btn-results, .btn-export, .btn-import, .btn-reset {
+        min-width: 100%;
+    }
 }
 
-.photo-input-group {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-bottom: 20px;
-}
-
-.photo-select {
-    flex: 1;
-    min-width: 150px;
-    padding: 10px;
-    border: 2px solid var(--gold);
-    border-radius: 8px;
-    background: rgba(0, 0, 0, 0.3);
-    color: white;
-    font-size: 1rem;
-}
-
-.photo-url-input {
-    flex: 2;
-    min-width: 200px;
-    padding: 10px;
-    border: 2px solid var(--gold);
-    border-radius: 8px;
-    background: rgba(0, 0, 0, 0.3);
-    color: white;
-    font-size: 1rem;
-}
-
-.current-photos {
-    margin-top: 20px;
-    padding: 15px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 10px;
-}
-
-.current-photos h4 {
-    color: var(--gold);
-    margin-bottom: 10px;
-}
-
-.photos-list {
-    max-height: 200px;
-    overflow-y: auto;
-}
-
-.photo-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px;
-    margin: 5px 0;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-    border-left: 3px solid var(--gold);
-}
-
-.photo-info {
-    flex: 1;
-}
-
-.photo-info a {
-    color: var(--neon-blue);
-    text-decoration: none;
-    font-size: 0.9rem;
-    word-break: break-all;
-}
-
-.photo-info a:hover {
-    text-decoration: underline;
-}
-
-.photo-thumbnail {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid var(--gold);
-    margin-left: 10px;
-}
-
-/* Descripción de categoría */
-.category-description {
-    color: var(--silver);
-    font-size: 0.9rem;
-    text-align: center;
-    margin: 10px 0;
-    font-style: italic;
-    min-height: 40px;
+@media (max-width: 480px) {
+    .logo-login h1 {
+        font-size: 2rem;
+    }
+    
+    h1 {
+        font-size: 2rem;
+    }
+    
+    .trophy-login {
+        font-size: 3.5rem;
+    }
+    
+    .nominee-photo {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .admin-section {
+        padding: 20px;
+    }
 }
