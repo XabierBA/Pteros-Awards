@@ -220,6 +220,7 @@ function cargarListaFotos() {
 }
 
 // Función para actualizar foto seleccionada - ¡ESTA ES LA QUE FALTABA!
+// REEMPLAZA ESTA FUNCIÓN EN admin.js (línea ~190):
 function updateSelectedPhoto() {
     const personSelect = document.getElementById('personSelect');
     const photoUrlInput = document.getElementById('photoUrl');
@@ -242,39 +243,28 @@ function updateSelectedPhoto() {
         return;
     }
     
-    // Validar URL
-    try {
-        new URL(nuevaUrl);
-    } catch (e) {
-        alert('❌ La URL no es válida. Debe empezar con http:// o https://');
+    // Validar URL básica
+    if (!nuevaUrl.startsWith('http://') && !nuevaUrl.startsWith('https://')) {
+        alert('❌ La URL debe empezar con http:// o https://');
         return;
     }
     
-    // Mostrar confirmación
-    if (!confirm(`¿Actualizar foto de ${persona}?\n\nNueva URL: ${nuevaUrl}`)) {
-        return;
-    }
-    
-    // Actualizar la foto
+    // Usar la nueva función del sistema de fotos
     if (typeof updatePersonPhoto === 'function') {
-        updatePersonPhoto(persona, nuevaUrl);
-        alert(`✅ Foto de ${persona} actualizada correctamente`);
-        
-        // Limpiar formulario
-        photoUrlInput.value = '';
-        
-        // Actualizar lista de fotos
-        cargarListaFotos();
-        
-        // Si estamos en la vista principal, actualizar categorías
-        if (typeof renderCategories === 'function') {
-            setTimeout(renderCategories, 500);
+        const resultado = updatePersonPhoto(persona, nuevaUrl);
+        if (resultado) {
+            alert(`✅ Foto de ${persona} actualizada correctamente`);
+            
+            // Limpiar formulario
+            photoUrlInput.value = '';
+            
+            // Actualizar lista de fotos
+            cargarListaFotos();
         }
     } else {
         alert('❌ Error: La función updatePersonPhoto no está disponible');
     }
 }
-
 // Función para usar foto de GitHub
 function usarFotoGitHub() {
     const personSelect = document.getElementById('personSelect');

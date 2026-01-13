@@ -11,7 +11,7 @@ let currentCategoryId = null;
 let photoPreviewFile = null;
 
 // ===== CARGAR DATOS Y FOTOS =====
-async function loadAppData() {
+function loadAppData() {
     try {
         console.log("🔄 Cargando datos de la aplicación...");
         
@@ -20,78 +20,88 @@ async function loadAppData() {
         if (!appData.categories) appData.categories = [];
         if (!appData.users) appData.users = [];
         
-        // B. INTENTAR CARGAR FOTOS DE GITHUB PRIMERO
-        if (typeof cargarFotosGitHub === 'function') {
-            console.log("📸 Intentando cargar fotos de GitHub...");
-            try {
-                // Cargar fotos en paralelo para ser más rápido
-                await Promise.race([
-                    cargarFotosGitHub(),
-                    new Promise(resolve => setTimeout(resolve, 3000)) // Timeout 3s
-                ]);
-                console.log("✅ Fotos procesadas");
-            } catch (error) {
-                console.error("❌ Error en cargarFotosGitHub:", error);
-            }
+        // B. CARGAR FOTOS DE MANERA SEGURA (sin await problemático)
+        console.log("📸 Procesando sistema de fotos...");
+        
+        // Inicializar fotos si el sistema está disponible
+        if (typeof inicializarFotosSistema === 'function') {
+            inicializarFotosSistema();
         } else {
-            console.log("⚠️ cargarFotosGitHub no disponible");
+            // Si no existe la función, crear avatares básicos
+            const personas = ["Brais", "Amalia", "Carlita", "Daniel", "Guille", 
+                             "Iker", "Joel", "Jose", "Nico", "Ruchiti", "Sara", "Tiago", "Xabi"];
+            
+            personas.forEach(persona => {
+                const inicial = persona.charAt(0).toUpperCase();
+                const colores = ['667eea', '764ba2', 'f093fb', 'f5576c', '4facfe', '00f2fe'];
+                const color = colores[personas.indexOf(persona) % colores.length];
+                appData.photoUrls[persona] = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="#${color}"/><text x="100" y="120" font-size="80" fill="white" text-anchor="middle" font-family="Arial">${inicial}</text></svg>`;
+            });
+            console.log("🎨 Avatares básicos creados");
         }
         
         // C. CARGAR DATOS DE FIREBASE/LOCALSTORAGE
         if (typeof loadDataFromFirebase === 'function') {
-            console.log("🔥 Cargando datos de Firebase...");
-            try {
-                await loadDataFromFirebase();
-                await loadUsersFromFirebase();
-            } catch (firebaseError) {
-                console.error("❌ Error Firebase, usando localStorage:", firebaseError);
+            console.log("🔥 Intentando cargar de Firebase...");
+            // Llamar sin await
+            loadDataFromFirebase().then(() => {
+                console.log("✅ Firebase cargado");
+                continuarCarga();
+            }).catch((error) => {
+                console.log("📂 Firebase falló, usando localStorage:", error.message);
                 cargarDesdeLocalStorage();
-            }
+                continuarCarga();
+            });
         } else {
             console.log("📱 Firebase no disponible, usando localStorage");
             cargarDesdeLocalStorage();
+            continuarCarga();
         }
         
-        // D. ASEGURAR QUE TODOS TIENEN FOTO
-        const todasLasPersonas = ["Brais", "Amalia", "Carlita", "Daniel", "Guille", 
-                                 "Iker", "Joel", "Jose", "Nico", "Ruchiti", "Sara", "Tiago", "Xabi"];
-        
-        let fotosFaltantes = 0;
-        todasLasPersonas.forEach(persona => {
-            if (!appData.photoUrls[persona]) {
-                fotosFaltantes++;
-                // Crear placeholder
-                if (typeof crearPlaceholder === 'function') {
-                    appData.photoUrls[persona] = crearPlaceholder(persona);
-                } else {
-                    // Fallback básico
-                    const inicial = persona.charAt(0).toUpperCase();
-                    appData.photoUrls[persona] = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="#667eea"/><text x="100" y="120" font-size="80" fill="white" text-anchor="middle">${inicial}</text></svg>`;
+        function continuarCarga() {
+            // D. ASEGURAR QUE TODOS TIENEN FOTO
+            const todasLasPersonas = ["Brais", "Amalia", "Carlita", "Daniel", "Guille", 
+                                     "Iker", "Joel", "Jose", "Nico", "Ruchiti", "Sara", "Tiago", "Xabi"];
+            
+            let fotosFaltantes = 0;
+            todasLasPersonas.forEach(persona => {
+                if (!appData.photoUrls[persona]) {
+                    fotosFaltantes++;
+                    // Usar función obtenerFotoPersona si existe
+                    if (typeof obtenerFotoPersona === 'function') {
+                        appData.photoUrls[persona] = obtenerFotoPersona(persona);
+                    } else {
+                        // Fallback básico
+                        const inicial = persona.charAt(0).toUpperCase();
+                        const colores = ['667eea', '764ba2', 'f093fb', 'f5576c', '4facfe', '00f2fe'];
+                        const color = colores[Math.floor(Math.random() * colores.length)];
+                        appData.photoUrls[persona] = `https://ui-avatars.com/api/?name=${persona}&background=${color}&color=fff&size=200`;
+                    }
                 }
+            });
+            
+            if (fotosFaltantes > 0) {
+                console.log(`⚠️ ${fotosFaltantes} fotos faltantes, creados avatares`);
             }
-        });
-        
-        if (fotosFaltantes > 0) {
-            console.log(`⚠️ ${fotosFaltantes} fotos faltantes, creados placeholders`);
+            
+            // E. VERIFICAR CATEGORÍAS
+            if (appData.categories.length === 0) {
+                console.log("📋 Creando categorías por defecto...");
+                appData.categories = createDefaultCategories();
+                saveData(); // Guardar
+            } else {
+                console.log("✅ Usando categorías existentes:", appData.categories.length);
+                ensureAllNomineesInCategories();
+            }
+            
+            // F. ACTUALIZAR UI
+            updatePhaseBanner();
+            updateVotersList();
+            updateStats();
+            renderCategories();
+            
+            console.log("✅ Datos cargados correctamente");
         }
-        
-        // E. VERIFICAR CATEGORÍAS
-        if (appData.categories.length === 0) {
-            console.log("📋 Creando categorías por defecto...");
-            appData.categories = createDefaultCategories();
-            saveData(); // Guardar
-        } else {
-            console.log("✅ Usando categorías existentes:", appData.categories.length);
-            ensureAllNomineesInCategories();
-        }
-        
-        // F. ACTUALIZAR UI
-        updatePhaseBanner();
-        updateVotersList();
-        updateStats();
-        renderCategories();
-        
-        console.log("✅ Datos cargados correctamente");
         
     } catch (error) {
         console.error("❌ Error crítico en loadAppData:", error);
@@ -114,6 +124,7 @@ function cargarDesdeLocalStorage() {
             const parsed = JSON.parse(savedData);
             appData.categories = parsed.categories || [];
             appData.phase = parsed.phase || 'nominations';
+            appData.photoUrls = parsed.photoUrls || {};
         } catch (e) {
             console.error("Error parseando premiosData:", e);
         }
@@ -129,7 +140,9 @@ function cargarDesdeLocalStorage() {
     
     if (savedPhotos) {
         try {
-            appData.photoUrls = JSON.parse(savedPhotos);
+            // Combinar con las existentes
+            const parsedPhotos = JSON.parse(savedPhotos);
+            appData.photoUrls = { ...appData.photoUrls, ...parsedPhotos };
         } catch (e) {
             console.error("Error parseando premiosPhotos:", e);
         }
@@ -148,7 +161,7 @@ function createDefaultCategories() {
                 name: person,
                 votes: 0,
                 voters: [],
-                photo: obtenerFotoPersona(person) // Usar función de fotos-github.js
+                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null
             }))
         },
         {
@@ -159,7 +172,7 @@ function createDefaultCategories() {
                 name: person,
                 votes: 0,
                 voters: [],
-                photo: obtenerFotoPersona(person)
+                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null
             }))
         },
         {
@@ -170,7 +183,7 @@ function createDefaultCategories() {
                 name: person,
                 votes: 0,
                 voters: [],
-                photo: obtenerFotoPersona(person)
+                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null
             }))
         },
         {
@@ -181,7 +194,7 @@ function createDefaultCategories() {
                 name: person,
                 votes: 0,
                 voters: [],
-                photo: obtenerFotoPersona(person)
+                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null
             }))
         },
         {
@@ -192,7 +205,7 @@ function createDefaultCategories() {
                 name: person,
                 votes: 0,
                 voters: [],
-                photo: obtenerFotoPersona(person)
+                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null
             }))
         },
         {
@@ -203,7 +216,7 @@ function createDefaultCategories() {
                 name: person,
                 votes: 0,
                 voters: [],
-                photo: obtenerFotoPersona(person)
+                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null
             }))
         },
         {
@@ -214,7 +227,7 @@ function createDefaultCategories() {
                 name: person,
                 votes: 0,
                 voters: [],
-                photo: obtenerFotoPersona(person)
+                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null
             }))
         },
         {
@@ -225,7 +238,7 @@ function createDefaultCategories() {
                 name: person,
                 votes: 0,
                 voters: [],
-                photo: obtenerFotoPersona(person)
+                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null
             }))
         },
         {
@@ -236,7 +249,7 @@ function createDefaultCategories() {
                 name: person,
                 votes: 0,
                 voters: [],
-                photo: obtenerFotoPersona(person)
+                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null
             }))
         },
         {
@@ -247,7 +260,7 @@ function createDefaultCategories() {
                 name: person,
                 votes: 0,
                 voters: [],
-                photo: obtenerFotoPersona(person)
+                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null
             }))
         },
         {
@@ -258,7 +271,7 @@ function createDefaultCategories() {
                 name: person,
                 votes: 0,
                 voters: [],
-                photo: obtenerFotoPersona(person)
+                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null
             }))
         },
         {
@@ -269,7 +282,7 @@ function createDefaultCategories() {
                 name: person,
                 votes: 0,
                 voters: [],
-                photo: obtenerFotoPersona(person)
+                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null
             }))
         },
         {
@@ -280,7 +293,7 @@ function createDefaultCategories() {
                 name: person,
                 votes: 0,
                 voters: [],
-                photo: obtenerFotoPersona(person)
+                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null
             }))
         },
         {
@@ -291,7 +304,7 @@ function createDefaultCategories() {
                 name: person,
                 votes: 0,
                 voters: [],
-                photo: obtenerFotoPersona(person)
+                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null
             }))
         },
         {
@@ -302,7 +315,7 @@ function createDefaultCategories() {
                 name: person,
                 votes: 0,
                 voters: [],
-                photo: obtenerFotoPersona(person)
+                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null
             }))
         }
     ];
@@ -320,11 +333,11 @@ function ensureAllNomineesInCategories() {
                     name: person,
                     votes: 0,
                     voters: [],
-                    photo: obtenerFotoPersona(person)
+                    photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null
                 });
             } else {
                 const nominee = category.nominees.find(n => n && n.name === person);
-                if (nominee && !nominee.photo) {
+                if (nominee && !nominee.photo && obtenerFotoPersona) {
                     nominee.photo = obtenerFotoPersona(person);
                 }
             }
@@ -771,11 +784,11 @@ function updateStats() {
 }
 
 // ===== INICIALIZACIÓN =====
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', function() {
     console.log("🚀 Iniciando aplicación Pteros Awards...");
     
-    setTimeout(async () => {
-        await loadAppData();
+    setTimeout(function() {
+        loadAppData();
         updateStats();
         
         const lastUserId = localStorage.getItem('lastUserId');
