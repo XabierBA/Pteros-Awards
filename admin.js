@@ -266,32 +266,31 @@ function importData() {
     input.click();
 }
 
-function resetVotes() {
-    if (!appData) return;
-    
-    if (confirm('⚠️ ¿ESTÁS SEGURO DE REINICIAR TODOS LOS VOTOS?\n\nEsto eliminará:\n• Todos los votos de nominados\n• Historial de votantes\n• Fotos de nominados\n\nEsta acción NO se puede deshacer.')) {
-        appData.categories.forEach(category => {
-            category.nominees.forEach(nominee => {
-                nominee.votes = 0;
-                nominee.voters = [];
-            });
+// En admin.js, modifica resetVotes() para que limpie Firebase:
+async function resetFirebaseData() {
+    try {
+        await database.ref('appData/categories').transaction((categories) => {
+            if (categories) {
+                categories.forEach(category => {
+                    category.nominees.forEach(nominee => {
+                        nominee.votes = 0;
+                        nominee.voters = [];
+                    });
+                });
+            }
+            return categories;
         });
         
-        if (appData.users) {
-            appData.users.forEach(user => {
-                user.votes = {};
-            });
-        }
+        await database.ref('users').set([]);
         
-        saveData();
-        saveUsers();
-        renderCategories();
-        updateVotersList();
-        updateStats();
-        
-        alert('✅ ¡Todos los votos han sido reiniciados!');
+        alert('✅ ¡Todos los votos han sido reiniciados en todos los dispositivos!');
+    } catch (error) {
+        console.error("Error reiniciando Firebase:", error);
+        alert('❌ Error al reiniciar datos');
     }
 }
+
+// Usar esta función en lugar de resetVotes()
 
 function updateStats() {
     if (!appData) return;

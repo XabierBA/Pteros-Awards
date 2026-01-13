@@ -11,50 +11,22 @@ let currentCategoryId = null;
 let photoPreviewFile = null;
 
 // ===== CARGAR DATOS Y FOTOS =====
+// En script.js, modifica loadAppData():
 async function loadAppData() {
     try {
-        // Cargar datos de localStorage
-        const savedData = localStorage.getItem('premiosData');
-        const savedUsers = localStorage.getItem('premiosUsers');
-        const savedPhotos = localStorage.getItem('premiosPhotos');
+        // Cargar de Firebase
+        await loadDataFromFirebase();
+        await loadUsersFromFirebase();
         
-        if (savedData) {
-            const parsed = JSON.parse(savedData);
-            appData.categories = parsed.categories || [];
-            appData.phase = parsed.phase || 'nominations';
-        }
-        
-        appData.users = savedUsers ? JSON.parse(savedUsers) : [];
-        
-        // Cargar fotos desde localStorage o crear defaults
-        if (savedPhotos) {
-            appData.photoUrls = JSON.parse(savedPhotos);
-        } else {
-            // Fotos por defecto (puedes cambiarlas en el panel admin)
-            appData.photoUrls = {
-                "Brais": "Imagenes\\Cajide.png",
-                "Amalia": null,
-                "Carlita": null,
-                "Daniel": null,
-                "Guille": null,
-                "Iker": "Imagenes\\Iker.jpg",
-                "Joel": "Imagenes\\Joel.jpg",
-                "Jose": null,
-                "Nico": null,
-                "Ruchiti": null,
-                "Sara": null,
-                "Tiago": "Imagenes\\Tiago.jpg",
-                "Xabi": null
-            };
-        }
-        
-        // Si no hay categorías, crear desde estructura por defecto
+        // Si no hay categorías, crear defaults
         if (appData.categories.length === 0) {
             appData.categories = createDefaultCategories();
         } else {
-            // Asegurar que todas las categorías tengan todos los nominados
             ensureAllNomineesInCategories();
         }
+        
+        // Configurar listeners en tiempo real
+        setupRealtimeListeners();
         
         updatePhaseBanner();
         updateVotersList();
@@ -62,10 +34,33 @@ async function loadAppData() {
         
     } catch (error) {
         console.error("Error cargando datos:", error);
-        // Crear datos por defecto si hay error
         appData.categories = createDefaultCategories();
         appData.users = [];
     }
+}
+
+    // Modifica saveData():
+    function saveData() {
+        saveDataToFirebase().catch(error => {
+            console.error("Error guardando en Firebase:", error);
+            // Guardar en localStorage como backup
+            localStorage.setItem('premiosData', JSON.stringify(appData.categories));
+        });
+        updateStats();
+}
+
+    // Modifica saveUsers():
+    function saveUsers() {
+        saveUsersToFirebase().catch(error => {
+            console.error("Error guardando usuarios:", error);
+            localStorage.setItem('premiosUsers', JSON.stringify(appData.users));
+        });
+        updateVotersList();
+}
+
+    // Modifica savePhotos():
+    function savePhotos() {
+        saveDataToFirebase(); // Las fotos ya están en appData.photoUrls
 }
 
 function createDefaultCategories() {

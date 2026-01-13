@@ -210,5 +210,28 @@
 
     <script src="script.js"></script>
     <script src="admin.js"></script>
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-analytics.js";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+
+        // Your web app's Firebase configuration
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+        const firebaseConfig = {
+            apiKey: "AIzaSyAX4_3sB1AsGt08kJlKRxBGfedgO_efW8I",
+            authDomain: "pteros-aword.firebaseapp.com",
+            projectId: "pteros-aword",
+            storageBucket: "pteros-aword.firebasestorage.app",
+            messagingSenderId: "78301948392",
+            appId: "1:78301948392:web:fd5cfbf78595a2ffea5c5d",
+            measurementId: "G-T5QGP962VZ"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+    </script>
 </body>
 </html>
