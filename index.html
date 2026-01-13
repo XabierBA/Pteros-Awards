@@ -152,18 +152,6 @@
                         <button onclick="updateSelectedPhoto()" class="btn-add">
                             <i class="fas fa-save"></i> Actualizar Foto
                         </button>
-                        <!-- En la sección de Gestión de Fotos, después del botón "Actualizar Foto" -->
-                        <div class="photo-input-group">
-                            <select id="personSelect" class="photo-select">
-                                <option value="">Seleccionar persona...</option>
-                                <!-- Las opciones se cargan con JavaScript -->
-                            </select>
-                            <input type="text" id="photoUrl" placeholder="URL de GitHub (https://raw.githubusercontent.com/...)" class="photo-url-input">
-                            <button onclick="updateSelectedPhoto()" class="btn-add">
-                                <i class="fas fa-save"></i> Actualizar Foto
-                            </button>
-                        </div>
-                        <!-- Los botones extra se añadirán automáticamente con JavaScript -->
                     </div>
                     <div class="current-photos">
                         <h4>Fotos Actuales:</h4>
@@ -260,7 +248,6 @@
     </script>
     
     <!-- Scripts en orden CORRECTO -->
-    <script src="firebase-config.js"></script>
     <script src="fotos-github.js"></script>
     <script src="script.js"></script>
     <script src="admin.js"></script>
