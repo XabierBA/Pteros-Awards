@@ -1,207 +1,195 @@
-// ===== CONFIGURACIÓN FIREBASE V12 =====
+// ===== CONFIGURACIÓN FIREBASE =====
 
-let database;
+let firebaseDB = null;
 let firebaseReady = false;
 
-// Esperar a que Firebase esté listo
+// Función para esperar Firebase
 function waitForFirebase() {
     return new Promise((resolve) => {
-        if (window.firebaseDatabase && window.firebaseInitialized) {
-            database = window.firebaseDatabase;
+        if (window.firebaseDatabase) {
+            firebaseDB = window.firebaseDatabase;
             firebaseReady = true;
-            console.log("✅ Firebase está listo");
+            console.log("✅ Firebase Database disponible");
             resolve(true);
             return;
         }
         
-        // Escuchar el evento firebaseReady
-        document.addEventListener('firebaseReady', () => {
+        // Escuchar evento firebaseReady
+        const onFirebaseReady = () => {
             if (window.firebaseDatabase) {
-                database = window.firebaseDatabase;
+                firebaseDB = window.firebaseDatabase;
                 firebaseReady = true;
-                console.log("✅ Firebase listo después del evento");
+                document.removeEventListener('firebaseReady', onFirebaseReady);
+                console.log("✅ Firebase Database listo después del evento");
                 resolve(true);
-            } else {
-                resolve(false);
             }
-        });
+        };
         
-        // Timeout después de 3 segundos
+        document.addEventListener('firebaseReady', onFirebaseReady);
+        
+        // Timeout después de 5 segundos
         setTimeout(() => {
             if (!firebaseReady) {
-                console.log("⚠️ Timeout esperando Firebase");
+                document.removeEventListener('firebaseReady', onFirebaseReady);
+                console.log("⚠️ Firebase no se cargó después de timeout");
                 resolve(false);
             }
-        }, 3000);
+        }, 5000);
     });
 }
 
 // ===== FUNCIONES PARA FIREBASE =====
 
-// Guardar datos en Firebase
-async function saveDataToFirebase() {
-    if (!firebaseReady) {
+// Cargar datos desde Firebase
+async function loadDataFromFirebase() {
+    try {
+        console.log("📥 Intentando cargar datos de Firebase...");
         const ready = await waitForFirebase();
-        if (!ready) {
-            console.log("⚠️ Firebase no disponible, usando localStorage");
-            localStorage.setItem('premiosData', JSON.stringify(appData.categories));
-            return;
+        
+        if (!ready || !firebaseDB) {
+            throw new Error("Firebase no disponible");
+        }
+        
+        const { get, ref } = await import('https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js');
+        const snapshot = await get(ref(firebaseDB, 'appData'));
+        const data = snapshot.val();
+        
+        if (data) {
+            appData.categories = data.categories || [];
+            appData.phase = data.phase || 'nominations';
+            appData.photoUrls = data.photoUrls || {};
+            console.log("✅ Datos cargados de Firebase. Categorías:", appData.categories.length);
+        } else {
+            console.log("⚠️ No hay datos en Firebase");
+        }
+        
+    } catch (error) {
+        console.log("📂 Usando localStorage (error Firebase):", error.message);
+        const saved = localStorage.getItem('premiosData');
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                appData.categories = parsed.categories || [];
+                appData.phase = parsed.phase || 'nominations';
+                appData.photoUrls = parsed.photoUrls || {};
+                console.log("📂 Datos cargados de localStorage. Categorías:", appData.categories.length);
+            } catch (e) {
+                console.error("Error parseando localStorage:", e);
+            }
         }
     }
-    
+}
+
+// Guardar datos en Firebase
+async function saveDataToFirebase() {
     try {
-        // Importar funciones dinámicamente
-        const { set, ref } = await import('https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js');
+        const ready = await waitForFirebase();
+        if (!ready || !firebaseDB) {
+            throw new Error("Firebase no disponible");
+        }
         
         const dataToSave = {
-            categories: appData.categories,
-            phase: appData.phase,
-            photoUrls: appData.photoUrls,
+            categories: appData.categories || [],
+            phase: appData.phase || 'nominations',
+            photoUrls: appData.photoUrls || {},
             lastUpdated: new Date().toISOString()
         };
         
-        await set(ref(database, 'appData'), dataToSave);
-        console.log("✅ Datos guardados en Firebase");
-        
-    } catch (error) {
-        console.error("❌ Error guardando en Firebase:", error);
-        // Guardar en localStorage como backup
-        localStorage.setItem('premiosData', JSON.stringify(appData.categories));
-    }
-}
-
-// Cargar datos desde Firebase
-async function loadDataFromFirebase() {
-    if (!firebaseReady) {
-        const ready = await waitForFirebase();
-        if (!ready) {
-            console.log("⚠️ Firebase no disponible, cargando de localStorage");
-            const savedData = localStorage.getItem('premiosData');
-            if (savedData) {
-                const parsed = JSON.parse(savedData);
-                appData.categories = parsed.categories || [];
-                appData.phase = parsed.phase || 'nominations';
-            }
-            return;
-        }
-    }
-    
-    try {
-        const { get, ref } = await import('https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js');
-        
-        const snapshot = await get(ref(database, 'appData'));
-        const firebaseData = snapshot.val();
-        
-        if (firebaseData) {
-            appData.categories = firebaseData.categories || [];
-            appData.phase = firebaseData.phase || 'nominations';
-            appData.photoUrls = firebaseData.photoUrls || {};
-            
-            console.log("✅ Datos cargados desde Firebase");
-        } else {
-            // Si no hay datos en Firebase, usar defaults
-            console.log("⚠️ No hay datos en Firebase, usando defaults");
-        }
-        
-    } catch (error) {
-        console.error("❌ Error cargando de Firebase:", error);
-        // Intentar cargar de localStorage
-        const savedData = localStorage.getItem('premiosData');
-        if (savedData) {
-            const parsed = JSON.parse(savedData);
-            appData.categories = parsed.categories || [];
-            appData.phase = parsed.phase || 'nominations';
-        }
-    }
-}
-
-// Guardar usuarios en Firebase
-async function saveUsersToFirebase() {
-    if (!firebaseReady) {
-        const ready = await waitForFirebase();
-        if (!ready) {
-            localStorage.setItem('premiosUsers', JSON.stringify(appData.users));
-            return;
-        }
-    }
-    
-    try {
         const { set, ref } = await import('https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js');
-        await set(ref(database, 'users'), appData.users);
-        console.log("✅ Usuarios guardados en Firebase");
+        await set(ref(firebaseDB, 'appData'), dataToSave);
+        console.log("💾 Datos guardados en Firebase");
         
     } catch (error) {
-        console.error("❌ Error guardando usuarios:", error);
-        localStorage.setItem('premiosUsers', JSON.stringify(appData.users));
+        console.log("📦 Guardando en localStorage:", error.message);
+        localStorage.setItem('premiosData', JSON.stringify({
+            categories: appData.categories || [],
+            phase: appData.phase || 'nominations',
+            photoUrls: appData.photoUrls || {}
+        }));
     }
 }
 
 // Cargar usuarios desde Firebase
 async function loadUsersFromFirebase() {
-    if (!firebaseReady) {
+    try {
         const ready = await waitForFirebase();
-        if (!ready) {
-            const savedUsers = localStorage.getItem('premiosUsers');
-            appData.users = savedUsers ? JSON.parse(savedUsers) : [];
+        if (!ready || !firebaseDB) {
+            const saved = localStorage.getItem('premiosUsers');
+            appData.users = saved ? JSON.parse(saved) : [];
+            console.log("👥 Usuarios cargados de localStorage:", appData.users.length);
             return;
         }
-    }
-    
-    try {
-        const { get, ref } = await import('https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js');
-        const snapshot = await get(ref(database, 'users'));
-        const firebaseUsers = snapshot.val();
         
-        if (firebaseUsers) {
-            appData.users = firebaseUsers;
-        } else {
-            appData.users = [];
-        }
+        const { get, ref } = await import('https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js');
+        const snapshot = await get(ref(firebaseDB, 'users'));
+        const users = snapshot.val();
+        appData.users = users || [];
+        console.log("👥 Usuarios cargados de Firebase:", appData.users.length);
         
     } catch (error) {
-        console.error("❌ Error cargando usuarios:", error);
-        const savedUsers = localStorage.getItem('premiosUsers');
-        appData.users = savedUsers ? JSON.parse(savedUsers) : [];
+        console.log("📂 Usuarios de localStorage (error Firebase):", error.message);
+        const saved = localStorage.getItem('premiosUsers');
+        appData.users = saved ? JSON.parse(saved) : [];
     }
 }
 
-// Escuchar cambios en tiempo real - CORREGIDO (quitar await de import)
-async function setupRealtimeListeners() {
-    if (!firebaseReady) {
-        console.log("⚠️ Firebase no está listo para listeners");
-        return;
-    }
-    
+// Guardar usuarios en Firebase
+async function saveUsersToFirebase() {
     try {
-        // Importar funciones dinámicamente
-        const firebaseModule = await import('https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js');
-        const { onValue, ref } = firebaseModule;
+        const ready = await waitForFirebase();
+        if (!ready || !firebaseDB) {
+            localStorage.setItem('premiosUsers', JSON.stringify(appData.users || []));
+            console.log("📦 Usuarios guardados en localStorage");
+            return;
+        }
         
-        // Escuchar cambios en appData
-        onValue(ref(database, 'appData'), (snapshot) => {
-            const newData = snapshot.val();
-            if (newData) {
-                appData.categories = newData.categories;
-                appData.phase = newData.phase;
-                appData.photoUrls = newData.photoUrls;
+        const { set, ref } = await import('https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js');
+        await set(ref(firebaseDB, 'users'), appData.users || []);
+        console.log("💾 Usuarios guardados en Firebase");
+        
+    } catch (error) {
+        console.log("📦 Usuarios guardados en localStorage (error):", error.message);
+        localStorage.setItem('premiosUsers', JSON.stringify(appData.users || []));
+    }
+}
+
+// Setup listeners (solo para actualizaciones en tiempo real)
+async function setupRealtimeListeners() {
+    try {
+        const ready = await waitForFirebase();
+        if (!ready || !firebaseDB) {
+            console.log("🔕 Listeners de Firebase desactivados");
+            return;
+        }
+        
+        const { onValue, ref } = await import('https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js');
+        
+        // Listener para datos de la app
+        onValue(ref(firebaseDB, 'appData'), (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                // Actualizar solo si hay cambios
+                appData.categories = data.categories || appData.categories;
+                appData.phase = data.phase || appData.phase;
+                appData.photoUrls = data.photoUrls || appData.photoUrls;
                 
-                // Actualizar UI
-                if (typeof updatePhaseBanner === 'function') updatePhaseBanner();
-                if (typeof renderCategories === 'function') renderCategories();
-                if (typeof updateStats === 'function') updateStats();
+                // Actualizar UI si las funciones existen
+                if (window.updatePhaseBanner) updatePhaseBanner();
+                if (window.renderCategories) renderCategories();
+                if (window.updateStats) updateStats();
             }
         });
         
-        // Escuchar cambios en users
-        onValue(ref(database, 'users'), (snapshot) => {
-            const newUsers = snapshot.val();
-            if (newUsers) {
-                appData.users = newUsers;
-                if (typeof updateVotersList === 'function') updateVotersList();
+        // Listener para usuarios
+        onValue(ref(firebaseDB, 'users'), (snapshot) => {
+            const users = snapshot.val();
+            if (users) {
+                appData.users = users;
+                if (window.updateVotersList) updateVotersList();
             }
         });
         
-        console.log("✅ Listeners de Firebase configurados");
+        console.log("🔔 Listeners de Firebase activados");
         
     } catch (error) {
         console.error("❌ Error configurando listeners:", error);

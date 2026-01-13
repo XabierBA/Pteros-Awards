@@ -15,6 +15,11 @@ async function loadAppData() {
     try {
         console.log("🔄 Cargando datos de la aplicación...");
         
+        // Inicializar arrays vacíos por si acaso
+        appData.categories = [];
+        appData.users = [];
+        appData.photoUrls = {};
+        
         // Cargar de Firebase si está disponible
         if (typeof loadDataFromFirebase === 'function') {
             console.log("🔥 Intentando cargar de Firebase...");
@@ -28,17 +33,38 @@ async function loadAppData() {
             const savedPhotos = localStorage.getItem('premiosPhotos');
             
             if (savedData) {
-                const parsed = JSON.parse(savedData);
-                appData.categories = parsed.categories || [];
-                appData.phase = parsed.phase || 'nominations';
+                try {
+                    const parsed = JSON.parse(savedData);
+                    appData.categories = parsed.categories || [];
+                    appData.phase = parsed.phase || 'nominations';
+                    appData.photoUrls = parsed.photoUrls || {};
+                } catch (e) {
+                    console.error("Error parseando premiosData:", e);
+                }
             }
             
-            appData.users = savedUsers ? JSON.parse(savedUsers) : [];
-            appData.photoUrls = savedPhotos ? JSON.parse(savedPhotos) : {};
+            if (savedUsers) {
+                try {
+                    appData.users = JSON.parse(savedUsers);
+                } catch (e) {
+                    console.error("Error parseando premiosUsers:", e);
+                    appData.users = [];
+                }
+            }
+            
+            if (savedPhotos) {
+                try {
+                    appData.photoUrls = JSON.parse(savedPhotos);
+                } catch (e) {
+                    console.error("Error parseando premiosPhotos:", e);
+                    appData.photoUrls = {};
+                }
+            }
         }
         
         console.log("📊 Categorías cargadas:", appData.categories.length);
         console.log("👥 Usuarios cargados:", appData.users.length);
+        console.log("🖼️ PhotoUrls cargados:", Object.keys(appData.photoUrls).length);
         
         // Si no hay categorías, crear defaults
         if (appData.categories.length === 0) {
@@ -49,6 +75,11 @@ async function loadAppData() {
         } else {
             console.log("✅ Usando categorías existentes");
             ensureAllNomineesInCategories();
+        }
+        
+        // Configurar listeners de Firebase (si existen)
+        if (typeof setupRealtimeListeners === 'function') {
+            setTimeout(setupRealtimeListeners, 2000); // Esperar un poco
         }
         
         updatePhaseBanner();
@@ -66,11 +97,13 @@ async function loadAppData() {
         // Crear datos por defecto si hay error
         appData.categories = createDefaultCategories();
         appData.users = [];
+        appData.photoUrls = {};
         
         // Renderizar categorías de todas formas
         renderCategories();
     }
 }
+
 function createDefaultCategories() {
     const people = ["Brais", "Amalia", "Carlita", "Daniel", "Guille", "Iker", "Joel", "Jose", "Nico", "Ruchiti", "Sara", "Tiago", "Xabi"];
     
@@ -247,8 +280,13 @@ function ensureAllNomineesInCategories() {
     const allPeople = ["Brais", "Amalia", "Carlita", "Daniel", "Guille", "Iker", "Joel", "Jose", "Nico", "Ruchiti", "Sara", "Tiago", "Xabi"];
     
     appData.categories.forEach(category => {
+        // Asegurar que nominees existe
+        if (!category.nominees) {
+            category.nominees = [];
+        }
+        
         allPeople.forEach(person => {
-            if (!category.nominees.some(n => n.name === person)) {
+            if (!category.nominees.some(n => n && n.name === person)) {
                 category.nominees.push({
                     name: person,
                     votes: 0,
@@ -257,7 +295,7 @@ function ensureAllNomineesInCategories() {
                 });
             } else {
                 // Actualizar foto si no está definida
-                const nominee = category.nominees.find(n => n.name === person);
+                const nominee = category.nominees.find(n => n && n.name === person);
                 if (nominee && !nominee.photo && appData.photoUrls[person]) {
                     nominee.photo = appData.photoUrls[person];
                 }
@@ -269,8 +307,9 @@ function ensureAllNomineesInCategories() {
 // ===== GUARDAR DATOS =====
 function saveData() {
     const dataToSave = {
-        categories: appData.categories,
-        phase: appData.phase
+        categories: appData.categories || [],
+        phase: appData.phase || 'nominations',
+        photoUrls: appData.photoUrls || {}
     };
     
     // Guardar en localStorage como backup
@@ -288,7 +327,7 @@ function saveData() {
 
 function saveUsers() {
     // Guardar en localStorage como backup
-    localStorage.setItem('premiosUsers', JSON.stringify(appData.users));
+    localStorage.setItem('premiosUsers', JSON.stringify(appData.users || []));
     
     // Intentar guardar en Firebase
     if (typeof saveUsersToFirebase === 'function') {
@@ -302,7 +341,7 @@ function saveUsers() {
 
 function savePhotos() {
     // Guardar en localStorage como backup
-    localStorage.setItem('premiosPhotos', JSON.stringify(appData.photoUrls));
+    localStorage.setItem('premiosPhotos', JSON.stringify(appData.photoUrls || {}));
     
     // Intentar guardar en Firebase
     if (typeof saveDataToFirebase === 'function') {
@@ -315,11 +354,16 @@ function savePhotos() {
 // ===== ACTUALIZAR FOTO DE PERSONA =====
 function updatePersonPhoto(personName, photoUrl) {
     if (personName && photoUrl) {
+        // Asegurar que photoUrls existe
+        if (!appData.photoUrls) {
+            appData.photoUrls = {};
+        }
+        
         appData.photoUrls[personName] = photoUrl;
         
         // Actualizar en todas las categorías
         appData.categories.forEach(category => {
-            const nominee = category.nominees.find(n => n.name === personName);
+            const nominee = category.nominees.find(n => n && n.name === personName);
             if (nominee) {
                 nominee.photo = photoUrl;
             }
@@ -346,7 +390,7 @@ function login() {
     }
     
     // Verificar si el usuario ya existe
-    let user = appData.users.find(u => u.name.toLowerCase() === userName.toLowerCase());
+    let user = (appData.users || []).find(u => u && u.name && u.name.toLowerCase() === userName.toLowerCase());
     
     if (!user) {
         // Crear nuevo usuario
@@ -356,6 +400,7 @@ function login() {
             votes: {},
             votedAt: new Date().toISOString()
         };
+        appData.users = appData.users || [];
         appData.users.push(user);
         saveUsers();
     }
@@ -406,9 +451,14 @@ function showUserInfo() {
 // ===== LISTA DE VOTANTES =====
 function updateVotersList() {
     const votersList = document.getElementById('votersList');
-    const activeUsers = appData.users.filter(u => 
-        Object.keys(u.votes).length > 0
-    );
+    if (!votersList) return;
+    
+    // Asegurar que users existe y tiene votes
+    const activeUsers = (appData.users || []).filter(u => {
+        if (!u) return false;
+        const votes = u.votes || {};
+        return Object.keys(votes).length > 0;
+    });
     
     votersList.innerHTML = activeUsers.length > 0 
         ? activeUsers
@@ -420,16 +470,29 @@ function updateVotersList() {
 // ===== RENDERIZAR CATEGORÍAS =====
 function renderCategories() {
     const container = document.querySelector('.categories-container');
-    if (!container) return;
+    if (!container) {
+        console.error("❌ No se encontró .categories-container");
+        return;
+    }
     
     container.innerHTML = '';
     
+    // Verificar que hay categorías
+    if (!appData.categories || appData.categories.length === 0) {
+        container.innerHTML = '<div class="no-categories">No hay categorías disponibles</div>';
+        return;
+    }
+    
     appData.categories.forEach(category => {
-        const totalVotes = category.nominees.reduce((sum, n) => sum + n.votes, 0);
-        const userVote = appData.currentUser ? appData.currentUser.votes[category.id] : null;
+        if (!category) return;
         
-        const top3 = category.nominees
-            .sort((a, b) => b.votes - a.votes)
+        const nominees = category.nominees || [];
+        const totalVotes = nominees.reduce((sum, n) => sum + (n.votes || 0), 0);
+        const userVote = appData.currentUser ? (appData.currentUser.votes || {})[category.id] : null;
+        
+        const top3 = nominees
+            .filter(n => n) // Filtrar nominados nulos
+            .sort((a, b) => (b.votes || 0) - (a.votes || 0))
             .slice(0, 3);
         
         const card = document.createElement('div');
@@ -437,14 +500,14 @@ function renderCategories() {
         card.onclick = () => openVoteModal(category.id);
         
         card.innerHTML = `
-            <h3>${category.name}</h3>
+            <h3>${category.name || 'Sin nombre'}</h3>
             <p class="category-description">${category.description || ''}</p>
             <div class="vote-count">${totalVotes}</div>
             <div class="nominees-preview">
                 ${top3.map(n => `
                     <div class="nominee-tag">
                         ${getNomineePhotoHTML(n)}
-                        ${n.name} (${n.votes})
+                        ${n.name || 'Sin nombre'} (${n.votes || 0})
                     </div>
                 `).join('')}
             </div>
@@ -456,7 +519,10 @@ function renderCategories() {
 }
 
 function getNomineePhotoHTML(nominee) {
-    const photoUrl = nominee.photo || appData.photoUrls[nominee.name];
+    if (!nominee) return '👤';
+    
+    const photoUrls = appData.photoUrls || {};
+    const photoUrl = nominee.photo || photoUrls[nominee.name];
     if (photoUrl) {
         return `<img src="${photoUrl}" class="nominee-preview-img" alt="${nominee.name}" onerror="this.style.display='none';">`;
     }
@@ -471,23 +537,34 @@ function openVoteModal(categoryId) {
     }
     
     currentCategoryId = categoryId;
-    const category = appData.categories.find(c => c.id === categoryId);
+    const category = appData.categories.find(c => c && c.id === categoryId);
     const modal = document.getElementById('voteModal');
     const modalCategory = document.getElementById('modalCategory');
     const nomineesList = document.getElementById('nomineesList');
     
-    modalCategory.innerHTML = `${category.name}<br><small>${category.description || ''}</small>`;
+    if (!category) {
+        alert('Error: Categoría no encontrada');
+        return;
+    }
+    
+    modalCategory.innerHTML = `${category.name || 'Sin nombre'}<br><small>${category.description || ''}</small>`;
     nomineesList.innerHTML = '';
     
-    const userVote = appData.currentUser.votes[categoryId];
+    const userVotes = appData.currentUser.votes || {};
+    const userVote = userVotes[categoryId];
     
-    const sortedNominees = [...category.nominees].sort((a, b) => b.votes - a.votes);
+    const nominees = category.nominees || [];
+    const sortedNominees = [...nominees]
+        .filter(n => n) // Filtrar nulos
+        .sort((a, b) => (b.votes || 0) - (a.votes || 0));
     
     sortedNominees.forEach(nominee => {
         const isVoted = userVote === nominee.name;
-        const votersCount = nominee.voters.length;
-        const hasVoted = nominee.voters.includes(appData.currentUser.id);
-        const photoUrl = nominee.photo || appData.photoUrls[nominee.name];
+        const voters = nominee.voters || [];
+        const votersCount = voters.length;
+        const hasVoted = voters.includes(appData.currentUser.id);
+        const photoUrls = appData.photoUrls || {};
+        const photoUrl = nominee.photo || photoUrls[nominee.name];
         
         const nomineeItem = document.createElement('div');
         nomineeItem.className = `nominee-item ${isVoted ? 'voted' : ''}`;
@@ -495,13 +572,13 @@ function openVoteModal(categoryId) {
         
         nomineeItem.innerHTML = `
             ${photoUrl ? 
-                `<img src="${photoUrl}" class="nominee-photo" alt="${nominee.name}" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"140\" height=\"140\" viewBox=\"0 0 140 140\"><rect width=\"140\" height=\"140\" fill=\"%23667eea\"/><text x=\"50%\" y=\"50%\" font-family=\"Arial\" font-size=\"50\" fill=\"white\" text-anchor=\"middle\" dy=\".3em\">${nominee.name.charAt(0)}</text></svg>';">` : 
+                `<img src="${photoUrl}" class="nominee-photo" alt="${nominee.name}" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"140\" height=\"140\" viewBox=\"0 0 140 140\"><rect width=\"140\" height=\"140\" fill=\"%23667eea\"/><text x=\"50%\" y=\"50%\" font-family=\"Arial\" font-size=\"50\" fill=\"white\" text-anchor=\"middle\" dy=\".3em\">${nominee.name ? nominee.name.charAt(0) : '?'}</text></svg>';">` : 
                 `<div class="nominee-photo" style="background:linear-gradient(45deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;">
                     <i class="fas fa-user" style="font-size:3rem;color:white;"></i>
                 </div>`
             }
-            <h4 class="nominee-name">${nominee.name}</h4>
-            <div class="vote-count-small">${nominee.votes} votos</div>
+            <h4 class="nominee-name">${nominee.name || 'Sin nombre'}</h4>
+            <div class="vote-count-small">${nominee.votes || 0} votos</div>
             <div class="voters-count">${votersCount} persona${votersCount !== 1 ? 's' : ''}</div>
             ${hasVoted ? '<div class="voted-check">⭐ Tú votaste aquí</div>' : ''}
             ${isVoted ? '<div class="voted-check">✅ Tu voto actual</div>' : ''}
@@ -524,26 +601,38 @@ function voteForNominee(nomineeName) {
         return;
     }
     
-    const category = appData.categories.find(c => c.id === currentCategoryId);
-    const nominee = category.nominees.find(n => n.name === nomineeName);
+    const category = appData.categories.find(c => c && c.id === currentCategoryId);
+    if (!category) {
+        alert('Error: Categoría no encontrada');
+        return;
+    }
     
-    if (!nominee) return;
+    const nominees = category.nominees || [];
+    const nominee = nominees.find(n => n && n.name === nomineeName);
+    if (!nominee) {
+        alert('Error: Nominado no encontrada');
+        return;
+    }
+    
+    // Inicializar arrays si no existen
+    if (!appData.currentUser.votes) appData.currentUser.votes = {};
+    if (!nominee.voters) nominee.voters = [];
     
     // Verificar si ya votó en esta categoría
     if (appData.currentUser.votes[category.id]) {
         const previousVote = appData.currentUser.votes[category.id];
         
         // Restar voto anterior
-        const previousNominee = category.nominees.find(n => n.name === previousVote);
+        const previousNominee = nominees.find(n => n && n.name === previousVote);
         if (previousNominee) {
-            previousNominee.votes--;
-            previousNominee.voters = previousNominee.voters.filter(v => v !== appData.currentUser.id);
+            previousNominee.votes = (previousNominee.votes || 1) - 1;
+            previousNominee.voters = (previousNominee.voters || []).filter(v => v !== appData.currentUser.id);
         }
     }
     
     // Registrar nuevo voto
     appData.currentUser.votes[category.id] = nomineeName;
-    nominee.votes++;
+    nominee.votes = (nominee.votes || 0) + 1;
     
     // Añadir usuario a la lista de votantes si no está
     if (!nominee.voters.includes(appData.currentUser.id)) {
@@ -591,10 +680,17 @@ function addNomineeWithPhoto() {
         return;
     }
     
-    const category = appData.categories.find(c => c.id === currentCategoryId);
+    const category = appData.categories.find(c => c && c.id === currentCategoryId);
+    if (!category) {
+        alert('Categoría no encontrada');
+        return;
+    }
+    
+    // Inicializar nominees si no existe
+    if (!category.nominees) category.nominees = [];
     
     // Verificar si ya existe
-    if (category.nominees.some(n => n.name.toLowerCase() === name.toLowerCase())) {
+    if (category.nominees.some(n => n && n.name && n.name.toLowerCase() === name.toLowerCase())) {
         alert('Este nominado ya existe en la categoría');
         return;
     }
@@ -659,14 +755,28 @@ function updatePhaseBanner() {
 }
 
 function updateStats() {
-    const totalVoters = appData.users.filter(u => Object.keys(u.votes).length > 0).length;
-    const totalCategories = appData.categories.length;
-    const totalVotes = appData.categories.reduce((sum, cat) => 
-        sum + cat.nominees.reduce((catSum, nom) => catSum + nom.votes, 0), 0);
+    const users = appData.users || [];
+    const categories = appData.categories || [];
     
-    document.getElementById('totalVoters').textContent = totalVoters;
-    document.getElementById('totalCategories').textContent = totalCategories;
-    document.getElementById('totalVotes').textContent = totalVotes;
+    const totalVoters = users.filter(u => {
+        const votes = u.votes || {};
+        return Object.keys(votes).length > 0;
+    }).length;
+    
+    const totalCategories = categories.length;
+    
+    const totalVotes = categories.reduce((sum, cat) => {
+        const nominees = cat.nominees || [];
+        return sum + nominees.reduce((catSum, nom) => catSum + (nom.votes || 0), 0);
+    }, 0);
+    
+    const votersElement = document.getElementById('totalVoters');
+    const categoriesElement = document.getElementById('totalCategories');
+    const votesElement = document.getElementById('totalVotes');
+    
+    if (votersElement) votersElement.textContent = totalVoters;
+    if (categoriesElement) categoriesElement.textContent = totalCategories;
+    if (votesElement) votesElement.textContent = totalVotes;
 }
 
 // ===== INICIALIZACIÓN =====
@@ -679,8 +789,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateStats();
         
         const lastUserId = localStorage.getItem('lastUserId');
-        if (lastUserId && appData.users.length > 0) {
-            const lastUser = appData.users.find(u => u.id == lastUserId);
+        if (lastUserId && appData.users && appData.users.length > 0) {
+            const lastUser = appData.users.find(u => u && u.id == lastUserId);
             if (lastUser) {
                 document.getElementById('userName').value = lastUser.name;
             }

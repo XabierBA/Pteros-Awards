@@ -125,9 +125,12 @@ function addCategory() {
         return;
     }
     
-    const newId = appData.categories.length > 0 
+    const newId = appData.categories && appData.categories.length > 0 
         ? Math.max(...appData.categories.map(c => c.id)) + 1 
         : 1;
+    
+    // Asegurar que categories existe
+    if (!appData.categories) appData.categories = [];
     
     appData.categories.push({
         id: newId,
@@ -151,8 +154,14 @@ function showResults() {
     modalCategory.textContent = '🏆 RESULTADOS FINALES 🏆';
     nomineesList.innerHTML = '';
     
-    appData.categories.forEach(category => {
-        const sortedNominees = [...category.nominees].sort((a, b) => b.votes - a.votes);
+    const categories = appData.categories || [];
+    
+    categories.forEach(category => {
+        const nominees = category.nominees || [];
+        const sortedNominees = [...nominees]
+            .filter(n => n)
+            .sort((a, b) => (b.votes || 0) - (a.votes || 0));
+        
         const winner = sortedNominees[0];
         const second = sortedNominees[1];
         const third = sortedNominees[2];
@@ -169,34 +178,37 @@ function showResults() {
                     ${second ? `
                         <div style="text-align: center;">
                             <div style="font-size: 2rem;">🥈</div>
-                            <div>${second.name}</div>
-                            <div style="color: var(--silver);">${second.votes} votos</div>
+                            <div>${second.name || 'Sin nombre'}</div>
+                            <div style="color: var(--silver);">${second.votes || 0} votos</div>
                         </div>
                     ` : ''}
                     
                     <div style="text-align: center;">
                         <div style="font-size: 3rem;">🥇</div>
-                        <div style="font-weight: bold; font-size: 1.3rem;">${winner.name}</div>
-                        <div style="color: var(--gold);">${winner.votes} votos</div>
+                        <div style="font-weight: bold; font-size: 1.3rem;">${winner.name || 'Sin nombre'}</div>
+                        <div style="color: var(--gold);">${winner.votes || 0} votos</div>
                     </div>
                     
                     ${third ? `
                         <div style="text-align: center;">
                             <div style="font-size: 1.5rem;">🥉</div>
-                            <div>${third.name}</div>
-                            <div style="color: var(--bronze);">${third.votes} votos</div>
+                            <div>${third.name || 'Sin nombre'}</div>
+                            <div style="color: var(--bronze);">${third.votes || 0} votos</div>
                         </div>
                     ` : ''}
                 </div>
             `;
         }
         
+        const totalVotes = nominees.reduce((sum, n) => sum + (n.votes || 0), 0);
+        const totalVoters = nominees.reduce((sum, n) => sum + ((n.voters || []).length), 0);
+        
         resultItem.innerHTML = `
-            <h3 style="color: var(--gold); text-align: center; margin-bottom: 15px;">${category.name}</h3>
+            <h3 style="color: var(--gold); text-align: center; margin-bottom: 15px;">${category.name || 'Sin nombre'}</h3>
             ${winner ? podiumHTML : '<p style="text-align: center; color: var(--silver);">Sin votos</p>'}
             <div style="margin-top: 20px; color: var(--silver); font-size: 0.9rem;">
-                <p>Total votantes: ${category.nominees.reduce((sum, n) => sum + n.voters.length, 0)}</p>
-                <p>Total votos: ${category.nominees.reduce((sum, n) => sum + n.votes, 0)}</p>
+                <p>Total votantes: ${totalVoters}</p>
+                <p>Total votos: ${totalVotes}</p>
             </div>
         `;
         
@@ -210,9 +222,9 @@ function exportData() {
     if (!appData) return;
     
     const dataToExport = {
-        categories: appData.categories,
+        categories: appData.categories || [],
         users: appData.users || [],
-        phase: appData.phase,
+        phase: appData.phase || 'nominations',
         exportDate: new Date().toISOString()
     };
     
@@ -243,8 +255,8 @@ function importData() {
                 const imported = JSON.parse(event.target.result);
                 
                 if (confirm('⚠️ Esto sobrescribirá todos los datos actuales. ¿Continuar?')) {
-                    appData.categories = imported.categories || appData.categories;
-                    appData.users = imported.users || appData.users;
+                    appData.categories = imported.categories || appData.categories || [];
+                    appData.users = imported.users || appData.users || [];
                     appData.phase = imported.phase || 'nominations';
                     
                     saveData();
@@ -269,18 +281,24 @@ function resetVotes() {
     if (!appData) return;
     
     if (confirm('⚠️ ¿ESTÁS SEGURO DE REINICIAR TODOS LOS VOTOS?\n\nEsto eliminará:\n• Todos los votos de nominados\n• Historial de votantes\n\nEsta acción NO se puede deshacer.')) {
-        appData.categories.forEach(category => {
-            category.nominees.forEach(nominee => {
-                nominee.votes = 0;
-                nominee.voters = [];
+        const categories = appData.categories || [];
+        
+        categories.forEach(category => {
+            const nominees = category.nominees || [];
+            nominees.forEach(nominee => {
+                if (nominee) {
+                    nominee.votes = 0;
+                    nominee.voters = [];
+                }
             });
         });
         
-        if (appData.users) {
-            appData.users.forEach(user => {
+        const users = appData.users || [];
+        users.forEach(user => {
+            if (user) {
                 user.votes = {};
-            });
-        }
+            }
+        });
         
         saveData();
         saveUsers();
@@ -295,10 +313,21 @@ function resetVotes() {
 function updateStats() {
     if (!appData) return;
     
-    const totalVoters = appData.users ? appData.users.filter(u => u.votes && Object.keys(u.votes).length > 0).length : 0;
-    const totalCategories = appData.categories ? appData.categories.length : 0;
-    const totalVotes = appData.categories ? appData.categories.reduce((sum, cat) => 
-        sum + cat.nominees.reduce((catSum, nom) => catSum + nom.votes, 0), 0) : 0;
+    const users = appData.users || [];
+    const categories = appData.categories || [];
+    
+    const totalVoters = users.filter(u => {
+        if (!u) return false;
+        const votes = u.votes || {};
+        return Object.keys(votes).length > 0;
+    }).length;
+    
+    const totalCategories = categories.length;
+    
+    const totalVotes = categories.reduce((sum, cat) => {
+        const nominees = cat.nominees || [];
+        return sum + nominees.reduce((catSum, nom) => catSum + (nom.votes || 0), 0);
+    }, 0);
     
     const votersElement = document.getElementById('totalVoters');
     const categoriesElement = document.getElementById('totalCategories');
