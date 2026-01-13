@@ -134,11 +134,36 @@
                     <div class="photo-input-group">
                         <select id="personSelect" class="photo-select">
                             <option value="">Seleccionar persona...</option>
+                            <option value="Brais">Brais</option>
+                            <option value="Amalia">Amalia</option>
+                            <option value="Carlita">Carlita</option>
+                            <option value="Daniel">Daniel</option>
+                            <option value="Guille">Guille</option>
+                            <option value="Iker">Iker</option>
+                            <option value="Joel">Joel</option>
+                            <option value="Jose">Jose</option>
+                            <option value="Nico">Nico</option>
+                            <option value="Ruchiti">Ruchiti</option>
+                            <option value="Sara">Sara</option>
+                            <option value="Tiago">Tiago</option>
+                            <option value="Xabi">Xabi</option>
                         </select>
-                        <input type="text" id="photoUrl" placeholder="URL de la foto (https://...)" class="photo-url-input">
+                        <input type="text" id="photoUrl" placeholder="URL de GitHub (https://raw.githubusercontent.com/...)" class="photo-url-input">
                         <button onclick="updateSelectedPhoto()" class="btn-add">
                             <i class="fas fa-save"></i> Actualizar Foto
                         </button>
+                        <!-- En la sección de Gestión de Fotos, después del botón "Actualizar Foto" -->
+                        <div class="photo-input-group">
+                            <select id="personSelect" class="photo-select">
+                                <option value="">Seleccionar persona...</option>
+                                <!-- Las opciones se cargan con JavaScript -->
+                            </select>
+                            <input type="text" id="photoUrl" placeholder="URL de la foto (https://...)" class="photo-url-input">
+                            <button onclick="updateSelectedPhoto()" class="btn-add">
+                                <i class="fas fa-save"></i> Actualizar Foto
+                            </button>
+                        </div>
+                        <!-- Los botones extra se añadirán automáticamente con JavaScript -->
                     </div>
                     <div class="current-photos">
                         <h4>Fotos Actuales:</h4>
@@ -209,11 +234,9 @@
 
     <!-- Script de Firebase v12 -->
     <script type="module">
-        // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
         import { getDatabase } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js";
         
-        // Your web app's Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyAX4_3sB1AsGt08kJlKRxBGfedgO_efW8I",
             authDomain: "pteros-aword.firebaseapp.com",
@@ -225,23 +248,20 @@
             measurementId: "G-T5QGP962VZ"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
         
-        // Hacer disponible globalmente
         window.firebaseApp = app;
         window.firebaseDatabase = database;
         window.firebaseInitialized = true;
         
-        console.log("✅ Firebase v12 inicializado");
-        
-        // Notificar que Firebase está listo
+        console.log("✅ Firebase inicializado");
         document.dispatchEvent(new Event('firebaseReady'));
     </script>
     
-    <!-- Tus scripts personalizados -->
+    <!-- Scripts en orden CORRECTO -->
     <script src="firebase-config.js"></script>
+    <script src="fotos-github.js"></script>
     <script src="script.js"></script>
     <script src="admin.js"></script>
 </body>
