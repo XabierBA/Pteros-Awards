@@ -21,21 +21,31 @@ function loadAppData() {
         if (!appData.users) appData.users = [];
         
         // B. CARGAR FOTOS DE MANERA SEGURA (sin await problemático)
+        // B. CARGAR FOTOS DE MANERA SEGURA (sin await problemático)
         console.log("📸 Procesando sistema de fotos...");
-        
+
         // Inicializar fotos si el sistema está disponible
         if (typeof inicializarFotosSistema === 'function') {
+            // Asegurar que appData existe primero
+            if (!window.appData) window.appData = {};
+            if (!window.appData.photoUrls) window.appData.photoUrls = {};
+            
+            // Ahora inicializar
             inicializarFotosSistema();
         } else {
             // Si no existe la función, crear avatares básicos
             const personas = ["Brais", "Amalia", "Carlita", "Daniel", "Guille", 
-                             "Iker", "Joel", "Jose", "Nico", "Ruchiti", "Sara", "Tiago", "Xabi"];
+                            "Iker", "Joel", "Jose", "Nico", "Ruchiti", "Sara", "Tiago", "Xabi"];
+            
+            if (!window.appData.photoUrls) window.appData.photoUrls = {};
             
             personas.forEach(persona => {
-                const inicial = persona.charAt(0).toUpperCase();
-                const colores = ['667eea', '764ba2', 'f093fb', 'f5576c', '4facfe', '00f2fe'];
-                const color = colores[personas.indexOf(persona) % colores.length];
-                appData.photoUrls[persona] = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="#${color}"/><text x="100" y="120" font-size="80" fill="white" text-anchor="middle" font-family="Arial">${inicial}</text></svg>`;
+                if (!window.appData.photoUrls[persona]) {
+                    const inicial = persona.charAt(0).toUpperCase();
+                    const colores = ['667eea', '764ba2', 'f093fb', 'f5576c', '4facfe', '00f2fe'];
+                    const color = colores[personas.indexOf(persona) % colores.length];
+                    window.appData.photoUrls[persona] = `https://ui-avatars.com/api/?name=${persona}&background=${color}&color=fff&size=200`;
+                }
             });
             console.log("🎨 Avatares básicos creados");
         }

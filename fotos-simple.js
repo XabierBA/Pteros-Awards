@@ -1,6 +1,6 @@
-// fotos-simple.js - Sistema de fotos SIMPLE y FUNCIONAL
+// fotos-simple.js - Sistema de fotos CORREGIDO
 
-console.log("📸 Iniciando sistema de fotos...");
+console.log("📸 Sistema de fotos cargado...");
 
 // 1. LISTA DE PERSONAS
 const PTEROS_PERSONAS = [
@@ -50,10 +50,11 @@ function updatePersonPhoto(persona, nuevaUrl) {
     
     console.log(`📸 Actualizando foto de ${persona}`);
     
+    // Asegurar que appData existe
+    if (!window.appData) window.appData = {};
+    if (!window.appData.photoUrls) window.appData.photoUrls = {};
+    
     // Guardar en appData
-    if (!window.appData.photoUrls) {
-        window.appData.photoUrls = {};
-    }
     window.appData.photoUrls[persona] = nuevaUrl;
     
     // Actualizar en todas las categorías
@@ -88,13 +89,20 @@ function updatePersonPhoto(persona, nuevaUrl) {
     return true;
 }
 
-// 5. INICIALIZACIÓN AUTOMÁTICA
+// 5. INICIALIZACIÓN AUTOMÁTICA (SEGURA)
 function inicializarFotosSistema() {
     console.log("🔄 Inicializando sistema de fotos...");
+    
+    // Asegurar que appData existe
+    if (!window.appData) {
+        window.appData = {};
+        console.log("⚠️ appData creado desde fotos-simple.js");
+    }
     
     // Crear avatares por defecto si no existen
     if (!window.appData.photoUrls) {
         window.appData.photoUrls = {};
+        console.log("🔄 Creando photoUrls...");
     }
     
     PTEROS_PERSONAS.forEach(persona => {
@@ -103,18 +111,16 @@ function inicializarFotosSistema() {
         }
     });
     
-    console.log("✅ Sistema de fotos listo");
+    console.log(`✅ Sistema de fotos listo (${Object.keys(window.appData.photoUrls).length} fotos)`);
 }
 
-// 6. EJECUTAR CUANDO LA PÁGINA ESTÉ LISTA
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', inicializarFotosSistema);
-} else {
-    inicializarFotosSistema();
-}
+// 6. NO INICIALIZAR AUTOMÁTICAMENTE - ESPERAR A QUE appData ESTÉ LISTO
+// En su lugar, exportar las funciones y dejar que script.js llame a inicializarFotosSistema()
 
 // 7. EXPORTAR FUNCIONES AL GLOBAL
 window.obtenerFotoPersona = obtenerFotoPersona;
 window.updatePersonPhoto = updatePersonPhoto;
 window.generarAvatar = generarAvatar;
 window.inicializarFotosSistema = inicializarFotosSistema;
+
+console.log("📸 Funciones de fotos exportadas correctamente");
