@@ -11,56 +11,49 @@ let currentCategoryId = null;
 let photoPreviewFile = null;
 
 // ===== CARGAR DATOS Y FOTOS =====
-// En script.js, modifica loadAppData():
 async function loadAppData() {
     try {
-        // Cargar de Firebase
-        await loadDataFromFirebase();
-        await loadUsersFromFirebase();
+        console.log("🔄 Cargando datos de la aplicación...");
+        
+        // Cargar de Firebase si está disponible
+        if (typeof loadDataFromFirebase === 'function') {
+            await loadDataFromFirebase();
+            await loadUsersFromFirebase();
+            
+            // Configurar listeners en tiempo real
+            if (typeof setupRealtimeListeners === 'function') {
+                // Esperar un poco para que Firebase se estabilice
+                setTimeout(setupRealtimeListeners, 1000);
+            }
+        }
         
         // Si no hay categorías, crear defaults
         if (appData.categories.length === 0) {
+            console.log("📋 Creando categorías por defecto...");
             appData.categories = createDefaultCategories();
         } else {
             ensureAllNomineesInCategories();
         }
         
-        // Configurar listeners en tiempo real
-        setupRealtimeListeners();
+        // Cargar fotos desde localStorage si no hay en Firebase
+        if (Object.keys(appData.photoUrls).length === 0) {
+            const savedPhotos = localStorage.getItem('premiosPhotos');
+            if (savedPhotos) {
+                appData.photoUrls = JSON.parse(savedPhotos);
+            }
+        }
         
         updatePhaseBanner();
         updateVotersList();
         updateStats();
+        
+        console.log("✅ Datos cargados correctamente");
         
     } catch (error) {
         console.error("Error cargando datos:", error);
         appData.categories = createDefaultCategories();
         appData.users = [];
     }
-}
-
-    // Modifica saveData():
-    function saveData() {
-        saveDataToFirebase().catch(error => {
-            console.error("Error guardando en Firebase:", error);
-            // Guardar en localStorage como backup
-            localStorage.setItem('premiosData', JSON.stringify(appData.categories));
-        });
-        updateStats();
-}
-
-    // Modifica saveUsers():
-    function saveUsers() {
-        saveUsersToFirebase().catch(error => {
-            console.error("Error guardando usuarios:", error);
-            localStorage.setItem('premiosUsers', JSON.stringify(appData.users));
-        });
-        updateVotersList();
-}
-
-    // Modifica savePhotos():
-    function savePhotos() {
-        saveDataToFirebase(); // Las fotos ya están en appData.photoUrls
 }
 
 function createDefaultCategories() {
@@ -264,17 +257,44 @@ function saveData() {
         categories: appData.categories,
         phase: appData.phase
     };
+    
+    // Guardar en localStorage como backup
     localStorage.setItem('premiosData', JSON.stringify(dataToSave));
+    
+    // Intentar guardar en Firebase
+    if (typeof saveDataToFirebase === 'function') {
+        saveDataToFirebase().catch(error => {
+            console.error("Error en saveDataToFirebase:", error);
+        });
+    }
+    
     updateStats();
 }
 
 function saveUsers() {
+    // Guardar en localStorage como backup
     localStorage.setItem('premiosUsers', JSON.stringify(appData.users));
+    
+    // Intentar guardar en Firebase
+    if (typeof saveUsersToFirebase === 'function') {
+        saveUsersToFirebase().catch(error => {
+            console.error("Error en saveUsersToFirebase:", error);
+        });
+    }
+    
     updateVotersList();
 }
 
 function savePhotos() {
+    // Guardar en localStorage como backup
     localStorage.setItem('premiosPhotos', JSON.stringify(appData.photoUrls));
+    
+    // Intentar guardar en Firebase
+    if (typeof saveDataToFirebase === 'function') {
+        saveDataToFirebase().catch(error => {
+            console.error("Error guardando fotos en Firebase:", error);
+        });
+    }
 }
 
 // ===== ACTUALIZAR FOTO DE PERSONA =====
@@ -328,6 +348,9 @@ function login() {
     appData.currentUser = user;
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('mainContent').style.display = 'block';
+    
+    // Guardar último usuario
+    localStorage.setItem('lastUserId', user.id);
     
     // Mostrar info del usuario
     showUserInfo();
@@ -633,16 +656,21 @@ function updateStats() {
 
 // ===== INICIALIZACIÓN =====
 document.addEventListener('DOMContentLoaded', async () => {
-    await loadAppData();
-    updateStats();
+    console.log("🚀 Iniciando aplicación...");
     
-    const lastUserId = localStorage.getItem('lastUserId');
-    if (lastUserId && appData.users.length > 0) {
-        const lastUser = appData.users.find(u => u.id == lastUserId);
-        if (lastUser) {
-            document.getElementById('userName').value = lastUser.name;
+    // Esperar un momento para que Firebase se cargue
+    setTimeout(async () => {
+        await loadAppData();
+        updateStats();
+        
+        const lastUserId = localStorage.getItem('lastUserId');
+        if (lastUserId && appData.users.length > 0) {
+            const lastUser = appData.users.find(u => u.id == lastUserId);
+            if (lastUser) {
+                document.getElementById('userName').value = lastUser.name;
+            }
         }
-    }
+    }, 500);
     
     window.onclick = function(event) {
         const modal = document.getElementById('voteModal');

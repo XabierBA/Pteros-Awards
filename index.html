@@ -202,19 +202,12 @@
                 
                 <div class="password-hint">
                     <p id="passwordError" class="error-message"></p>
-                    <!-- <p class="hint-text">Contraseña: <strong>qwerty123456</strong></p> -->
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="script.js"></script>
-    <script src="admin.js"></script>
-      <!-- Añade estos scripts ANTES de tus scripts personalizados -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    
-    <!-- Tu configuración de Firebase v12 (la que te dio Firebase) -->
+    <!-- Script de Firebase v12 -->
     <script type="module">
         // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
@@ -234,16 +227,21 @@
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app); // <-- ESTA ES IMPORTANTE
+        const database = getDatabase(app);
         const analytics = getAnalytics(app);
         
         // Hacer disponible globalmente
         window.firebaseApp = app;
         window.firebaseDatabase = database;
+        window.firebaseInitialized = true;
+        
         console.log("✅ Firebase v12 inicializado");
+        
+        // Notificar que Firebase está listo
+        document.dispatchEvent(new Event('firebaseReady'));
     </script>
     
-    <!-- Ahora tus scripts personalizados -->
+    <!-- Tus scripts personalizados -->
     <script src="firebase-config.js"></script>
     <script src="script.js"></script>
     <script src="admin.js"></script>

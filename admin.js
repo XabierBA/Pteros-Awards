@@ -3,7 +3,7 @@ const ADMIN_PASSWORD = "qwerty123456";
 
 // ===== FUNCIÓN PRINCIPAL PARA ABRIR PANEL =====
 function openAdminPanel() {
-    console.log("openAdminPanel llamada"); // Para debug
+    console.log("openAdminPanel llamada");
     
     if (!appData || !appData.currentUser) {
         alert('Debes estar logueado para acceder al panel admin');
@@ -249,7 +249,6 @@ function importData() {
                     
                     saveData();
                     saveUsers();
-                    loadData();
                     renderCategories();
                     
                     alert('✅ Datos importados correctamente');
@@ -266,31 +265,32 @@ function importData() {
     input.click();
 }
 
-// En admin.js, modifica resetVotes() para que limpie Firebase:
-async function resetFirebaseData() {
-    try {
-        await database.ref('appData/categories').transaction((categories) => {
-            if (categories) {
-                categories.forEach(category => {
-                    category.nominees.forEach(nominee => {
-                        nominee.votes = 0;
-                        nominee.voters = [];
-                    });
-                });
-            }
-            return categories;
+function resetVotes() {
+    if (!appData) return;
+    
+    if (confirm('⚠️ ¿ESTÁS SEGURO DE REINICIAR TODOS LOS VOTOS?\n\nEsto eliminará:\n• Todos los votos de nominados\n• Historial de votantes\n\nEsta acción NO se puede deshacer.')) {
+        appData.categories.forEach(category => {
+            category.nominees.forEach(nominee => {
+                nominee.votes = 0;
+                nominee.voters = [];
+            });
         });
         
-        await database.ref('users').set([]);
+        if (appData.users) {
+            appData.users.forEach(user => {
+                user.votes = {};
+            });
+        }
         
-        alert('✅ ¡Todos los votos han sido reiniciados en todos los dispositivos!');
-    } catch (error) {
-        console.error("Error reiniciando Firebase:", error);
-        alert('❌ Error al reiniciar datos');
+        saveData();
+        saveUsers();
+        renderCategories();
+        updateVotersList();
+        updateStats();
+        
+        alert('✅ ¡Todos los votos han sido reiniciados!');
     }
 }
-
-// Usar esta función en lugar de resetVotes()
 
 function updateStats() {
     if (!appData) return;
