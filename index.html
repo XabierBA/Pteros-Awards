@@ -218,6 +218,7 @@
         const firebaseConfig = {
             apiKey: "AIzaSyAX4_3sB1AsGt08kJlKRxBGfedgO_efW8I",
             authDomain: "pteros-aword.firebaseapp.com",
+            databaseURL: "https://pteros-aword-default-rtdb.europe-west1.firebasedatabase.app", // ← CORREGIDO
             projectId: "pteros-aword",
             storageBucket: "pteros-aword.firebasestorage.app",
             messagingSenderId: "78301948392",
@@ -235,7 +236,7 @@
         window.firebaseDatabase = database;
         window.firebaseInitialized = true;
         
-        console.log("✅ Firebase v12 inicializado");
+        console.log("✅ Firebase v12 inicializado con databaseURL correcta");
         
         // Notificar que Firebase está listo
         document.dispatchEvent(new Event('firebaseReady'));

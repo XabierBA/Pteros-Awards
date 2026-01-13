@@ -17,45 +17,60 @@ async function loadAppData() {
         
         // Cargar de Firebase si está disponible
         if (typeof loadDataFromFirebase === 'function') {
+            console.log("🔥 Intentando cargar de Firebase...");
             await loadDataFromFirebase();
             await loadUsersFromFirebase();
+        } else {
+            console.log("📱 Firebase no disponible, usando localStorage");
+            // Cargar de localStorage
+            const savedData = localStorage.getItem('premiosData');
+            const savedUsers = localStorage.getItem('premiosUsers');
+            const savedPhotos = localStorage.getItem('premiosPhotos');
             
-            // Configurar listeners en tiempo real
-            if (typeof setupRealtimeListeners === 'function') {
-                // Esperar un poco para que Firebase se estabilice
-                setTimeout(setupRealtimeListeners, 1000);
+            if (savedData) {
+                const parsed = JSON.parse(savedData);
+                appData.categories = parsed.categories || [];
+                appData.phase = parsed.phase || 'nominations';
             }
+            
+            appData.users = savedUsers ? JSON.parse(savedUsers) : [];
+            appData.photoUrls = savedPhotos ? JSON.parse(savedPhotos) : {};
         }
+        
+        console.log("📊 Categorías cargadas:", appData.categories.length);
+        console.log("👥 Usuarios cargados:", appData.users.length);
         
         // Si no hay categorías, crear defaults
         if (appData.categories.length === 0) {
             console.log("📋 Creando categorías por defecto...");
             appData.categories = createDefaultCategories();
+            // Guardar las categorías por defecto
+            saveData();
         } else {
+            console.log("✅ Usando categorías existentes");
             ensureAllNomineesInCategories();
-        }
-        
-        // Cargar fotos desde localStorage si no hay en Firebase
-        if (Object.keys(appData.photoUrls).length === 0) {
-            const savedPhotos = localStorage.getItem('premiosPhotos');
-            if (savedPhotos) {
-                appData.photoUrls = JSON.parse(savedPhotos);
-            }
         }
         
         updatePhaseBanner();
         updateVotersList();
         updateStats();
         
+        // FORZAR renderizado de categorías
+        console.log("🎨 Renderizando categorías...");
+        renderCategories();
+        
         console.log("✅ Datos cargados correctamente");
         
     } catch (error) {
-        console.error("Error cargando datos:", error);
+        console.error("❌ Error cargando datos:", error);
+        // Crear datos por defecto si hay error
         appData.categories = createDefaultCategories();
         appData.users = [];
+        
+        // Renderizar categorías de todas formas
+        renderCategories();
     }
 }
-
 function createDefaultCategories() {
     const people = ["Brais", "Amalia", "Carlita", "Daniel", "Guille", "Iker", "Joel", "Jose", "Nico", "Ruchiti", "Sara", "Tiago", "Xabi"];
     
