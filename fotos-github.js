@@ -4,9 +4,9 @@
 // Las fotos deben estar en la carpeta 'fotos/' del repositorio
 
 // Configuración de URLs de GitHub
-const GITHUB_USER = "XabiERBA"; // TU USUARIO DE GITHUB
+const GITHUB_USER = "XabierBA"; // TU USUARIO DE GITHUB
 const REPO_NAME = "Pteros-Awards"; // NOMBRE DEL REPOSITORIO
-const BRANCH = "main"; // RAMA (main o master)
+const BRANCH = "Photo-gestion"; // RAMA (main o master)
 const FOTOS_FOLDER = "fotos"; // CARPETA DONDE ESTÁN LAS FOTOS
 
 // Base URL para las fotos
