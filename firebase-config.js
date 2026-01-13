@@ -165,15 +165,17 @@ async function loadUsersFromFirebase() {
     }
 }
 
-// Escuchar cambios en tiempo real
-function setupRealtimeListeners() {
+// Escuchar cambios en tiempo real - CORREGIDO (quitar await de import)
+async function setupRealtimeListeners() {
     if (!firebaseReady) {
         console.log("⚠️ Firebase no está listo para listeners");
         return;
     }
     
     try {
-        const { onValue, ref } = await import('https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js');
+        // Importar funciones dinámicamente
+        const firebaseModule = await import('https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js');
+        const { onValue, ref } = firebaseModule;
         
         // Escuchar cambios en appData
         onValue(ref(database, 'appData'), (snapshot) => {
