@@ -1,35 +1,22 @@
-// fotos-simple.js - Sistema de fotos CORREGIDO
+// fotos-simple.js - Sistema de fotos SIMPLE Y FUNCIONAL
 
-console.log("📸 Sistema de fotos cargado...");
+console.log("📸 Módulo de fotos cargado (esperando inicialización)...");
 
-// 1. LISTA DE PERSONAS
+// LISTA DE PERSONAS DEL GRUPO PTEROS
 const PTEROS_PERSONAS = [
     "Brais", "Amalia", "Carlita", "Daniel", "Guille", 
     "Iker", "Joel", "Jose", "Nico", "Ruchiti", 
     "Sara", "Tiago", "Xabi"
 ];
 
-// 2. FUNCIÓN PRINCIPAL - OBTENER FOTO (SIEMPRE FUNCIONA)
-function obtenerFotoPersona(nombre) {
-    if (!nombre) return generarAvatar("Usuario");
-    
-    const nombreLimpio = nombre.trim();
-    
-    // 2.1 Primero verificar si hay foto en appData.photoUrls
-    if (window.appData && window.appData.photoUrls && window.appData.photoUrls[nombreLimpio]) {
-        return window.appData.photoUrls[nombreLimpio];
-    }
-    
-    // 2.2 Si no, generar avatar automático
-    return generarAvatar(nombreLimpio);
-}
-
-// 3. GENERAR AVATAR (SIEMPRE FUNCIONA)
+// FUNCIÓN PARA GENERAR AVATAR AUTOMÁTICO
 function generarAvatar(nombre) {
+    if (!nombre) nombre = "Usuario";
+    
     // Colores bonitos para avatares
     const colores = ['FF6B6B', '4ECDC4', '45B7D1', '96CEB4', 'FFEAA7', 'DDA0DD', '98D8C8'];
     
-    // Generar índice de color basado en el nombre
+    // Generar color basado en el nombre (siempre el mismo para cada persona)
     let hash = 0;
     for (let i = 0; i < nombre.length; i++) {
         hash = nombre.charCodeAt(i) + ((hash << 5) - hash);
@@ -38,31 +25,88 @@ function generarAvatar(nombre) {
     const color = colores[colorIndex];
     
     // Usar UI Avatars (servicio gratuito y confiable)
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(nombre)}&background=${color}&color=fff&size=200&bold=true&format=png`;
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(nombre)}&background=${color}&color=fff&size=200&bold=true`;
 }
 
-// 4. FUNCIÓN PARA ACTUALIZAR FOTO DESDE ADMIN
-function updatePersonPhoto(persona, nuevaUrl) {
-    if (!persona || !nuevaUrl) {
-        alert("❌ Faltan datos");
+// FUNCIÓN PRINCIPAL PARA OBTENER FOTO DE UNA PERSONA
+function obtenerFotoPersona(nombre) {
+    if (!nombre) return generarAvatar("Usuario");
+    
+    const nombreLimpio = nombre.trim();
+    
+    // Buscar foto en appData si existe
+    if (window.appData && window.appData.photoUrls && window.appData.photoUrls[nombreLimpio]) {
+        const foto = window.appData.photoUrls[nombreLimpio];
+        // Verificar que la foto no sea un placeholder vacío
+        if (foto && foto !== '' && !foto.includes('undefined')) {
+            return foto;
+        }
+    }
+    
+    // Si no hay foto, generar avatar
+    return generarAvatar(nombreLimpio);
+}
+
+// FUNCIÓN PARA INICIALIZAR FOTOS (llamar desde script.js)
+function inicializarFotos() {
+    console.log("🔄 Inicializando sistema de fotos...");
+    
+    // Verificar que appData existe
+    if (!window.appData) {
+        console.error("❌ appData no está disponible");
         return false;
     }
     
-    console.log(`📸 Actualizando foto de ${persona}`);
+    // Crear photoUrls si no existe
+    if (!window.appData.photoUrls) {
+        window.appData.photoUrls = {};
+        console.log("📁 Creada estructura photoUrls");
+    }
+    
+    // Crear avatares para todas las personas si no tienen foto
+    let avataresCreados = 0;
+    PTEROS_PERSONAS.forEach(persona => {
+        if (!window.appData.photoUrls[persona] || 
+            window.appData.photoUrls[persona] === '' ||
+            window.appData.photoUrls[persona].includes('undefined')) {
+            
+            window.appData.photoUrls[persona] = generarAvatar(persona);
+            avataresCreados++;
+        }
+    });
+    
+    console.log(`✅ Sistema de fotos inicializado (${avataresCreados} avatares creados)`);
+    return true;
+}
+
+// FUNCIÓN PARA ACTUALIZAR FOTO (usar desde panel admin)
+function actualizarFotoPersona(persona, nuevaUrl) {
+    if (!persona || !nuevaUrl) {
+        alert("❌ Faltan datos: necesita persona y URL");
+        return false;
+    }
+    
+    console.log(`📸 Actualizando foto de ${persona}...`);
+    
+    // Validar URL básica
+    if (!nuevaUrl.startsWith('http')) {
+        alert("❌ La URL debe empezar con http:// o https://");
+        return false;
+    }
     
     // Asegurar que appData existe
     if (!window.appData) window.appData = {};
     if (!window.appData.photoUrls) window.appData.photoUrls = {};
     
-    // Guardar en appData
+    // Actualizar la foto
     window.appData.photoUrls[persona] = nuevaUrl;
     
     // Actualizar en todas las categorías
-    if (window.appData.categories) {
+    if (window.appData.categories && Array.isArray(window.appData.categories)) {
         window.appData.categories.forEach(categoria => {
-            if (categoria.nominees) {
+            if (categoria.nominees && Array.isArray(categoria.nominees)) {
                 categoria.nominees.forEach(nominado => {
-                    if (nominado.name === persona) {
+                    if (nominado && nominado.name === persona) {
                         nominado.photo = nuevaUrl;
                     }
                 });
@@ -70,57 +114,29 @@ function updatePersonPhoto(persona, nuevaUrl) {
         });
     }
     
-    // Guardar datos
+    console.log(`✅ Foto de ${persona} actualizada`);
+    
+    // Guardar datos si las funciones existen
     if (typeof saveData === 'function') {
         saveData();
     }
-    
-    // Guardar fotos específicamente
     if (typeof savePhotos === 'function') {
         savePhotos();
     }
     
-    // Actualizar UI si es necesario
+    // Actualizar UI
     if (typeof renderCategories === 'function') {
         setTimeout(() => renderCategories(), 300);
     }
     
-    console.log(`✅ Foto de ${persona} actualizada`);
+    alert(`✅ Foto de ${persona} actualizada correctamente`);
     return true;
 }
 
-// 5. INICIALIZACIÓN AUTOMÁTICA (SEGURA)
-function inicializarFotosSistema() {
-    console.log("🔄 Inicializando sistema de fotos...");
-    
-    // Asegurar que appData existe
-    if (!window.appData) {
-        window.appData = {};
-        console.log("⚠️ appData creado desde fotos-simple.js");
-    }
-    
-    // Crear avatares por defecto si no existen
-    if (!window.appData.photoUrls) {
-        window.appData.photoUrls = {};
-        console.log("🔄 Creando photoUrls...");
-    }
-    
-    PTEROS_PERSONAS.forEach(persona => {
-        if (!window.appData.photoUrls[persona]) {
-            window.appData.photoUrls[persona] = generarAvatar(persona);
-        }
-    });
-    
-    console.log(`✅ Sistema de fotos listo (${Object.keys(window.appData.photoUrls).length} fotos)`);
-}
-
-// 6. NO INICIALIZAR AUTOMÁTICAMENTE - ESPERAR A QUE appData ESTÉ LISTO
-// En su lugar, exportar las funciones y dejar que script.js llame a inicializarFotosSistema()
-
-// 7. EXPORTAR FUNCIONES AL GLOBAL
+// EXPORTAR FUNCIONES AL ÁMBITO GLOBAL
 window.obtenerFotoPersona = obtenerFotoPersona;
-window.updatePersonPhoto = updatePersonPhoto;
+window.actualizarFotoPersona = actualizarFotoPersona;
+window.inicializarFotos = inicializarFotos;
 window.generarAvatar = generarAvatar;
-window.inicializarFotosSistema = inicializarFotosSistema;
 
-console.log("📸 Funciones de fotos exportadas correctamente");
+console.log("✅ Funciones de fotos exportadas correctamente");

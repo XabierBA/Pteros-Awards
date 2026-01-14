@@ -250,8 +250,8 @@ function updateSelectedPhoto() {
     }
     
     // Usar la nueva función del sistema de fotos
-    if (typeof updatePersonPhoto === 'function') {
-        const resultado = updatePersonPhoto(persona, nuevaUrl);
+    if (typeof actualizarFotoPersona === 'function') {
+        const resultado = actualizarFotoPersona(persona, nuevaUrl);
         if (resultado) {
             alert(`✅ Foto de ${persona} actualizada correctamente`);
             
@@ -261,10 +261,17 @@ function updateSelectedPhoto() {
             // Actualizar lista de fotos
             cargarListaFotos();
         }
+    } else if (typeof updatePersonPhoto === 'function') {
+        // Fallback a la función antigua
+        updatePersonPhoto(persona, nuevaUrl);
+        alert(`✅ Foto de ${persona} actualizada correctamente`);
+        photoUrlInput.value = '';
+        cargarListaFotos();
     } else {
-        alert('❌ Error: La función updatePersonPhoto no está disponible');
+        alert('❌ Error: No se encontró función para actualizar fotos');
     }
 }
+
 // Función para usar foto de GitHub
 function usarFotoGitHub() {
     const personSelect = document.getElementById('personSelect');

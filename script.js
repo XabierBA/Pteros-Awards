@@ -7,6 +7,9 @@ let appData = {
     photoUrls: {}
 };
 
+// Hacer appData global para otros scripts
+window.appData = appData;
+
 let currentCategoryId = null;
 let photoPreviewFile = null;
 
@@ -20,42 +23,31 @@ function loadAppData() {
         if (!appData.categories) appData.categories = [];
         if (!appData.users) appData.users = [];
         
-        // B. CARGAR FOTOS DE MANERA SEGURA (sin await problemático)
-        // B. CARGAR FOTOS DE MANERA SEGURA (sin await problemático)
-        console.log("📸 Procesando sistema de fotos...");
-
-        // Inicializar fotos si el sistema está disponible
-        if (typeof inicializarFotosSistema === 'function') {
-            // Asegurar que appData existe primero
-            if (!window.appData) window.appData = {};
-            if (!window.appData.photoUrls) window.appData.photoUrls = {};
-            
-            // Ahora inicializar
-            inicializarFotosSistema();
+        // B. INICIALIZAR SISTEMA DE FOTOS
+        console.log("📸 Inicializando sistema de fotos...");
+        
+        if (typeof inicializarFotos === 'function') {
+            inicializarFotos();
         } else {
-            // Si no existe la función, crear avatares básicos
+            // Fallback: crear avatares básicos
+            console.log("⚠️ inicializarFotos no disponible, creando avatares básicos");
             const personas = ["Brais", "Amalia", "Carlita", "Daniel", "Guille", 
-                            "Iker", "Joel", "Jose", "Nico", "Ruchiti", "Sara", "Tiago", "Xabi"];
-            
-            if (!window.appData.photoUrls) window.appData.photoUrls = {};
+                             "Iker", "Joel", "Jose", "Nico", "Ruchiti", "Sara", "Tiago", "Xabi"];
             
             personas.forEach(persona => {
-                if (!window.appData.photoUrls[persona]) {
-                    const inicial = persona.charAt(0).toUpperCase();
+                if (!appData.photoUrls[persona]) {
                     const colores = ['667eea', '764ba2', 'f093fb', 'f5576c', '4facfe', '00f2fe'];
                     const color = colores[personas.indexOf(persona) % colores.length];
-                    window.appData.photoUrls[persona] = `https://ui-avatars.com/api/?name=${persona}&background=${color}&color=fff&size=200`;
+                    appData.photoUrls[persona] = `https://ui-avatars.com/api/?name=${persona}&background=${color}&color=fff&size=200`;
                 }
             });
-            console.log("🎨 Avatares básicos creados");
         }
         
         // C. CARGAR DATOS DE FIREBASE/LOCALSTORAGE
         if (typeof loadDataFromFirebase === 'function') {
             console.log("🔥 Intentando cargar de Firebase...");
-            // Llamar sin await
             loadDataFromFirebase().then(() => {
-                console.log("✅ Firebase cargado");
+                console.log("✅ Datos de Firebase cargados");
                 continuarCarga();
             }).catch((error) => {
                 console.log("📂 Firebase falló, usando localStorage:", error.message);
@@ -69,42 +61,17 @@ function loadAppData() {
         }
         
         function continuarCarga() {
-            // D. ASEGURAR QUE TODOS TIENEN FOTO
-            const todasLasPersonas = ["Brais", "Amalia", "Carlita", "Daniel", "Guille", 
-                                     "Iker", "Joel", "Jose", "Nico", "Ruchiti", "Sara", "Tiago", "Xabi"];
-            
-            let fotosFaltantes = 0;
-            todasLasPersonas.forEach(persona => {
-                if (!appData.photoUrls[persona]) {
-                    fotosFaltantes++;
-                    // Usar función obtenerFotoPersona si existe
-                    if (typeof obtenerFotoPersona === 'function') {
-                        appData.photoUrls[persona] = obtenerFotoPersona(persona);
-                    } else {
-                        // Fallback básico
-                        const inicial = persona.charAt(0).toUpperCase();
-                        const colores = ['667eea', '764ba2', 'f093fb', 'f5576c', '4facfe', '00f2fe'];
-                        const color = colores[Math.floor(Math.random() * colores.length)];
-                        appData.photoUrls[persona] = `https://ui-avatars.com/api/?name=${persona}&background=${color}&color=fff&size=200`;
-                    }
-                }
-            });
-            
-            if (fotosFaltantes > 0) {
-                console.log(`⚠️ ${fotosFaltantes} fotos faltantes, creados avatares`);
-            }
-            
-            // E. VERIFICAR CATEGORÍAS
+            // D. VERIFICAR CATEGORÍAS
             if (appData.categories.length === 0) {
                 console.log("📋 Creando categorías por defecto...");
                 appData.categories = createDefaultCategories();
-                saveData(); // Guardar
+                saveData();
             } else {
                 console.log("✅ Usando categorías existentes:", appData.categories.length);
                 ensureAllNomineesInCategories();
             }
             
-            // F. ACTUALIZAR UI
+            // E. ACTUALIZAR UI
             updatePhaseBanner();
             updateVotersList();
             updateStats();
@@ -134,7 +101,10 @@ function cargarDesdeLocalStorage() {
             const parsed = JSON.parse(savedData);
             appData.categories = parsed.categories || [];
             appData.phase = parsed.phase || 'nominations';
-            appData.photoUrls = parsed.photoUrls || {};
+            // Combinar photoUrls
+            if (parsed.photoUrls) {
+                appData.photoUrls = { ...appData.photoUrls, ...parsed.photoUrls };
+            }
         } catch (e) {
             console.error("Error parseando premiosData:", e);
         }
@@ -150,7 +120,6 @@ function cargarDesdeLocalStorage() {
     
     if (savedPhotos) {
         try {
-            // Combinar con las existentes
             const parsedPhotos = JSON.parse(savedPhotos);
             appData.photoUrls = { ...appData.photoUrls, ...parsedPhotos };
         } catch (e) {
