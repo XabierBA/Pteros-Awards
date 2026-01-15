@@ -1,85 +1,47 @@
-// En la función actualizarFotoPersona, reemplaza todo por:
-function actualizarFotoPersona(persona, nuevaUrl) {
-    if (!persona || !nuevaUrl) {
-        alert("❌ Faltan datos: necesita persona y URL");
-        return false;
+// fotos-simple.js - Sistema de fotos CORREGIDO
+
+console.log("📸 Módulo de fotos cargado...");
+
+// 1. LISTA DE PERSONAS (DEBE SER GLOBAL EN ESTE ARCHIVO)
+const PTEROS_PERSONAS = [
+    "Brais", "Amalia", "Carlita", "Daniel", "Guille", 
+    "Iker", "Joel", "Jose", "Nico", "Ruchiti", 
+    "Sara", "Tiago", "Xabi"
+];
+
+// 2. GENERAR AVATAR
+function generarAvatar(nombre) {
+    if (!nombre) nombre = "Usuario";
+    
+    const colores = ['FF6B6B', '4ECDC4', '45B7D1', '96CEB4', 'FFEAA7', 'DDA0DD', '98D8C8'];
+    
+    let hash = 0;
+    for (let i = 0; i < nombre.length; i++) {
+        hash = nombre.charCodeAt(i) + ((hash << 5) - hash);
     }
+    const colorIndex = Math.abs(hash) % colores.length;
+    const color = colores[colorIndex];
     
-    console.log(`📸 Actualizando foto de ${persona} en Firebase...`);
-    
-    // Validar URL básica
-    if (!nuevaUrl.startsWith('http')) {
-        alert("❌ La URL debe empezar con http:// o https://");
-        return false;
-    }
-    
-    // Asegurar que appData existe
-    if (!window.appData) window.appData = {};
-    if (!window.appData.photoUrls) window.appData.photoUrls = {};
-    
-    // 1. ACTUALIZAR LOCALMENTE
-    window.appData.photoUrls[persona] = nuevaUrl;
-    
-    // 2. ACTUALIZAR EN CATEGORÍAS
-    if (window.appData.categories && Array.isArray(window.appData.categories)) {
-        window.appData.categories.forEach(categoria => {
-            if (categoria.nominees && Array.isArray(categoria.nominees)) {
-                categoria.nominees.forEach(nominado => {
-                    if (nominado && nominado.name === persona) {
-                        nominado.photo = nuevaUrl;
-                    }
-                });
-            }
-        });
-    }
-    
-    console.log(`✅ Foto de ${persona} actualizada localmente`);
-    
-    // 3. GUARDAR EN FIREBASE (¡IMPORTANTE!)
-    guardarFotoEnFirebase(persona, nuevaUrl);
-    
-    // 4. GUARDAR EN LOCALSTORAGE (backup)
-    if (typeof savePhotos === 'function') {
-        savePhotos();
-    }
-    
-    // 5. ACTUALIZAR UI
-    if (typeof renderCategories === 'function') {
-        setTimeout(() => renderCategories(), 300);
-    }
-    
-    alert(`✅ Foto de ${persona} actualizada y guardada en la nube`);
-    return true;
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(nombre)}&background=${color}&color=fff&size=200&bold=true`;
 }
 
-// NUEVA FUNCIÓN: Guardar foto en Firebase
-async function guardarFotoEnFirebase(persona, url) {
-    try {
-        // Verificar que Firebase está disponible
-        if (!window.firebaseDatabase) {
-            console.log("⚠️ Firebase no disponible, guardando solo localmente");
-            return false;
+// 3. OBTENER FOTO DE PERSONA
+function obtenerFotoPersona(nombre) {
+    if (!nombre) return generarAvatar("Usuario");
+    
+    const nombreLimpio = nombre.trim();
+    
+    if (window.appData && window.appData.photoUrls && window.appData.photoUrls[nombreLimpio]) {
+        const foto = window.appData.photoUrls[nombreLimpio];
+        if (foto && foto !== '' && !foto.includes('undefined')) {
+            return foto;
         }
-        
-        console.log(`💾 Guardando foto de ${persona} en Firebase...`);
-        
-        const { getDatabase, ref, set } = await import('https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js');
-        const db = getDatabase();
-        
-        // Guardar en la ruta: photos/[persona]
-        const photoRef = ref(db, `photos/${persona}`);
-        await set(photoRef, url);
-        
-        console.log(`✅ Foto de ${persona} guardada en Firebase`);
-        return true;
-        
-    } catch (error) {
-        console.error("❌ Error guardando en Firebase:", error);
-        return false;
     }
+    
+    return generarAvatar(nombreLimpio);
 }
 
-// NUEVA FUNCIÓN: Cargar todas las fotos desde Firebase
+// 4. CARGAR FOTOS DE FIREBASE
 async function cargarFotosDeFirebase() {
     try {
         if (!window.firebaseDatabase) {
@@ -98,11 +60,9 @@ async function cargarFotosDeFirebase() {
         if (snapshot.exists()) {
             const fotosFirebase = snapshot.val();
             
-            // Asegurar que appData existe
             if (!window.appData) window.appData = {};
             if (!window.appData.photoUrls) window.appData.photoUrls = {};
             
-            // Combinar fotos (Firebase tiene prioridad)
             window.appData.photoUrls = { ...window.appData.photoUrls, ...fotosFirebase };
             
             console.log(`✅ ${Object.keys(fotosFirebase).length} fotos cargadas desde Firebase`);
@@ -118,7 +78,32 @@ async function cargarFotosDeFirebase() {
     }
 }
 
-// Modificar la función inicializarFotos para cargar de Firebase
+// 5. GUARDAR FOTO EN FIREBASE
+async function guardarFotoEnFirebase(persona, url) {
+    try {
+        if (!window.firebaseDatabase) {
+            console.log("⚠️ Firebase no disponible");
+            return false;
+        }
+        
+        console.log(`💾 Guardando foto de ${persona} en Firebase...`);
+        
+        const { getDatabase, ref, set } = await import('https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js');
+        const db = getDatabase();
+        
+        const photoRef = ref(db, `photos/${persona}`);
+        await set(photoRef, url);
+        
+        console.log(`✅ Foto de ${persona} guardada en Firebase`);
+        return true;
+        
+    } catch (error) {
+        console.error("❌ Error guardando en Firebase:", error);
+        return false;
+    }
+}
+
+// 6. INICIALIZAR SISTEMA DE FOTOS
 async function inicializarFotos() {
     console.log("🔄 Inicializando sistema de fotos...");
     
@@ -134,10 +119,10 @@ async function inicializarFotos() {
         console.log("📁 Creada estructura photoUrls");
     }
     
-    // 1. INTENTAR CARGAR DE FIREBASE PRIMERO
+    // 1. Intentar cargar de Firebase
     const cargadoDeFirebase = await cargarFotosDeFirebase();
     
-    // 2. CREAR AVATARES PARA LOS QUE NO TENGAN FOTO
+    // 2. Crear avatares para los que no tengan foto
     let avataresCreados = 0;
     PTEROS_PERSONAS.forEach(persona => {
         if (!window.appData.photoUrls[persona] || 
@@ -155,3 +140,67 @@ async function inicializarFotos() {
     
     return true;
 }
+
+// 7. ACTUALIZAR FOTO (PANEL ADMIN)
+async function actualizarFotoPersona(persona, nuevaUrl) {
+    if (!persona || !nuevaUrl) {
+        alert("❌ Faltan datos: necesita persona y URL");
+        return false;
+    }
+    
+    console.log(`📸 Actualizando foto de ${persona}...`);
+    
+    if (!nuevaUrl.startsWith('http')) {
+        alert("❌ La URL debe empezar con http:// o https://");
+        return false;
+    }
+    
+    if (!window.appData) window.appData = {};
+    if (!window.appData.photoUrls) window.appData.photoUrls = {};
+    
+    // Actualizar localmente
+    window.appData.photoUrls[persona] = nuevaUrl;
+    
+    // Actualizar en categorías
+    if (window.appData.categories && Array.isArray(window.appData.categories)) {
+        window.appData.categories.forEach(categoria => {
+            if (categoria.nominees && Array.isArray(categoria.nominees)) {
+                categoria.nominees.forEach(nominado => {
+                    if (nominado && nominado.name === persona) {
+                        nominado.photo = nuevaUrl;
+                    }
+                });
+            }
+        });
+    }
+    
+    // Guardar en Firebase
+    const guardadoFirebase = await guardarFotoEnFirebase(persona, nuevaUrl);
+    
+    // Guardar en localStorage (backup)
+    if (typeof savePhotos === 'function') {
+        savePhotos();
+    }
+    
+    // Actualizar UI
+    if (typeof renderCategories === 'function') {
+        setTimeout(() => renderCategories(), 300);
+    }
+    
+    if (guardadoFirebase) {
+        alert(`✅ Foto de ${persona} guardada en la nube`);
+    } else {
+        alert(`✅ Foto de ${persona} guardada localmente`);
+    }
+    
+    return true;
+}
+
+// 8. EXPORTAR FUNCIONES
+window.obtenerFotoPersona = obtenerFotoPersona;
+window.actualizarFotoPersona = actualizarFotoPersona;
+window.inicializarFotos = inicializarFotos;
+window.generarAvatar = generarAvatar;
+window.PTEROS_PERSONAS = PTEROS_PERSONAS; // Exportar la constante también
+
+console.log("✅ Funciones de fotos exportadas correctamente");

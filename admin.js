@@ -221,6 +221,7 @@ function cargarListaFotos() {
 
 // Función para actualizar foto seleccionada - ¡ESTA ES LA QUE FALTABA!
 // REEMPLAZA ESTA FUNCIÓN EN admin.js (línea ~190):
+// En admin.js, busca la función updateSelectedPhoto y cámbiala por:
 function updateSelectedPhoto() {
     const personSelect = document.getElementById('personSelect');
     const photoUrlInput = document.getElementById('photoUrl');
@@ -250,26 +251,26 @@ function updateSelectedPhoto() {
     }
     
     // Usar la nueva función del sistema de fotos
-    // En la función updateSelectedPhoto, cambia la llamada:
     if (typeof actualizarFotoPersona === 'function') {
-        const resultado = actualizarFotoPersona(persona, nuevaUrl);
-        if (resultado) {
-            // Esta función ahora guarda en Firebase automáticamente
-            alert(`✅ Foto de ${persona} guardada en la nube`);
-            photoUrlInput.value = '';
-            cargarListaFotos();
-        }
+        actualizarFotoPersona(persona, nuevaUrl).then(resultado => {
+            if (resultado) {
+                // Limpiar formulario
+                photoUrlInput.value = '';
+                
+                // Actualizar lista de fotos
+                cargarListaFotos();
+            }
+        });
     } else if (typeof updatePersonPhoto === 'function') {
         // Fallback a la función antigua
         updatePersonPhoto(persona, nuevaUrl);
-        alert(`✅ Foto de ${persona} actualizada correctamente`);
+        alert(`✅ Foto de ${persona} actualizada`);
         photoUrlInput.value = '';
         cargarListaFotos();
     } else {
         alert('❌ Error: No se encontró función para actualizar fotos');
     }
 }
-
 // Función para usar foto de GitHub
 function usarFotoGitHub() {
     const personSelect = document.getElementById('personSelect');

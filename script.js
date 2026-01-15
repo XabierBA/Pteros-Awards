@@ -15,99 +15,82 @@ let photoPreviewFile = null;
 
 // ===== CARGAR DATOS Y FOTOS =====
 function loadAppData() {
-    try {
-        console.log("🔄 Cargando datos de la aplicación...");
-        
-        // A. INICIALIZAR ESTRUCTURAS
-        if (!appData.photoUrls) appData.photoUrls = {};
-        if (!appData.categories) appData.categories = [];
-        if (!appData.users) appData.users = [];
-        
-        // B. INICIALIZAR SISTEMA DE FOTOS (ASINCRONO)
-        console.log("📸 Cargando sistema de fotos...");
-
-        if (typeof inicializarFotos === 'function') {
-            // Usar Promise para manejar la carga asíncrona
-            inicializarFotos().then(exito => {
-                if (exito) {
-                    console.log("✅ Fotos cargadas correctamente");
-                } else {
-                    console.log("⚠️ Fotos cargadas con fallback");
-                }
-                continuarConElResto();
-            }).catch(error => {
-                console.error("❌ Error cargando fotos:", error);
-                continuarConElResto();
-            });
-        } else {
-            console.log("⚠️ Función inicializarFotos no disponible");
-            continuarConElResto();
-        }
-
-        function continuarConElResto() {
-            // El resto de tu código de carga...
-            // C. CARGAR DATOS DE FIREBASE/LOCALSTORAGE
-            if (typeof loadDataFromFirebase === 'function') {
-                console.log("🔥 Intentando cargar de Firebase...");
-                loadDataFromFirebase().then(() => {
-                    console.log("✅ Datos de Firebase cargados");
-                    finalizarCarga();
-                }).catch((error) => {
-                    console.log("📂 Firebase falló, usando localStorage:", error.message);
-                    cargarDesdeLocalStorage();
-                    finalizarCarga();
-                });
-            } else {
-                console.log("📱 Firebase no disponible, usando localStorage");
-                cargarDesdeLocalStorage();
-                finalizarCarga();
-            }
-        }
-        
-        // C. CARGAR DATOS DE FIREBASE/LOCALSTORAGE
+    console.log("🔄 Cargando datos de la aplicación...");
+    
+    // Asegurar estructuras básicas
+    if (!appData.photoUrls) appData.photoUrls = {};
+    if (!appData.categories) appData.categories = [];
+    if (!appData.users) appData.users = [];
+    
+    // Función para continuar después de cargar fotos
+    function continuarDespuesDeFotos() {
+        // CARGAR DATOS DE FIREBASE/LOCALSTORAGE
         if (typeof loadDataFromFirebase === 'function') {
             console.log("🔥 Intentando cargar de Firebase...");
             loadDataFromFirebase().then(() => {
                 console.log("✅ Datos de Firebase cargados");
-                continuarCarga();
+                finalizarCarga();
             }).catch((error) => {
                 console.log("📂 Firebase falló, usando localStorage:", error.message);
                 cargarDesdeLocalStorage();
-                continuarCarga();
+                finalizarCarga();
             });
         } else {
             console.log("📱 Firebase no disponible, usando localStorage");
             cargarDesdeLocalStorage();
-            continuarCarga();
+            finalizarCarga();
+        }
+    }
+    
+    // Función final
+    function finalizarCarga() {
+        // VERIFICAR CATEGORÍAS
+        if (appData.categories.length === 0) {
+            console.log("📋 Creando categorías por defecto...");
+            appData.categories = createDefaultCategories();
+            saveData();
+        } else {
+            console.log("✅ Usando categorías existentes:", appData.categories.length);
+            ensureAllNomineesInCategories();
         }
         
-        function continuarCarga() {
-            // D. VERIFICAR CATEGORÍAS
-            if (appData.categories.length === 0) {
-                console.log("📋 Creando categorías por defecto...");
-                appData.categories = createDefaultCategories();
-                saveData();
-            } else {
-                console.log("✅ Usando categorías existentes:", appData.categories.length);
-                ensureAllNomineesInCategories();
-            }
-            
-            // E. ACTUALIZAR UI
-            updatePhaseBanner();
-            updateVotersList();
-            updateStats();
-            renderCategories();
-            
-            console.log("✅ Datos cargados correctamente");
-        }
-        
-    } catch (error) {
-        console.error("❌ Error crítico en loadAppData:", error);
-        // Recuperación: crear datos por defecto
-        appData.categories = createDefaultCategories();
-        appData.users = [];
-        appData.photoUrls = {};
+        // ACTUALIZAR UI
+        updatePhaseBanner();
+        updateVotersList();
+        updateStats();
         renderCategories();
+        
+        console.log("✅ Datos cargados correctamente");
+    }
+    
+    // INICIALIZAR SISTEMA DE FOTOS
+    console.log("📸 Cargando sistema de fotos...");
+    
+    if (typeof inicializarFotos === 'function') {
+        inicializarFotos().then(exito => {
+            if (exito) {
+                console.log("✅ Fotos cargadas correctamente");
+            }
+            continuarDespuesDeFotos();
+        }).catch(error => {
+            console.error("❌ Error cargando fotos:", error);
+            continuarDespuesDeFotos();
+        });
+    } else {
+        console.log("⚠️ Función inicializarFotos no disponible");
+        // Crear avatares básicos como fallback
+        const personas = ["Brais", "Amalia", "Carlita", "Daniel", "Guille", 
+                         "Iker", "Joel", "Jose", "Nico", "Ruchiti", "Sara", "Tiago", "Xabi"];
+        
+        personas.forEach(persona => {
+            if (!appData.photoUrls[persona]) {
+                const colores = ['667eea', '764ba2', 'f093fb', 'f5576c', '4facfe', '00f2fe'];
+                const color = colores[personas.indexOf(persona) % colores.length];
+                appData.photoUrls[persona] = `https://ui-avatars.com/api/?name=${persona}&background=${color}&color=fff&size=200`;
+            }
+        });
+        console.log("🎨 Avatares básicos creados");
+        continuarDespuesDeFotos();
     }
 }
 
