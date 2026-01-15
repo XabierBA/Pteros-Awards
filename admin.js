@@ -251,15 +251,12 @@ function updateSelectedPhoto() {
     }
     
     // Usar la nueva función del sistema de fotos
+    // En la función updateSelectedPhoto, usa:
     if (typeof actualizarFotoPersona === 'function') {
-        actualizarFotoPersona(persona, nuevaUrl).then(resultado => {
-            if (resultado) {
-                // Limpiar formulario
-                photoUrlInput.value = '';
-                
-                // Actualizar lista de fotos
-                cargarListaFotos();
-            }
+        actualizarFotoPersona(persona, nuevaUrl).then(() => {
+            alert(`✅ Foto de ${persona} actualizada`);
+            photoUrlInput.value = '';
+            cargarListaFotos();
         });
     } else if (typeof updatePersonPhoto === 'function') {
         // Fallback a la función antigua
@@ -271,6 +268,7 @@ function updateSelectedPhoto() {
         alert('❌ Error: No se encontró función para actualizar fotos');
     }
 }
+
 // Función para usar foto de GitHub
 function usarFotoGitHub() {
     const personSelect = document.getElementById('personSelect');
