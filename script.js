@@ -13,38 +13,20 @@ window.appData = appData;
 let currentCategoryId = null;
 let photoPreviewFile = null;
 
-// ===== CARGAR DATOS Y FOTOS =====
+// ===== CARGAR DATOS (SIN COMPLICACIONES) =====
 function loadAppData() {
     console.log("🔄 Cargando datos de la aplicación...");
     
-    // Asegurar estructuras básicas
-    if (!appData.photoUrls) appData.photoUrls = {};
-    if (!appData.categories) appData.categories = [];
-    if (!appData.users) appData.users = [];
-    
-    // Función para continuar después de cargar fotos
-    function continuarDespuesDeFotos() {
-        // CARGAR DATOS DE FIREBASE/LOCALSTORAGE
-        if (typeof loadDataFromFirebase === 'function') {
-            console.log("🔥 Intentando cargar de Firebase...");
-            loadDataFromFirebase().then(() => {
-                console.log("✅ Datos de Firebase cargados");
-                finalizarCarga();
-            }).catch((error) => {
-                console.log("📂 Firebase falló, usando localStorage:", error.message);
-                cargarDesdeLocalStorage();
-                finalizarCarga();
-            });
-        } else {
-            console.log("📱 Firebase no disponible, usando localStorage");
-            cargarDesdeLocalStorage();
-            finalizarCarga();
-        }
-    }
-    
-    // Función final
-    function finalizarCarga() {
-        // VERIFICAR CATEGORÍAS
+    try {
+        // A. INICIALIZAR ESTRUCTURAS
+        if (!appData.photoUrls) appData.photoUrls = {};
+        if (!appData.categories) appData.categories = [];
+        if (!appData.users) appData.users = [];
+        
+        // B. CARGAR DE LOCALSTORAGE (SIEMPRE PRIMERO)
+        cargarDesdeLocalStorage();
+        
+        // C. VERIFICAR CATEGORÍAS
         if (appData.categories.length === 0) {
             console.log("📋 Creando categorías por defecto...");
             appData.categories = createDefaultCategories();
@@ -54,81 +36,59 @@ function loadAppData() {
             ensureAllNomineesInCategories();
         }
         
-        // ACTUALIZAR UI
+        // D. INTENTAR FIREBASE (SOLO COMO EXTRA, NO ESENCIAL)
+        if (typeof loadDataFromFirebase === 'function') {
+            console.log("🔥 Intentando sincronizar con Firebase...");
+            // Esto es solo para sincronizar, no es crítico
+            loadDataFromFirebase().catch(() => {
+                console.log("ℹ️ Firebase no disponible, trabajando localmente");
+            });
+        }
+        
+        // E. ACTUALIZAR UI
         updatePhaseBanner();
         updateVotersList();
         updateStats();
         renderCategories();
         
         console.log("✅ Datos cargados correctamente");
-    }
-    
-    // INICIALIZAR SISTEMA DE FOTOS
-    console.log("📸 Cargando sistema de fotos...");
-    
-    if (typeof inicializarFotos === 'function') {
-        inicializarFotos().then(exito => {
-            if (exito) {
-                console.log("✅ Fotos cargadas correctamente");
-            }
-            continuarDespuesDeFotos();
-        }).catch(error => {
-            console.error("❌ Error cargando fotos:", error);
-            continuarDespuesDeFotos();
-        });
-    } else {
-        console.log("⚠️ Función inicializarFotos no disponible");
-        // Crear avatares básicos como fallback
-        const personas = ["Brais", "Amalia", "Carlita", "Daniel", "Guille", 
-                         "Iker", "Joel", "Jose", "Nico", "Ruchiti", "Sara", "Tiago", "Xabi"];
         
-        personas.forEach(persona => {
-            if (!appData.photoUrls[persona]) {
-                const colores = ['667eea', '764ba2', 'f093fb', 'f5576c', '4facfe', '00f2fe'];
-                const color = colores[personas.indexOf(persona) % colores.length];
-                appData.photoUrls[persona] = `https://ui-avatars.com/api/?name=${persona}&background=${color}&color=fff&size=200`;
-            }
-        });
-        console.log("🎨 Avatares básicos creados");
-        continuarDespuesDeFotos();
+    } catch (error) {
+        console.error("❌ Error en loadAppData:", error);
+        // Si todo falla, crear datos básicos
+        appData.categories = createDefaultCategories();
+        renderCategories();
     }
 }
 
 // Función auxiliar para cargar desde localStorage
 function cargarDesdeLocalStorage() {
-    const savedData = localStorage.getItem('premiosData');
-    const savedUsers = localStorage.getItem('premiosUsers');
-    const savedPhotos = localStorage.getItem('premiosPhotos');
-    
-    if (savedData) {
-        try {
+    try {
+        const savedData = localStorage.getItem('premiosData');
+        const savedUsers = localStorage.getItem('premiosUsers');
+        const savedPhotos = localStorage.getItem('premiosPhotos');
+        
+        if (savedData) {
             const parsed = JSON.parse(savedData);
             appData.categories = parsed.categories || [];
             appData.phase = parsed.phase || 'nominations';
-            // Combinar photoUrls
-            if (parsed.photoUrls) {
-                appData.photoUrls = { ...appData.photoUrls, ...parsed.photoUrls };
-            }
-        } catch (e) {
-            console.error("Error parseando premiosData:", e);
+            appData.photoUrls = parsed.photoUrls || {};
         }
-    }
-    
-    if (savedUsers) {
-        try {
+        
+        if (savedUsers) {
             appData.users = JSON.parse(savedUsers);
-        } catch (e) {
-            console.error("Error parseando premiosUsers:", e);
         }
-    }
-    
-    if (savedPhotos) {
-        try {
+        
+        if (savedPhotos) {
+            // Combinar fotos
             const parsedPhotos = JSON.parse(savedPhotos);
             appData.photoUrls = { ...appData.photoUrls, ...parsedPhotos };
-        } catch (e) {
-            console.error("Error parseando premiosPhotos:", e);
         }
+        
+        console.log("📂 Datos cargados de localStorage");
+        
+    } catch (error) {
+        console.error("Error cargando localStorage:", error);
     }
 }
 
