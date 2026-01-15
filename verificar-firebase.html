@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Verificar Firebase</title>
+</head>
+<body>
+    <h1>Verificación de Firebase</h1>
+    <button onclick="verificar()">Verificar Conexión</button>
+    <div id="resultado"></div>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+        import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js";
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyAX4_3sB1AsGt08kJlKRxBGfedgO_efW8I",
+            authDomain: "pteros-aword.firebaseapp.com",
+            databaseURL: "https://pteros-aword-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "pteros-aword",
+            storageBucket: "pteros-aword.firebasestorage.app",
+            messagingSenderId: "78301948392",
+            appId: "1:78301948392:web:fd5cfbf78595a2ffea5c5d",
+            measurementId: "G-T5QGP962VZ"
+        };
+
+        async function verificar() {
+            const resultado = document.getElementById('resultado');
+            
+            try {
+                // 1. Inicializar
+                const app = initializeApp(firebaseConfig);
+                const db = getDatabase(app);
+                
+                resultado.innerHTML += "<p>✅ Firebase inicializado</p>";
+                
+                // 2. Probar escritura
+                const testRef = ref(db, 'test/conexion');
+                await set(testRef, {
+                    timestamp: new Date().toISOString(),
+                    mensaje: "Conexión exitosa"
+                });
+                
+                resultado.innerHTML += "<p>✅ Escritura exitosa</p>";
+                
+                // 3. Probar lectura
+                const snapshot = await get(testRef);
+                if (snapshot.exists()) {
+                    resultado.innerHTML += "<p>✅ Lectura exitosa</p>";
+                    resultado.innerHTML += `<p>Datos: ${JSON.stringify(snapshot.val())}</p>`;
+                }
+                
+                // 4. Verificar fotos existentes
+                const photosRef = ref(db, 'photos');
+                const photosSnapshot = await get(photosRef);
+                
+                if (photosSnapshot.exists()) {
+                    const fotos = photosSnapshot.val();
+                    resultado.innerHTML += `<p>✅ ${Object.keys(fotos).length} fotos encontradas en Firebase:</p>`;
+                    resultado.innerHTML += `<ul>${Object.keys(fotos).map(p => `<li>${p}: ${fotos[p].substring(0,50)}...</li>`).join('')}</ul>`;
+                } else {
+                    resultado.innerHTML += "<p>ℹ️ No hay fotos guardadas aún en Firebase</p>";
+                }
+                
+            } catch (error) {
+                resultado.innerHTML += `<p style="color:red">❌ Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

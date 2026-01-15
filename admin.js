@@ -250,15 +250,13 @@ function updateSelectedPhoto() {
     }
     
     // Usar la nueva función del sistema de fotos
+    // En la función updateSelectedPhoto, cambia la llamada:
     if (typeof actualizarFotoPersona === 'function') {
         const resultado = actualizarFotoPersona(persona, nuevaUrl);
         if (resultado) {
-            alert(`✅ Foto de ${persona} actualizada correctamente`);
-            
-            // Limpiar formulario
+            // Esta función ahora guarda en Firebase automáticamente
+            alert(`✅ Foto de ${persona} guardada en la nube`);
             photoUrlInput.value = '';
-            
-            // Actualizar lista de fotos
             cargarListaFotos();
         }
     } else if (typeof updatePersonPhoto === 'function') {

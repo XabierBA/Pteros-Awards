@@ -1,92 +1,11 @@
-// fotos-simple.js - Sistema de fotos SIMPLE Y FUNCIONAL
-
-console.log("📸 Módulo de fotos cargado (esperando inicialización)...");
-
-// LISTA DE PERSONAS DEL GRUPO PTEROS
-const PTEROS_PERSONAS = [
-    "Brais", "Amalia", "Carlita", "Daniel", "Guille", 
-    "Iker", "Joel", "Jose", "Nico", "Ruchiti", 
-    "Sara", "Tiago", "Xabi"
-];
-
-// FUNCIÓN PARA GENERAR AVATAR AUTOMÁTICO
-function generarAvatar(nombre) {
-    if (!nombre) nombre = "Usuario";
-    
-    // Colores bonitos para avatares
-    const colores = ['FF6B6B', '4ECDC4', '45B7D1', '96CEB4', 'FFEAA7', 'DDA0DD', '98D8C8'];
-    
-    // Generar color basado en el nombre (siempre el mismo para cada persona)
-    let hash = 0;
-    for (let i = 0; i < nombre.length; i++) {
-        hash = nombre.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const colorIndex = Math.abs(hash) % colores.length;
-    const color = colores[colorIndex];
-    
-    // Usar UI Avatars (servicio gratuito y confiable)
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(nombre)}&background=${color}&color=fff&size=200&bold=true`;
-}
-
-// FUNCIÓN PRINCIPAL PARA OBTENER FOTO DE UNA PERSONA
-function obtenerFotoPersona(nombre) {
-    if (!nombre) return generarAvatar("Usuario");
-    
-    const nombreLimpio = nombre.trim();
-    
-    // Buscar foto en appData si existe
-    if (window.appData && window.appData.photoUrls && window.appData.photoUrls[nombreLimpio]) {
-        const foto = window.appData.photoUrls[nombreLimpio];
-        // Verificar que la foto no sea un placeholder vacío
-        if (foto && foto !== '' && !foto.includes('undefined')) {
-            return foto;
-        }
-    }
-    
-    // Si no hay foto, generar avatar
-    return generarAvatar(nombreLimpio);
-}
-
-// FUNCIÓN PARA INICIALIZAR FOTOS (llamar desde script.js)
-function inicializarFotos() {
-    console.log("🔄 Inicializando sistema de fotos...");
-    
-    // Verificar que appData existe
-    if (!window.appData) {
-        console.error("❌ appData no está disponible");
-        return false;
-    }
-    
-    // Crear photoUrls si no existe
-    if (!window.appData.photoUrls) {
-        window.appData.photoUrls = {};
-        console.log("📁 Creada estructura photoUrls");
-    }
-    
-    // Crear avatares para todas las personas si no tienen foto
-    let avataresCreados = 0;
-    PTEROS_PERSONAS.forEach(persona => {
-        if (!window.appData.photoUrls[persona] || 
-            window.appData.photoUrls[persona] === '' ||
-            window.appData.photoUrls[persona].includes('undefined')) {
-            
-            window.appData.photoUrls[persona] = generarAvatar(persona);
-            avataresCreados++;
-        }
-    });
-    
-    console.log(`✅ Sistema de fotos inicializado (${avataresCreados} avatares creados)`);
-    return true;
-}
-
-// FUNCIÓN PARA ACTUALIZAR FOTO (usar desde panel admin)
+// En la función actualizarFotoPersona, reemplaza todo por:
 function actualizarFotoPersona(persona, nuevaUrl) {
     if (!persona || !nuevaUrl) {
         alert("❌ Faltan datos: necesita persona y URL");
         return false;
     }
     
-    console.log(`📸 Actualizando foto de ${persona}...`);
+    console.log(`📸 Actualizando foto de ${persona} en Firebase...`);
     
     // Validar URL básica
     if (!nuevaUrl.startsWith('http')) {
@@ -98,10 +17,10 @@ function actualizarFotoPersona(persona, nuevaUrl) {
     if (!window.appData) window.appData = {};
     if (!window.appData.photoUrls) window.appData.photoUrls = {};
     
-    // Actualizar la foto
+    // 1. ACTUALIZAR LOCALMENTE
     window.appData.photoUrls[persona] = nuevaUrl;
     
-    // Actualizar en todas las categorías
+    // 2. ACTUALIZAR EN CATEGORÍAS
     if (window.appData.categories && Array.isArray(window.appData.categories)) {
         window.appData.categories.forEach(categoria => {
             if (categoria.nominees && Array.isArray(categoria.nominees)) {
@@ -114,29 +33,125 @@ function actualizarFotoPersona(persona, nuevaUrl) {
         });
     }
     
-    console.log(`✅ Foto de ${persona} actualizada`);
+    console.log(`✅ Foto de ${persona} actualizada localmente`);
     
-    // Guardar datos si las funciones existen
-    if (typeof saveData === 'function') {
-        saveData();
-    }
+    // 3. GUARDAR EN FIREBASE (¡IMPORTANTE!)
+    guardarFotoEnFirebase(persona, nuevaUrl);
+    
+    // 4. GUARDAR EN LOCALSTORAGE (backup)
     if (typeof savePhotos === 'function') {
         savePhotos();
     }
     
-    // Actualizar UI
+    // 5. ACTUALIZAR UI
     if (typeof renderCategories === 'function') {
         setTimeout(() => renderCategories(), 300);
     }
     
-    alert(`✅ Foto de ${persona} actualizada correctamente`);
+    alert(`✅ Foto de ${persona} actualizada y guardada en la nube`);
     return true;
 }
 
-// EXPORTAR FUNCIONES AL ÁMBITO GLOBAL
-window.obtenerFotoPersona = obtenerFotoPersona;
-window.actualizarFotoPersona = actualizarFotoPersona;
-window.inicializarFotos = inicializarFotos;
-window.generarAvatar = generarAvatar;
+// NUEVA FUNCIÓN: Guardar foto en Firebase
+async function guardarFotoEnFirebase(persona, url) {
+    try {
+        // Verificar que Firebase está disponible
+        if (!window.firebaseDatabase) {
+            console.log("⚠️ Firebase no disponible, guardando solo localmente");
+            return false;
+        }
+        
+        console.log(`💾 Guardando foto de ${persona} en Firebase...`);
+        
+        const { getDatabase, ref, set } = await import('https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js');
+        const db = getDatabase();
+        
+        // Guardar en la ruta: photos/[persona]
+        const photoRef = ref(db, `photos/${persona}`);
+        await set(photoRef, url);
+        
+        console.log(`✅ Foto de ${persona} guardada en Firebase`);
+        return true;
+        
+    } catch (error) {
+        console.error("❌ Error guardando en Firebase:", error);
+        return false;
+    }
+}
 
-console.log("✅ Funciones de fotos exportadas correctamente");
+// NUEVA FUNCIÓN: Cargar todas las fotos desde Firebase
+async function cargarFotosDeFirebase() {
+    try {
+        if (!window.firebaseDatabase) {
+            console.log("⚠️ Firebase no disponible para cargar fotos");
+            return false;
+        }
+        
+        console.log("📥 Cargando fotos desde Firebase...");
+        
+        const { getDatabase, ref, get } = await import('https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js');
+        const db = getDatabase();
+        
+        const photosRef = ref(db, 'photos');
+        const snapshot = await get(photosRef);
+        
+        if (snapshot.exists()) {
+            const fotosFirebase = snapshot.val();
+            
+            // Asegurar que appData existe
+            if (!window.appData) window.appData = {};
+            if (!window.appData.photoUrls) window.appData.photoUrls = {};
+            
+            // Combinar fotos (Firebase tiene prioridad)
+            window.appData.photoUrls = { ...window.appData.photoUrls, ...fotosFirebase };
+            
+            console.log(`✅ ${Object.keys(fotosFirebase).length} fotos cargadas desde Firebase`);
+            return true;
+        } else {
+            console.log("ℹ️ No hay fotos en Firebase aún");
+            return false;
+        }
+        
+    } catch (error) {
+        console.error("❌ Error cargando fotos de Firebase:", error);
+        return false;
+    }
+}
+
+// Modificar la función inicializarFotos para cargar de Firebase
+async function inicializarFotos() {
+    console.log("🔄 Inicializando sistema de fotos...");
+    
+    // Asegurar que appData existe
+    if (!window.appData) {
+        console.error("❌ appData no está disponible");
+        return false;
+    }
+    
+    // Crear photoUrls si no existe
+    if (!window.appData.photoUrls) {
+        window.appData.photoUrls = {};
+        console.log("📁 Creada estructura photoUrls");
+    }
+    
+    // 1. INTENTAR CARGAR DE FIREBASE PRIMERO
+    const cargadoDeFirebase = await cargarFotosDeFirebase();
+    
+    // 2. CREAR AVATARES PARA LOS QUE NO TENGAN FOTO
+    let avataresCreados = 0;
+    PTEROS_PERSONAS.forEach(persona => {
+        if (!window.appData.photoUrls[persona] || 
+            window.appData.photoUrls[persona] === '' ||
+            window.appData.photoUrls[persona].includes('undefined')) {
+            
+            window.appData.photoUrls[persona] = generarAvatar(persona);
+            avataresCreados++;
+        }
+    });
+    
+    console.log(`✅ Sistema de fotos inicializado`);
+    console.log(`   - Fotos de Firebase: ${cargadoDeFirebase ? 'Sí' : 'No'}`);
+    console.log(`   - Avatares creados: ${avataresCreados}`);
+    
+    return true;
+}

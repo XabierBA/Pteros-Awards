@@ -23,24 +23,45 @@ function loadAppData() {
         if (!appData.categories) appData.categories = [];
         if (!appData.users) appData.users = [];
         
-        // B. INICIALIZAR SISTEMA DE FOTOS
-        console.log("📸 Inicializando sistema de fotos...");
-        
+        // B. INICIALIZAR SISTEMA DE FOTOS (ASINCRONO)
+        console.log("📸 Cargando sistema de fotos...");
+
         if (typeof inicializarFotos === 'function') {
-            inicializarFotos();
-        } else {
-            // Fallback: crear avatares básicos
-            console.log("⚠️ inicializarFotos no disponible, creando avatares básicos");
-            const personas = ["Brais", "Amalia", "Carlita", "Daniel", "Guille", 
-                             "Iker", "Joel", "Jose", "Nico", "Ruchiti", "Sara", "Tiago", "Xabi"];
-            
-            personas.forEach(persona => {
-                if (!appData.photoUrls[persona]) {
-                    const colores = ['667eea', '764ba2', 'f093fb', 'f5576c', '4facfe', '00f2fe'];
-                    const color = colores[personas.indexOf(persona) % colores.length];
-                    appData.photoUrls[persona] = `https://ui-avatars.com/api/?name=${persona}&background=${color}&color=fff&size=200`;
+            // Usar Promise para manejar la carga asíncrona
+            inicializarFotos().then(exito => {
+                if (exito) {
+                    console.log("✅ Fotos cargadas correctamente");
+                } else {
+                    console.log("⚠️ Fotos cargadas con fallback");
                 }
+                continuarConElResto();
+            }).catch(error => {
+                console.error("❌ Error cargando fotos:", error);
+                continuarConElResto();
             });
+        } else {
+            console.log("⚠️ Función inicializarFotos no disponible");
+            continuarConElResto();
+        }
+
+        function continuarConElResto() {
+            // El resto de tu código de carga...
+            // C. CARGAR DATOS DE FIREBASE/LOCALSTORAGE
+            if (typeof loadDataFromFirebase === 'function') {
+                console.log("🔥 Intentando cargar de Firebase...");
+                loadDataFromFirebase().then(() => {
+                    console.log("✅ Datos de Firebase cargados");
+                    finalizarCarga();
+                }).catch((error) => {
+                    console.log("📂 Firebase falló, usando localStorage:", error.message);
+                    cargarDesdeLocalStorage();
+                    finalizarCarga();
+                });
+            } else {
+                console.log("📱 Firebase no disponible, usando localStorage");
+                cargarDesdeLocalStorage();
+                finalizarCarga();
+            }
         }
         
         // C. CARGAR DATOS DE FIREBASE/LOCALSTORAGE
