@@ -407,7 +407,7 @@ function renderCategories() {
         const totalVotes = nominees.reduce((sum, n) => sum + (n.votes || 0), 0);
         const userVote = appData.currentUser ? (appData.currentUser.votes || {})[category.id] : null;
         
-        // ORDENAR POR VOTOS PERO NO MOSTRAR LOS NÚMEROS
+        // MOSTRAR TOP 3 CON VOTOS (como antes)
         const top3 = nominees
             .filter(n => n)
             .sort((a, b) => (b.votes || 0) - (a.votes || 0))
@@ -420,12 +420,12 @@ function renderCategories() {
         card.innerHTML = `
             <h3>${category.name || 'Sin nombre'}</h3>
             <p class="category-description">${category.description || ''}</p>
-            <div class="vote-count">${totalVotes} votos totales</div>
+            <div class="vote-count">${totalVotes} votos</div>
             <div class="nominees-preview">
                 ${top3.map(n => `
                     <div class="nominee-tag">
                         ${getNomineePhotoHTML(n)}
-                        ${n.name || 'Sin nombre'}
+                        ${n.name || 'Sin nombre'} (${n.votes || 0})
                     </div>
                 `).join('')}
             </div>
@@ -470,7 +470,7 @@ function openVoteModal(categoryId) {
     const userVote = userVotes[categoryId];
     
     const nominees = category.nominees || [];
-    // Ordenar alfabéticamente, no por votos
+    // Ordenar alfabéticamente para NO mostrar quién va ganando
     const sortedNominees = [...nominees]
         .filter(n => n)
         .sort((a, b) => a.name.localeCompare(b.name));
@@ -485,7 +485,7 @@ function openVoteModal(categoryId) {
         nomineeItem.className = `nominee-item ${isVoted ? 'voted' : ''}`;
         nomineeItem.onclick = () => voteForNominee(nominee.name);
         
-        // Contenido básico del nominado - SIN MOSTRAR VOTOS
+        // CONTENIDO MODIFICADO: OCULTAR VOTOS INDIVIDUALES
         nomineeItem.innerHTML = `
             ${photoUrl ? 
                 `<img src="${photoUrl}" class="nominee-photo" alt="${nominee.name}" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';">` : 
@@ -497,11 +497,13 @@ function openVoteModal(categoryId) {
                 </div>
             ` : ''}
             <h4 class="nominee-name">${nominee.name}</h4>
-            ${hasVoted ? '<div class="voted-check">⭐ Tú ya votaste aquí</div>' : ''}
+            <!-- VOTOS OCULTOS: <div class="vote-count-small">${nominee.votes || 0} votos</div> -->
+            <!-- VOTANTES OCULTOS: <div class="voters-count">${voters.length} persona${voters.length !== 1 ? 's' : ''}</div> -->
+            ${hasVoted ? '<div class="voted-check">⭐ Tú votaste aquí</div>' : ''}
             ${isVoted ? '<div class="voted-check">✅ Tu voto actual</div>' : ''}
         `;
         
-        // AÑADIR FRASES EXISTENTES
+        // AÑADIR FRASES EXISTENTES (solo para Frase del Año)
         if (category.id === 17 && nominee.frases && Object.keys(nominee.frases).length > 0) {
             const frasesDiv = document.createElement('div');
             frasesDiv.className = 'existing-frases';

@@ -1499,3 +1499,36 @@ footer {
     font-size: 0.9rem !important;
     opacity: 0.8 !important;
 }
+/* ===== ESTILOS PARA OCULTAR VOTOS EN MODAL DE VOTACIÓN ===== */
+
+/* Ocultar contadores de votos individuales en el modal */
+.modal .vote-count-small,
+.modal .voters-count {
+    display: none !important;
+}
+
+/* Estilo para los nombres en el modal (sin números) */
+.modal .nominee-name {
+    margin: 15px 0 10px !important;
+}
+
+/* Ajustar espaciado en modal sin números */
+.modal .nominee-item {
+    padding-bottom: 15px !important;
+    min-height: 220px !important;
+}
+
+/* Mantener visibles los votos en las tarjetas principales */
+.category-card .nominee-tag::after {
+    content: " (" attr(data-votes) ")" !important;
+}
+
+.category-card .nominee-tag {
+    position: relative;
+}
+
+.category-card .nominee-tag[data-votes]::after {
+    content: " (" attr(data-votes) ")" !important;
+    font-size: 0.8em;
+    opacity: 0.8;
+}
