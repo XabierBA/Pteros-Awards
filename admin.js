@@ -83,7 +83,7 @@ function checkAdminPassword() {
         
     } else {
         // Contraseña incorrecta
-        errorElement.textContent = '❌ Contraseña incorrecta.';
+        errorElement.textContent = '❌ Contraseña incorrecta. Prueba con irte a la mierda y fuchicar en lo q te toca';
         errorElement.style.color = '#ff4757';
         
         // Animación de shake
