@@ -13,7 +13,7 @@ window.appData = appData;
 let currentCategoryId = null;
 let photoPreviewFile = null;
 
-// ===== CARGAR DATOS (SIN COMPLICACIONES) =====
+// ===== CARGAR DATOS Y FOTOS =====
 function loadAppData() {
     console.log("🔄 Cargando datos de la aplicación...");
     
@@ -23,40 +23,82 @@ function loadAppData() {
         if (!appData.categories) appData.categories = [];
         if (!appData.users) appData.users = [];
         
-        // B. CARGAR DE LOCALSTORAGE (SIEMPRE PRIMERO)
-        cargarDesdeLocalStorage();
+        // B. INICIALIZAR SISTEMA DE FOTOS
+        console.log("📸 Inicializando sistema de fotos...");
         
-        // C. VERIFICAR CATEGORÍAS
-        if (appData.categories.length === 0) {
-            console.log("📋 Creando categorías por defecto...");
-            appData.categories = createDefaultCategories();
-            saveData();
-        } else {
-            console.log("✅ Usando categorías existentes:", appData.categories.length);
-            ensureAllNomineesInCategories();
-        }
-        
-        // D. INTENTAR FIREBASE (SOLO COMO EXTRA, NO ESENCIAL)
-        if (typeof loadDataFromFirebase === 'function') {
-            console.log("🔥 Intentando sincronizar con Firebase...");
-            // Esto es solo para sincronizar, no es crítico
-            loadDataFromFirebase().catch(() => {
-                console.log("ℹ️ Firebase no disponible, trabajando localmente");
+        if (typeof inicializarFotos === 'function') {
+            inicializarFotos().then(exito => {
+                if (exito) {
+                    console.log("✅ Fotos cargadas correctamente");
+                }
+                continuarDespuesDeFotos();
+            }).catch(error => {
+                console.error("❌ Error cargando fotos:", error);
+                continuarDespuesDeFotos();
             });
+        } else {
+            console.log("⚠️ Función inicializarFotos no disponible");
+            continuarDespuesDeFotos();
         }
         
-        // E. ACTUALIZAR UI
-        updatePhaseBanner();
-        updateVotersList();
-        updateStats();
-        renderCategories();
-        
-        console.log("✅ Datos cargados correctamente");
+        // ========== AQUÍ MODIFICAS - FORZAR CARGA FIREBASE ==========
+        function continuarDespuesDeFotos() {
+            // C. PRIMERO LOCALSTORAGE (rápido)
+            cargarDesdeLocalStorage();
+            console.log("📂 Datos básicos cargados de localStorage");
+            
+            // D. VERIFICAR CATEGORÍAS
+            if (appData.categories.length === 0) {
+                console.log("📋 Creando categorías por defecto...");
+                appData.categories = createDefaultCategories();
+                saveData(); // Guardar inmediatamente
+            } else {
+                console.log("✅ Usando categorías existentes:", appData.categories.length);
+                ensureAllNomineesInCategories();
+            }
+            
+            // E. ACTUALIZAR UI CON LO QUE TENEMOS
+            updatePhaseBanner();
+            updateVotersList();
+            updateStats();
+            renderCategories();
+            
+            console.log("✅ UI actualizada con datos locales");
+            
+            // F. LUEGO FIREBASE EN SEGUNDO PLANO (sincronización)
+            if (typeof loadDataFromFirebase === 'function') {
+                console.log("🔥 Sincronizando con Firebase en segundo plano...");
+                
+                // No bloquear la UI - cargar en segundo plano
+                setTimeout(() => {
+                    loadDataFromFirebase().then(exito => {
+                        if (exito) {
+                            console.log("✅ Sincronización Firebase completada");
+                            // Actualizar UI con nuevos datos si hay cambios
+                            updatePhaseBanner();
+                            updateVotersList();
+                            updateStats();
+                            renderCategories();
+                            console.log("🔄 UI actualizada con datos de Firebase");
+                        }
+                    }).catch(error => {
+                        console.log("⚠️ Firebase no disponible, trabajando localmente:", error.message);
+                    });
+                }, 1000); // Esperar 1 segundo para no sobrecargar
+            } else {
+                console.log("📱 Firebase no disponible en este navegador");
+            }
+            
+            console.log("✅ Datos cargados correctamente");
+        }
+        // ========== FIN DE LA MODIFICACIÓN ==========
         
     } catch (error) {
-        console.error("❌ Error en loadAppData:", error);
-        // Si todo falla, crear datos básicos
+        console.error("❌ Error crítico en loadAppData:", error);
+        // Recuperación: crear datos por defecto
         appData.categories = createDefaultCategories();
+        appData.users = [];
+        appData.photoUrls = {};
         renderCategories();
     }
 }

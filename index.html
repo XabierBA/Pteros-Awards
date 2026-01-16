@@ -119,11 +119,23 @@
             </div>
 
             <div class="admin-section">
-                <h3>Gestionar Categorías</h3>
-                <div class="add-category">
-                    <input type="text" id="newCategory" placeholder="Nueva categoría divertida...">
-                    <button onclick="addCategory()" class="btn-add">
-                        <i class="fas fa-plus"></i> Añadir Categoría
+                <h3>Resultados y Datos</h3>
+                <div class="admin-buttons">
+                    <button onclick="showResults()" class="btn-results">
+                        <i class="fas fa-chart-bar"></i> Ver Resultados
+                    </button>
+                    <button onclick="exportData()" class="btn-export">
+                        <i class="fas fa-download"></i> Exportar Datos
+                    </button>
+                    <button onclick="importData()" class="btn-import">
+                        <i class="fas fa-upload"></i> Importar Datos
+                    </button>
+                    <button onclick="resetVotes()" class="btn-reset">
+                        <i class="fas fa-redo"></i> Reiniciar Votos
+                    </button>
+                    <button onclick="diagnosticarFirebase()" class="btn-diagnostic" 
+                            style="background: linear-gradient(90deg, #FF6B6B, #FF8E53);">
+                        <i class="fas fa-bug"></i> Diagnosticar Firebase
                     </button>
                 </div>
             </div>
