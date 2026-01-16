@@ -66,7 +66,7 @@ function checkAdminPassword() {
     }
     
     if (inputPassword === ADMIN_PASSWORD) {
-        // Contraseña correcta
+        // Contraseña correcta (código existente)
         errorElement.textContent = '✅ Acceso concedido...';
         errorElement.style.color = '#4CAF50';
         
@@ -82,8 +82,8 @@ function checkAdminPassword() {
         }, 500);
         
     } else {
-        // Contraseña incorrecta
-        errorElement.textContent = '❌ Contraseña incorrecta. Prueba con irte a la mierda y fuchicar en lo q te toca';
+        // CONTRASEÑA INCORRECTA - AÑADIR RICKROLL AQUÍ
+        errorElement.textContent = '❌ Contraseña incorrecta. Preparando sorpresa...';
         errorElement.style.color = '#ff4757';
         
         // Animación de shake
@@ -91,6 +91,14 @@ function checkAdminPassword() {
         setTimeout(() => {
             passwordInput.classList.remove('shake');
         }, 500);
+        
+        // RICKROLL - Abrir en nueva pestaña después de 1 segundo
+        setTimeout(() => {
+            window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ', '_blank');
+            
+            // Mensaje divertido (opcional)
+            errorElement.textContent = '❌ ¡Contraseña incorrecta! Disfruta del Rickroll 🎵';
+        }, 1000);
     }
 }
 
