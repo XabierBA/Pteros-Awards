@@ -140,8 +140,20 @@ function createDefaultCategories() {
     return [
         {
             id: 1,
-            name: "👑 Más Putero/Putera",
-            description: "El/la que más sale de fiesta y se lo curra en el ocio",
+            name: "👑 Más Putero",
+            description: "Puterismo de manual",
+            nominees: people.map(person => ({
+                name: person,
+                votes: 0,
+                voters: [],
+                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null,
+                frases: {} // Nuevo: para guardar frases
+            }))
+        },
+        {
+            id: 1,
+            name: "👑 Más Putera",
+            description: "No me seais cabrones que nos conocemos",
             nominees: people.map(person => ({
                 name: person,
                 votes: 0,
@@ -153,7 +165,7 @@ function createDefaultCategories() {
         {
             id: 2,
             name: "🍻 Peor Borrachera",
-            description: "Quien haya tenido la noche más épica (o desastrosa)",
+            description: "La locura en persona cuando va borracha",
             nominees: people.map(person => ({
                 name: person,
                 votes: 0,
@@ -165,7 +177,7 @@ function createDefaultCategories() {
         {
             id: 3,
             name: "⏰ Más Impuntual",
-            description: "El/la que siempre llega tarde, sin excepción",
+            description: "Mmm, me cago en su puta estampa",
             nominees: people.map(person => ({
                 name: person,
                 votes: 0,
@@ -177,7 +189,7 @@ function createDefaultCategories() {
         {
             id: 4,
             name: "😂 Más Gracioso/a",
-            description: "El/la que siempre te saca una sonrisa (o carcajada)",
+            description: "La vd es q dais pena todos",
             nominees: people.map(person => ({
                 name: person,
                 votes: 0,
@@ -189,7 +201,7 @@ function createDefaultCategories() {
         {
             id: 5,
             name: "👯‍♂️ Mejor Dúo",
-            description: "La pareja más icónica del grupo",
+            description: "El duo dinámico, creo q sabemos quienes son (si votais a alguien añadid a su duo como frase)",
             nominees: people.map(person => ({
                 name: person,
                 votes: 0,
@@ -201,7 +213,7 @@ function createDefaultCategories() {
         {
             id: 6,
             name: "🎉 Mejor Evento del Año",
-            description: "La mejor fiesta/salida/organización del año",
+            description: "Esto votad persona y el evento q organizó (como frase)",
             nominees: people.map(person => ({
                 name: person,
                 votes: 0,
@@ -236,7 +248,7 @@ function createDefaultCategories() {
         },
         {
             id: 9,
-            name: "👀 El/Lam que más mira por el grupo",
+            name: "👀 El/La que más mira por el grupo",
             description: "Quien más se preocupa por todos",
             nominees: people.map(person => ({
                 name: person,
@@ -260,7 +272,7 @@ function createDefaultCategories() {
         },
         {
             id: 11,
-            name: "🎭 El/Lam Dramas",
+            name: "🎭 El/La que más dramas monta",
             description: "Quien monta más drama por todo",
             nominees: people.map(person => ({
                 name: person,
@@ -272,7 +284,7 @@ function createDefaultCategories() {
         },
         {
             id: 12,
-            name: "🏃‍♂️ El/Lam que más deja tirado al grupo",
+            name: "🏃‍♂️ El/La que más deja tirado al grupo",
             description: "Quien más falla o desaparece",
             nominees: people.map(person => ({
                 name: person,
@@ -284,7 +296,7 @@ function createDefaultCategories() {
         },
         {
             id: 13,
-            name: "💀 El/Lam que suelta más bastadas",
+            name: "💀 El/La que suelta más bastadas",
             description: "Quien dice las cosas más brutales sin filtro",
             nominees: people.map(person => ({
                 name: person,
@@ -344,20 +356,8 @@ function createDefaultCategories() {
         },
         {
             id: 18,
-            name: "🏆 Balón de Oro Puteros Awards 2025",
+            name: "🏆 Balón de Oro Puteros Awards 2026",
             description: "El MVP absoluto del grupo",
-            nominees: people.map(person => ({
-                name: person,
-                votes: 0,
-                voters: [],
-                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null,
-                frases: {}
-            }))
-        },
-        {
-            id: 19,
-            name: "🎤 El Cantante",
-            description: "Quien más canta (bien o mal, eso da igual)",
             nominees: people.map(person => ({
                 name: person,
                 votes: 0,
@@ -369,7 +369,19 @@ function createDefaultCategories() {
         {
             id: 20,
             name: "🔒 El Correas",
-            description: "Quien más controla o ata corto",
+            description: "Quien más está atado corto",
+            nominees: people.map(person => ({
+                name: person,
+                votes: 0,
+                voters: [],
+                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null,
+                frases: {}
+            }))
+        },
+        {
+            id: 20,
+            name: "🔒 El que pone las correas",
+            description: "Quien más controla",
             nominees: people.map(person => ({
                 name: person,
                 votes: 0,
@@ -440,7 +452,7 @@ function createDefaultCategories() {
         },
         {
             id: 26,
-            name: "📉 El/Lam más Putilla Académicamente",
+            name: "📉 El/La más Putilla Académicamente",
             description: "El peor compañero para estudiar/trabajar",
             nominees: people.map(person => ({
                 name: person,
