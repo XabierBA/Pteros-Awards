@@ -1,5 +1,5 @@
 // ===== CONTRASEÑA DE ADMIN =====
-const ADMIN_PASSWORD = "qwerty123456";
+const ADMIN_PASSWORD = "qawsedrfty123456";
 
 // ===== FUNCIÓN PRINCIPAL PARA ABRIR PANEL =====
 function openAdminPanel() {
@@ -83,7 +83,7 @@ function checkAdminPassword() {
         
     } else {
         // Contraseña incorrecta
-        errorElement.textContent = '❌ Contraseña incorrecta. Prueba con: qwerty123456';
+        errorElement.textContent = '❌ Contraseña incorrecta.';
         errorElement.style.color = '#ff4757';
         
         // Animación de shake
