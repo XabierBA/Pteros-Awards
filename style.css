@@ -1449,3 +1449,53 @@ footer {
     margin-left: 5px;
     font-weight: bold;
 }
+/* ===== ESTILOS PARA OCULTAR VOTOS ===== */
+.vote-count-small {
+    display: none !important;
+}
+
+.voters-count {
+    display: none !important;
+}
+
+.nominee-tag {
+    /* Quitar el número de votos del preview */
+    padding: 8px 15px !important;
+}
+
+.nominee-tag::after {
+    /* No mostrar "(X)" después del nombre */
+    content: "" !important;
+}
+
+/* En los resultados, ocultar números de votos */
+.podium-stats {
+    display: none !important;
+}
+
+/* En el modal de votación, ocultar contadores */
+.vote-counter {
+    display: none !important;
+}
+
+/* Ajustar estilos para que se vea bien sin números */
+.category-card .nominees-preview .nominee-tag {
+    min-width: 80px;
+    justify-content: center;
+}
+
+/* Ocultar "X votos" en las tarjetas de categoría */
+.vote-count {
+    /* Cambiar texto para que sea más genérico */
+    font-size: 0.9rem !important;
+    padding: 5px 10px !important;
+    background: linear-gradient(45deg, rgba(255, 215, 0, 0.2), rgba(212, 175, 55, 0.2)) !important;
+    color: var(--gold) !important;
+    border: 1px solid rgba(255, 215, 0, 0.3) !important;
+}
+
+/* En el modal de resultados, ajustar texto */
+.results-total {
+    font-size: 0.9rem !important;
+    opacity: 0.8 !important;
+}

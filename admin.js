@@ -66,7 +66,7 @@ function checkAdminPassword() {
     }
     
     if (inputPassword === ADMIN_PASSWORD) {
-        // Contraseña correcta (código existente)
+        // Contraseña correcta
         errorElement.textContent = '✅ Acceso concedido...';
         errorElement.style.color = '#4CAF50';
         
@@ -384,27 +384,28 @@ function showResults() {
         
         let podiumHTML = '';
         if (winner) {
+            // MODIFICADO: NO MOSTRAR NÚMERO DE VOTOS
             podiumHTML = `
                 <div style="display: flex; justify-content: center; gap: 20px; margin: 15px 0; flex-wrap: wrap;">
                     ${second ? `
                         <div style="text-align: center; flex: 1; min-width: 100px;">
                             <div style="font-size: 2rem;">🥈</div>
                             <div style="font-weight: bold;">${second.name || 'Sin nombre'}</div>
-                            <div style="color: var(--silver);">${second.votes || 0} votos</div>
+                            <div style="color: var(--silver);">Segundo lugar</div>
                         </div>
                     ` : ''}
                     
                     <div style="text-align: center; flex: 1; min-width: 120px;">
                         <div style="font-size: 3rem;">🥇</div>
                         <div style="font-weight: bold; font-size: 1.3rem; color: var(--gold);">${winner.name || 'Sin nombre'}</div>
-                        <div style="color: var(--gold); font-weight: bold;">${winner.votes || 0} votos</div>
+                        <div style="color: var(--gold); font-weight: bold;">¡GANADOR/A!</div>
                     </div>
                     
                     ${third ? `
                         <div style="text-align: center; flex: 1; min-width: 100px;">
                             <div style="font-size: 1.5rem;">🥉</div>
                             <div style="font-weight: bold;">${third.name || 'Sin nombre'}</div>
-                            <div style="color: var(--bronze);">${third.votes || 0} votos</div>
+                            <div style="color: var(--bronze);">Tercer lugar</div>
                         </div>
                     ` : ''}
                 </div>
@@ -417,7 +418,7 @@ function showResults() {
         // ========== CÓDIGO DE FRASES ==========
         let frasesHTML = '';
         
-        // Solo para categoría 17 (Frase del Año) - NOTA: ID 17, no 16
+        // Solo para categoría 17 (Frase del Año)
         if (category.id === 17) {
             const todasLasFrases = [];
             
@@ -435,7 +436,7 @@ function showResults() {
                 }
             });
             
-            // Ordenar frases por votos
+            // Ordenar frases (las más votadas primero)
             todasLasFrases.sort((a, b) => b.votos - a.votos);
             
             if (todasLasFrases.length > 0) {
@@ -454,7 +455,7 @@ function showResults() {
                                 "${item.frase}"
                             </div>
                             <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--silver);">
-                                <span><strong>${item.persona}</strong> (${item.votos} votos)</span>
+                                <span><strong>${item.persona}</strong></span>
                                 <span>Añadida por: ${item.votante}</span>
                             </div>
                         </div>
@@ -474,13 +475,14 @@ function showResults() {
         }
         // ========== FIN DEL CÓDIGO DE FRASES ==========
         
+        // MODIFICADO: Solo mostrar "X votos totales" sin detalles
         resultItem.innerHTML = `
             <h3 style="color: var(--gold); text-align: center; margin-bottom: 15px;">${category.name || 'Sin nombre'}</h3>
             ${category.description ? `<p style="text-align: center; color: var(--silver); font-style: italic; margin-bottom: 15px;">${category.description}</p>` : ''}
-            ${winner ? podiumHTML : '<p style="text-align: center; color: var(--silver);">Sin votos</p>'}
-            ${frasesHTML} <!-- ESTO MUESTRA LAS FRASES -->
+            ${winner ? podiumHTML : '<p style="text-align: center; color: var(--silver);">Sin votos registrados</p>'}
+            ${frasesHTML}
             <div style="margin-top: 20px; color: var(--silver); font-size: 0.9rem; text-align: center;">
-                <p>Total votantes: ${totalVoters} | Total votos: ${totalVotes}</p>
+                <p>${totalVotes} votos totales | ${totalVoters} votantes</p>
             </div>
         `;
         
@@ -536,7 +538,9 @@ function importData() {
                     appData.photoUrls = imported.photoUrls || appData.photoUrls || {};
                     
                     // Verificar IDs duplicados
-                    verificarIDsCategorias();
+                    if (typeof verificarIDsCategorias === 'function') {
+                        verificarIDsCategorias();
+                    }
                     
                     saveData();
                     saveUsers();

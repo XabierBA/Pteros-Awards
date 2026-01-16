@@ -407,6 +407,7 @@ function renderCategories() {
         const totalVotes = nominees.reduce((sum, n) => sum + (n.votes || 0), 0);
         const userVote = appData.currentUser ? (appData.currentUser.votes || {})[category.id] : null;
         
+        // ORDENAR POR VOTOS PERO NO MOSTRAR LOS NÚMEROS
         const top3 = nominees
             .filter(n => n)
             .sort((a, b) => (b.votes || 0) - (a.votes || 0))
@@ -419,12 +420,12 @@ function renderCategories() {
         card.innerHTML = `
             <h3>${category.name || 'Sin nombre'}</h3>
             <p class="category-description">${category.description || ''}</p>
-            <div class="vote-count">${totalVotes}</div>
+            <div class="vote-count">${totalVotes} votos totales</div>
             <div class="nominees-preview">
                 ${top3.map(n => `
                     <div class="nominee-tag">
                         ${getNomineePhotoHTML(n)}
-                        ${n.name || 'Sin nombre'} (${n.votes || 0})
+                        ${n.name || 'Sin nombre'}
                     </div>
                 `).join('')}
             </div>
@@ -469,14 +470,14 @@ function openVoteModal(categoryId) {
     const userVote = userVotes[categoryId];
     
     const nominees = category.nominees || [];
+    // Ordenar alfabéticamente, no por votos
     const sortedNominees = [...nominees]
         .filter(n => n)
-        .sort((a, b) => (b.votes || 0) - (a.votes || 0));
+        .sort((a, b) => a.name.localeCompare(b.name));
     
     sortedNominees.forEach(nominee => {
         const isVoted = userVote && userVote.nomineeName === nominee.name;
         const voters = nominee.voters || [];
-        const votersCount = voters.length;
         const hasVoted = voters.includes(appData.currentUser.id);
         const photoUrl = nominee.photo || (appData.photoUrls && appData.photoUrls[nominee.name]);
         
@@ -484,7 +485,7 @@ function openVoteModal(categoryId) {
         nomineeItem.className = `nominee-item ${isVoted ? 'voted' : ''}`;
         nomineeItem.onclick = () => voteForNominee(nominee.name);
         
-        // Contenido básico del nominado
+        // Contenido básico del nominado - SIN MOSTRAR VOTOS
         nomineeItem.innerHTML = `
             ${photoUrl ? 
                 `<img src="${photoUrl}" class="nominee-photo" alt="${nominee.name}" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';">` : 
@@ -496,9 +497,7 @@ function openVoteModal(categoryId) {
                 </div>
             ` : ''}
             <h4 class="nominee-name">${nominee.name}</h4>
-            <div class="vote-count-small">${nominee.votes || 0} votos</div>
-            <div class="voters-count">${votersCount} persona${votersCount !== 1 ? 's' : ''}</div>
-            ${hasVoted ? '<div class="voted-check">⭐ Tú votaste aquí</div>' : ''}
+            ${hasVoted ? '<div class="voted-check">⭐ Tú ya votaste aquí</div>' : ''}
             ${isVoted ? '<div class="voted-check">✅ Tu voto actual</div>' : ''}
         `;
         
@@ -569,7 +568,7 @@ function voteForNominee(nomineeName) {
     // ===== SISTEMA DE FRASES =====
     let fraseUsuario = '';
     
-    // Solo pedir frase para la categoría 17 (Frase del Año) - NOTA: ID 17, no 16
+    // Solo pedir frase para la categoría 17 (Frase del Año)
     if (category.id === 17) {
         fraseUsuario = prompt(
             `📝 FRASE DEL AÑO\n\nEstás votando a ${nomineeName}.\n\nPor favor, escribe la frase icónica que dijo (o por la que es famoso/a):\n\nEjemplo: "Mejor me voy a mi casa"`,
@@ -791,55 +790,6 @@ function updateStats() {
     if (categoriesElement) categoriesElement.textContent = totalCategories;
     if (votesElement) votesElement.textContent = totalVotes;
 }
-
-// ===== FUNCIÓN DE DEPURACIÓN =====
-function verificarVotos() {
-    console.clear();
-    console.log("🔍 VERIFICACIÓN DE VOTOS");
-    console.log("==========================");
-    
-    console.log("👥 USUARIOS (" + appData.users.length + "):");
-    appData.users.forEach((user, index) => {
-        if (user && user.votes) {
-            console.log(`  ${index+1}. ${user.name}: ${Object.keys(user.votes).length} votos`);
-            Object.entries(user.votes).forEach(([catId, voto]) => {
-                console.log(`     → Cat ${catId}: ${voto.nomineeName}`);
-            });
-        }
-    });
-    
-    console.log("\n🏆 CATEGORÍAS (" + appData.categories.length + "):");
-    appData.categories.forEach((cat, index) => {
-        if (cat && cat.nominees) {
-            const totalVotos = cat.nominees.reduce((sum, n) => sum + (n.votes || 0), 0);
-            console.log(`  ${index+1}. ${cat.name} (ID: ${cat.id}): ${totalVotos} votos totales`);
-            
-            // Mostrar top 3
-            const top3 = [...cat.nominees]
-                .filter(n => n)
-                .sort((a, b) => (b.votes || 0) - (a.votes || 0))
-                .slice(0, 3);
-            
-            top3.forEach((n, i) => {
-                console.log(`     ${i+1}. ${n.name}: ${n.votes} votos`);
-            });
-        }
-    });
-    
-    console.log("\n💾 LOCALSTORAGE:");
-    const premiosData = localStorage.getItem('premiosData');
-    const premiosUsers = localStorage.getItem('premiosUsers');
-    console.log("  premiosData:", premiosData ? "✅ " + Math.round(premiosData.length/1024) + "KB" : "❌ Vacío");
-    console.log("  premiosUsers:", premiosUsers ? "✅ " + Math.round(premiosUsers.length/1024) + "KB" : "❌ Vacío");
-    
-    console.log("==========================");
-    console.log("✅ Verificación completada");
-    
-    alert("Verificación completada. Revisa la consola (F12 → Console) para ver los detalles.");
-}
-
-// Añadir función global
-window.verificarVotos = verificarVotos;
 
 // ===== INICIALIZACIÓN =====
 document.addEventListener('DOMContentLoaded', function() {
