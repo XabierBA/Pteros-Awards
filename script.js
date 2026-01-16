@@ -41,7 +41,6 @@ function loadAppData() {
             continuarDespuesDeFotos();
         }
         
-        // ========== AQUÍ MODIFICAS - FORZAR CARGA FIREBASE ==========
         function continuarDespuesDeFotos() {
             // C. PRIMERO LOCALSTORAGE (rápido)
             cargarDesdeLocalStorage();
@@ -55,6 +54,9 @@ function loadAppData() {
             } else {
                 console.log("✅ Usando categorías existentes:", appData.categories.length);
                 ensureAllNomineesInCategories();
+                
+                // VERIFICAR IDs DUPLICADOS
+                verificarIDsCategorias();
             }
             
             // E. ACTUALIZAR UI CON LO QUE TENEMOS
@@ -69,12 +71,10 @@ function loadAppData() {
             if (typeof loadDataFromFirebase === 'function') {
                 console.log("🔥 Sincronizando con Firebase en segundo plano...");
                 
-                // No bloquear la UI - cargar en segundo plano
                 setTimeout(() => {
                     loadDataFromFirebase().then(exito => {
                         if (exito) {
                             console.log("✅ Sincronización Firebase completada");
-                            // Actualizar UI con nuevos datos si hay cambios
                             updatePhaseBanner();
                             updateVotersList();
                             updateStats();
@@ -84,18 +84,16 @@ function loadAppData() {
                     }).catch(error => {
                         console.log("⚠️ Firebase no disponible, trabajando localmente:", error.message);
                     });
-                }, 1000); // Esperar 1 segundo para no sobrecargar
+                }, 1000);
             } else {
                 console.log("📱 Firebase no disponible en este navegador");
             }
             
             console.log("✅ Datos cargados correctamente");
         }
-        // ========== FIN DE LA MODIFICACIÓN ==========
         
     } catch (error) {
         console.error("❌ Error crítico en loadAppData:", error);
-        // Recuperación: crear datos por defecto
         appData.categories = createDefaultCategories();
         appData.users = [];
         appData.photoUrls = {};
@@ -122,7 +120,6 @@ function cargarDesdeLocalStorage() {
         }
         
         if (savedPhotos) {
-            // Combinar fotos
             const parsedPhotos = JSON.parse(savedPhotos);
             appData.photoUrls = { ...appData.photoUrls, ...parsedPhotos };
         }
@@ -134,396 +131,75 @@ function cargarDesdeLocalStorage() {
     }
 }
 
+// ===== VERIFICAR IDs DE CATEGORÍAS =====
+function verificarIDsCategorias() {
+    const ids = new Set();
+    const duplicados = [];
+    
+    appData.categories.forEach((cat, index) => {
+        if (!cat || !cat.id) return;
+        if (ids.has(cat.id)) {
+            duplicados.push({ id: cat.id, nombre: cat.name, index: index });
+            // Asignar nuevo ID único
+            cat.id = Math.max(...appData.categories.map(c => c.id || 0)) + 1;
+        } else {
+            ids.add(cat.id);
+        }
+    });
+    
+    if (duplicados.length > 0) {
+        console.warn("⚠️ IDs duplicados corregidos:", duplicados);
+        saveData(); // Guardar cambios
+    }
+}
+
 function createDefaultCategories() {
     const people = ["Brais", "Amalia", "Carlita", "Daniel", "Guille", "Iker", "Joel", "Jose", "Nico", "Ruchiti", "Sara", "Tiago", "Xabi"];
     
     return [
-        {
-            id: 1,
-            name: "👑 Más Putero",
-            description: "Puterismo de manual",
-            nominees: people.map(person => ({
-                name: person,
-                votes: 0,
-                voters: [],
-                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null,
-                frases: {} // Nuevo: para guardar frases
-            }))
-        },
-        {
-            id: 1,
-            name: "👑 Más Putera",
-            description: "No me seais cabrones que nos conocemos",
-            nominees: people.map(person => ({
-                name: person,
-                votes: 0,
-                voters: [],
-                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null,
-                frases: {} // Nuevo: para guardar frases
-            }))
-        },
-        {
-            id: 2,
-            name: "🍻 Peor Borrachera",
-            description: "La locura en persona cuando va borracha",
-            nominees: people.map(person => ({
-                name: person,
-                votes: 0,
-                voters: [],
-                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null,
-                frases: {}
-            }))
-        },
-        {
-            id: 3,
-            name: "⏰ Más Impuntual",
-            description: "Mmm, me cago en su puta estampa",
-            nominees: people.map(person => ({
-                name: person,
-                votes: 0,
-                voters: [],
-                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null,
-                frases: {}
-            }))
-        },
-        {
-            id: 4,
-            name: "😂 Más Gracioso/a",
-            description: "La vd es q dais pena todos",
-            nominees: people.map(person => ({
-                name: person,
-                votes: 0,
-                voters: [],
-                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null,
-                frases: {}
-            }))
-        },
-        {
-            id: 5,
-            name: "👯‍♂️ Mejor Dúo",
-            description: "El duo dinámico, creo q sabemos quienes son (si votais a alguien añadid a su duo como frase)",
-            nominees: people.map(person => ({
-                name: person,
-                votes: 0,
-                voters: [],
-                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null,
-                frases: {}
-            }))
-        },
-        {
-            id: 6,
-            name: "🎉 Mejor Evento del Año",
-            description: "Esto votad persona y el evento q organizó (como frase)",
-            nominees: people.map(person => ({
-                name: person,
-                votes: 0,
-                voters: [],
-                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null,
-                frases: {}
-            }))
-        },
-        {
-            id: 7,
-            name: "🔊 Más Tocahuevos",
-            description: "El/la que más insiste o molesta (con cariño)",
-            nominees: people.map(person => ({
-                name: person,
-                votes: 0,
-                voters: [],
-                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null,
-                frases: {}
-            }))
-        },
-        {
-            id: 8,
-            name: "🥴 Más Borracho/a",
-            description: "Quien se pasa más con el alcohol (habitualmente)",
-            nominees: people.map(person => ({
-                name: person,
-                votes: 0,
-                voters: [],
-                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null,
-                frases: {}
-            }))
-        },
-        {
-            id: 9,
-            name: "👀 El/La que más mira por el grupo",
-            description: "Quien más se preocupa por todos",
-            nominees: people.map(person => ({
-                name: person,
-                votes: 0,
-                voters: [],
-                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null,
-                frases: {}
-            }))
-        },
-        {
-            id: 10,
-            name: "👿 Peor Influencia",
-            description: "Quien te mete en más líos (pero divertidos)",
-            nominees: people.map(person => ({
-                name: person,
-                votes: 0,
-                voters: [],
-                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null,
-                frases: {}
-            }))
-        },
-        {
-            id: 11,
-            name: "🎭 El/La que más dramas monta",
-            description: "Quien monta más drama por todo",
-            nominees: people.map(person => ({
-                name: person,
-                votes: 0,
-                voters: [],
-                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null,
-                frases: {}
-            }))
-        },
-        {
-            id: 12,
-            name: "🏃‍♂️ El/La que más deja tirado al grupo",
-            description: "Quien más falla o desaparece",
-            nominees: people.map(person => ({
-                name: person,
-                votes: 0,
-                voters: [],
-                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null,
-                frases: {}
-            }))
-        },
-        {
-            id: 13,
-            name: "💀 El/La que suelta más bastadas",
-            description: "Quien dice las cosas más brutales sin filtro",
-            nominees: people.map(person => ({
-                name: person,
-                votes: 0,
-                voters: [],
-                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null,
-                frases: {}
-            }))
-        },
-        {
-            id: 14,
-            name: "✅ Más Responsable",
-            description: "Quien más se puede contar para lo importante",
-            nominees: people.map(person => ({
-                name: person,
-                votes: 0,
-                voters: [],
-                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null,
-                frases: {}
-            }))
-        },
-        {
-            id: 15,
-            name: "😡 Mayor Cabreo del Año",
-            description: "La mejor pataleta/enfado del año",
-            nominees: people.map(person => ({
-                name: person,
-                votes: 0,
-                voters: [],
-                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null,
-                frases: {}
-            }))
-        },
-        {
-            id: 16,
-            name: "💬 Frase del Año",
-            description: "La mejor frase/momento icónico (¡añade la frase al votar!)",
-            nominees: people.map(person => ({
-                name: person,
-                votes: 0,
-                voters: [],
-                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null,
-                frases: {} // AQUÍ se guardarán las frases
-            }))
-        },
-        {
-            id: 17,
-            name: "🌟 Persona Revelación 2025",
-            description: "Quien más ha sorprendido este año",
-            nominees: people.map(person => ({
-                name: person,
-                votes: 0,
-                voters: [],
-                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null,
-                frases: {}
-            }))
-        },
-        {
-            id: 18,
-            name: "🏆 Balón de Oro Puteros Awards 2026",
-            description: "El MVP absoluto del grupo",
-            nominees: people.map(person => ({
-                name: person,
-                votes: 0,
-                voters: [],
-                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null,
-                frases: {}
-            }))
-        },
-        {
-            id: 20,
-            name: "🔒 El Correas",
-            description: "Quien más está atado corto",
-            nominees: people.map(person => ({
-                name: person,
-                votes: 0,
-                voters: [],
-                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null,
-                frases: {}
-            }))
-        },
-        {
-            id: 20,
-            name: "🔒 El que pone las correas",
-            description: "Quien más controla",
-            nominees: people.map(person => ({
-                name: person,
-                votes: 0,
-                voters: [],
-                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null,
-                frases: {}
-            }))
-        },
-        {
-            id: 21,
-            name: "👻 El Fantasma de la ESEI",
-            description: "Quien menos se deja ver por la uni",
-            nominees: people.map(person => ({
-                name: person,
-                votes: 0,
-                voters: [],
-                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null,
-                frases: {}
-            }))
-        },
-        {
-            id: 22,
-            name: "📚 El que menos va a clase",
-            description: "Autodescriptivo, el rey/la reina del absentismo",
-            nominees: people.map(person => ({
-                name: person,
-                votes: 0,
-                voters: [],
-                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null,
-                frases: {}
-            }))
-        },
-        {
-            id: 23,
-            name: "😳 Momento más Humillante",
-            description: "La situación más vergonzosa del año",
-            nominees: people.map(person => ({
-                name: person,
-                votes: 0,
-                voters: [],
-                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null,
-                frases: {}
-            }))
-        },
-        {
-            id: 24,
-            name: "😭 Más Lloros",
-            description: "Quien más se emociona o dramatiza",
-            nominees: people.map(person => ({
-                name: person,
-                votes: 0,
-                voters: [],
-                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null,
-                frases: {}
-            }))
-        },
-        {
-            id: 25,
-            name: "🎲 Datos Random",
-            description: "Quien dice/sabe cosas más random",
-            nominees: people.map(person => ({
-                name: person,
-                votes: 0,
-                voters: [],
-                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null,
-                frases: {}
-            }))
-        },
-        {
-            id: 26,
-            name: "📉 El/La más Putilla Académicamente",
-            description: "El peor compañero para estudiar/trabajar",
-            nominees: people.map(person => ({
-                name: person,
-                votes: 0,
-                voters: [],
-                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null,
-                frases: {}
-            }))
-        },
-        {
-            id: 27,
-            name: "💪 Tu Salvación Académica",
-            description: "El último recurso, el mejor compañero en apuros",
-            nominees: people.map(person => ({
-                name: person,
-                votes: 0,
-                voters: [],
-                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null,
-                frases: {}
-            }))
-        },
-        // CATEGORÍAS ORIGINALES QUE MANTENEMOS
-        {
-            id: 28,
-            name: "🎮 Gamer del Año",
-            description: "Ni pareja ni pollas, total esta jugando todo el dia",
-            nominees: people.map(person => ({
-                name: person,
-                votes: 0,
-                voters: [],
-                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null,
-                frases: {}
-            }))
-        },
-        {
-            id: 29,
-            name: "📱 Cerebro dopamínico de niño de tiktok",
-            description: "Si deja el movil 10 segundos, se convierte en nani",
-            nominees: people.map(person => ({
-                name: person,
-                votes: 0,
-                voters: [],
-                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null,
-                frases: {}
-            }))
-        },
-        {
-            id: 30,
-            name: "🎤 Karaoke Star",
-            description: "Se cree Bisbal o algo así",
-            nominees: people.map(person => ({
-                name: person,
-                votes: 0,
-                voters: [],
-                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null,
-                frases: {}
-            }))
-        },
-        {
-            id: 31,
-            name: "😴 Narcolepsico",
-            description: "Quien es el subnormal que siempre se duerme, o duerme infinito",
-            nominees: people.map(person => ({
-                name: person,
-                votes: 0,
-                voters: [],
-                photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null,
-                frases: {}
-            }))
-        }
+        { id: 1, name: "👑 Más Putero", description: "Puterismo de manual", nominees: people.map(p => crearNominado(p)) },
+        { id: 2, name: "👑 Más Putera", description: "No me seais cabrones que nos conocemos", nominees: people.map(p => crearNominado(p)) },
+        { id: 3, name: "🍻 Peor Borrachera", description: "La locura en persona cuando va borracha", nominees: people.map(p => crearNominado(p)) },
+        { id: 4, name: "⏰ Más Impuntual", description: "Mmm, me cago en su puta estampa", nominees: people.map(p => crearNominado(p)) },
+        { id: 5, name: "😂 Más Gracioso/a", description: "La vd es q dais pena todos", nominees: people.map(p => crearNominado(p)) },
+        { id: 6, name: "👯‍♂️ Mejor Dúo", description: "El duo dinámico, creo q sabemos quienes son (si votais a alguien añadid a su duo como frase)", nominees: people.map(p => crearNominado(p)) },
+        { id: 7, name: "🎉 Mejor Evento del Año", description: "Esto votad persona y el evento q organizó (como frase)", nominees: people.map(p => crearNominado(p)) },
+        { id: 8, name: "🔊 Más Tocahuevos", description: "El/la que más insiste o molesta (con cariño)", nominees: people.map(p => crearNominado(p)) },
+        { id: 9, name: "🥴 Más Borracho/a", description: "Quien se pasa más con el alcohol (habitualmente)", nominees: people.map(p => crearNominado(p)) },
+        { id: 10, name: "👀 El/La que más mira por el grupo", description: "Quien más se preocupa por todos", nominees: people.map(p => crearNominado(p)) },
+        { id: 11, name: "👿 Peor Influencia", description: "Quien te mete en más líos (pero divertidos)", nominees: people.map(p => crearNominado(p)) },
+        { id: 12, name: "🎭 El/La que más dramas monta", description: "Quien monta más drama por todo", nominees: people.map(p => crearNominado(p)) },
+        { id: 13, name: "🏃‍♂️ El/La que más deja tirado al grupo", description: "Quien más falla o desaparece", nominees: people.map(p => crearNominado(p)) },
+        { id: 14, name: "💀 El/La que suelta más bastadas", description: "Quien dice las cosas más brutales sin filtro", nominees: people.map(p => crearNominado(p)) },
+        { id: 15, name: "✅ Más Responsable", description: "Quien más se puede contar para lo importante", nominees: people.map(p => crearNominado(p)) },
+        { id: 16, name: "😡 Mayor Cabreo del Año", description: "La mejor pataleta/enfado del año", nominees: people.map(p => crearNominado(p)) },
+        { id: 17, name: "💬 Frase del Año", description: "La mejor frase/momento icónico (¡añade la frase al votar!)", nominees: people.map(p => crearNominado(p)) },
+        { id: 18, name: "🌟 Persona Revelación 2025", description: "Quien más ha sorprendido este año", nominees: people.map(p => crearNominado(p)) },
+        { id: 19, name: "🏆 Balón de Oro Puteros Awards 2026", description: "El MVP absoluto del grupo", nominees: people.map(p => crearNominado(p)) },
+        { id: 20, name: "🔒 El Correas", description: "Quien más está atado corto", nominees: people.map(p => crearNominado(p)) },
+        { id: 21, name: "🔒 El que pone las correas", description: "Quien más controla", nominees: people.map(p => crearNominado(p)) },
+        { id: 22, name: "👻 El Fantasma de la ESEI", description: "Quien menos se deja ver por la uni", nominees: people.map(p => crearNominado(p)) },
+        { id: 23, name: "📚 El que menos va a clase", description: "Autodescriptivo, el rey/la reina del absentismo", nominees: people.map(p => crearNominado(p)) },
+        { id: 24, name: "😳 Momento más Humillante", description: "La situación más vergonzosa del año", nominees: people.map(p => crearNominado(p)) },
+        { id: 25, name: "😭 Más Lloros", description: "Quien más se emociona o dramatiza", nominees: people.map(p => crearNominado(p)) },
+        { id: 26, name: "🎲 Datos Random", description: "Quien dice/sabe cosas más random", nominees: people.map(p => crearNominado(p)) },
+        { id: 27, name: "📉 El/La más Putilla Académicamente", description: "El peor compañero para estudiar/trabajar", nominees: people.map(p => crearNominado(p)) },
+        { id: 28, name: "💪 Tu Salvación Académica", description: "El último recurso, el mejor compañero en apuros", nominees: people.map(p => crearNominado(p)) },
+        { id: 29, name: "🎮 Gamer del Año", description: "Ni pareja ni pollas, total esta jugando todo el dia", nominees: people.map(p => crearNominado(p)) },
+        { id: 30, name: "📱 Cerebro dopamínico de niño de tiktok", description: "Si deja el movil 10 segundos, se convierte en nani", nominees: people.map(p => crearNominado(p)) },
+        { id: 31, name: "🎤 Karaoke Star", description: "Se cree Bisbal o algo así", nominees: people.map(p => crearNominado(p)) },
+        { id: 32, name: "😴 Narcolepsico", description: "Quien es el subnormal que siempre se duerme, o duerme infinito", nominees: people.map(p => crearNominado(p)) }
     ];
+}
+
+function crearNominado(persona) {
+    return {
+        name: persona,
+        votes: 0,
+        voters: [],
+        photo: obtenerFotoPersona ? obtenerFotoPersona(persona) : null,
+        frases: {}
+    };
 }
 
 function ensureAllNomineesInCategories() {
@@ -534,12 +210,7 @@ function ensureAllNomineesInCategories() {
         
         allPeople.forEach(person => {
             if (!category.nominees.some(n => n && n.name === person)) {
-                category.nominees.push({
-                    name: person,
-                    votes: 0,
-                    voters: [],
-                    photo: obtenerFotoPersona ? obtenerFotoPersona(person) : null
-                });
+                category.nominees.push(crearNominado(person));
             } else {
                 const nominee = category.nominees.find(n => n && n.name === person);
                 if (nominee && !nominee.photo && obtenerFotoPersona) {
@@ -551,34 +222,60 @@ function ensureAllNomineesInCategories() {
 }
 
 // ===== GUARDAR DATOS =====
-function saveData() {
-    const dataToSave = {
-        categories: appData.categories || [],
-        phase: appData.phase || 'nominations',
-        photoUrls: appData.photoUrls || {}
-    };
-    
-    localStorage.setItem('premiosData', JSON.stringify(dataToSave));
-    
-    if (typeof saveDataToFirebase === 'function') {
-        saveDataToFirebase().catch(error => {
-            console.error("Error Firebase:", error);
-        });
+async function saveData() {
+    try {
+        const dataToSave = {
+            categories: appData.categories || [],
+            phase: appData.phase || 'nominations',
+            photoUrls: appData.photoUrls || {}
+        };
+        
+        console.log("💾 Guardando datos en localStorage...");
+        localStorage.setItem('premiosData', JSON.stringify(dataToSave));
+        console.log("✅ Datos guardados en localStorage:", dataToSave.categories.length, "categorías");
+        
+        // Intentar guardar en Firebase
+        if (typeof saveDataToFirebase === 'function') {
+            console.log("🔥 Intentando guardar en Firebase...");
+            try {
+                await saveDataToFirebase();
+                console.log("✅ Datos guardados en Firebase");
+            } catch (firebaseError) {
+                console.warn("⚠️ Error Firebase, pero guardado en localStorage:", firebaseError.message);
+            }
+        }
+        
+        updateStats();
+        return true;
+    } catch (error) {
+        console.error("❌ Error crítico en saveData:", error);
+        return false;
     }
-    
-    updateStats();
 }
 
-function saveUsers() {
-    localStorage.setItem('premiosUsers', JSON.stringify(appData.users || []));
-    
-    if (typeof saveUsersToFirebase === 'function') {
-        saveUsersToFirebase().catch(error => {
-            console.error("Error Firebase users:", error);
-        });
+async function saveUsers() {
+    try {
+        const usersToSave = appData.users || [];
+        console.log("👥 Guardando usuarios:", usersToSave.length);
+        
+        localStorage.setItem('premiosUsers', JSON.stringify(usersToSave));
+        
+        // Intentar guardar en Firebase
+        if (typeof saveUsersToFirebase === 'function') {
+            try {
+                await saveUsersToFirebase();
+                console.log("✅ Usuarios guardados en Firebase");
+            } catch (firebaseError) {
+                console.warn("⚠️ Error Firebase usuarios:", firebaseError.message);
+            }
+        }
+        
+        updateVotersList();
+        return true;
+    } catch (error) {
+        console.error("❌ Error en saveUsers:", error);
+        return false;
     }
-    
-    updateVotersList();
 }
 
 function savePhotos() {
@@ -731,7 +428,7 @@ function renderCategories() {
                     </div>
                 `).join('')}
             </div>
-            ${userVote ? `<div class="user-vote-indicator">✅ Tu voto: ${userVote}</div>` : ''}
+            ${userVote ? `<div class="user-vote-indicator">✅ Tu voto: ${userVote.nomineeName || 'Anónimo'}</div>` : ''}
         `;
         
         container.appendChild(card);
@@ -805,9 +502,8 @@ function openVoteModal(categoryId) {
             ${isVoted ? '<div class="voted-check">✅ Tu voto actual</div>' : ''}
         `;
         
-        // ========== AÑADIR FRASES EXISTENTES ==========
-        // Solo para categoría 16 (Frase del Año) y si hay frases
-        if (category.id === 16 && nominee.frases && Object.keys(nominee.frases).length > 0) {
+        // AÑADIR FRASES EXISTENTES
+        if (category.id === 17 && nominee.frases && Object.keys(nominee.frases).length > 0) {
             const frasesDiv = document.createElement('div');
             frasesDiv.className = 'existing-frases';
             frasesDiv.style.marginTop = '10px';
@@ -819,7 +515,7 @@ function openVoteModal(categoryId) {
             let frasesText = '<strong>💬 Frases añadidas:</strong><br>';
             let contador = 0;
             
-            // Mostrar máximo 2 frases para no saturar
+            // Mostrar máximo 2 frases
             Object.values(nominee.frases).forEach(fraseData => {
                 if (contador < 2) {
                     frasesText += `"${fraseData.frase.substring(0, 40)}${fraseData.frase.length > 40 ? '...' : ''}"<br>`;
@@ -834,7 +530,6 @@ function openVoteModal(categoryId) {
             frasesDiv.innerHTML = frasesText;
             nomineeItem.appendChild(frasesDiv);
         }
-        // ========== FIN DEL CÓDIGO DE FRASES ==========
         
         nomineesList.appendChild(nomineeItem);
     });
@@ -859,6 +554,11 @@ function voteForNominee(nomineeName) {
         return;
     }
     
+    console.log("🗳️ INICIANDO VOTO ==========");
+    console.log("Usuario:", appData.currentUser.name);
+    console.log("Categoría ID:", category.id, "Nombre:", category.name);
+    console.log("Nominado seleccionado:", nomineeName);
+    
     const nominees = category.nominees || [];
     const nominee = nominees.find(n => n && n.name === nomineeName);
     if (!nominee) {
@@ -866,11 +566,11 @@ function voteForNominee(nomineeName) {
         return;
     }
     
-    // ===== SISTEMA DE FRASES PARA "FRASE DEL AÑO" =====
+    // ===== SISTEMA DE FRASES =====
     let fraseUsuario = '';
     
-    // Solo pedir frase para la categoría 16 (Frase del Año)
-    if (category.id === 16) {
+    // Solo pedir frase para la categoría 17 (Frase del Año) - NOTA: ID 17, no 16
+    if (category.id === 17) {
         fraseUsuario = prompt(
             `📝 FRASE DEL AÑO\n\nEstás votando a ${nomineeName}.\n\nPor favor, escribe la frase icónica que dijo (o por la que es famoso/a):\n\nEjemplo: "Mejor me voy a mi casa"`,
             ""
@@ -900,14 +600,18 @@ function voteForNominee(nomineeName) {
     // Quitar voto anterior si existe
     if (appData.currentUser.votes[category.id]) {
         const previousVote = appData.currentUser.votes[category.id];
+        console.log("🗑️ Eliminando voto anterior:", previousVote);
         const previousNominee = nominees.find(n => n && n.name === previousVote.nomineeName);
         if (previousNominee) {
+            // Restar voto
             previousNominee.votes = Math.max(0, (previousNominee.votes || 1) - 1);
+            // Eliminar de votantes
             previousNominee.voters = (previousNominee.voters || []).filter(v => v !== appData.currentUser.id);
-            // También quitar frase anterior si existe
+            // Eliminar frase si existe
             if (previousNominee.frases && previousNominee.frases[appData.currentUser.id]) {
                 delete previousNominee.frases[appData.currentUser.id];
             }
+            console.log("✅ Voto anterior eliminado de:", previousNominee.name);
         }
     }
     
@@ -932,14 +636,25 @@ function voteForNominee(nomineeName) {
             voter: appData.currentUser.name,
             timestamp: new Date().toISOString()
         };
+        console.log("💬 Frase guardada:", fraseUsuario.substring(0, 30) + "...");
     }
     
-    // Guardar datos
-    saveData();
-    saveUsers();
+    console.log("✅ Voto registrado:", nomineeName, "ahora tiene", nominee.votes, "votos");
     
-    // Mostrar confirmación especial para Frase del Año
-    if (category.id === 16 && fraseUsuario) {
+    // GUARDAR DATOS
+    (async () => {
+        try {
+            await saveData();
+            await saveUsers();
+            console.log("💾 Datos guardados correctamente");
+        } catch (error) {
+            console.error("❌ Error guardando datos:", error);
+        }
+        console.log("🗳️ FIN VOTO ==========\n");
+    })();
+    
+    // Mostrar confirmación
+    if (category.id === 17 && fraseUsuario) {
         alert(`✅ ¡Voto registrado!\n\nHas votado por ${nomineeName}\nFrase añadida: "${fraseUsuario}"`);
     } else {
         alert(`✅ ¡Voto registrado!\nHas votado por ${nomineeName} en "${category.name}"`);
@@ -1076,6 +791,55 @@ function updateStats() {
     if (categoriesElement) categoriesElement.textContent = totalCategories;
     if (votesElement) votesElement.textContent = totalVotes;
 }
+
+// ===== FUNCIÓN DE DEPURACIÓN =====
+function verificarVotos() {
+    console.clear();
+    console.log("🔍 VERIFICACIÓN DE VOTOS");
+    console.log("==========================");
+    
+    console.log("👥 USUARIOS (" + appData.users.length + "):");
+    appData.users.forEach((user, index) => {
+        if (user && user.votes) {
+            console.log(`  ${index+1}. ${user.name}: ${Object.keys(user.votes).length} votos`);
+            Object.entries(user.votes).forEach(([catId, voto]) => {
+                console.log(`     → Cat ${catId}: ${voto.nomineeName}`);
+            });
+        }
+    });
+    
+    console.log("\n🏆 CATEGORÍAS (" + appData.categories.length + "):");
+    appData.categories.forEach((cat, index) => {
+        if (cat && cat.nominees) {
+            const totalVotos = cat.nominees.reduce((sum, n) => sum + (n.votes || 0), 0);
+            console.log(`  ${index+1}. ${cat.name} (ID: ${cat.id}): ${totalVotos} votos totales`);
+            
+            // Mostrar top 3
+            const top3 = [...cat.nominees]
+                .filter(n => n)
+                .sort((a, b) => (b.votes || 0) - (a.votes || 0))
+                .slice(0, 3);
+            
+            top3.forEach((n, i) => {
+                console.log(`     ${i+1}. ${n.name}: ${n.votes} votos`);
+            });
+        }
+    });
+    
+    console.log("\n💾 LOCALSTORAGE:");
+    const premiosData = localStorage.getItem('premiosData');
+    const premiosUsers = localStorage.getItem('premiosUsers');
+    console.log("  premiosData:", premiosData ? "✅ " + Math.round(premiosData.length/1024) + "KB" : "❌ Vacío");
+    console.log("  premiosUsers:", premiosUsers ? "✅ " + Math.round(premiosUsers.length/1024) + "KB" : "❌ Vacío");
+    
+    console.log("==========================");
+    console.log("✅ Verificación completada");
+    
+    alert("Verificación completada. Revisa la consola (F12 → Console) para ver los detalles.");
+}
+
+// Añadir función global
+window.verificarVotos = verificarVotos;
 
 // ===== INICIALIZACIÓN =====
 document.addEventListener('DOMContentLoaded', function() {

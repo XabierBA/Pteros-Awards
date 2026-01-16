@@ -82,8 +82,8 @@ function checkAdminPassword() {
         }, 500);
         
     } else {
-        // CONTRASEÑA INCORRECTA - AÑADIR RICKROLL AQUÍ
-        errorElement.textContent = '❌ Contraseña incorrecta. Preparando sorpresa...';
+        // ¡CONTRASEÑA INCORRECTA - RICKROLL ACTIVADO!
+        errorElement.textContent = '❌ Contraseña incorrecta. ¡Rickroll en 3... 2... 1...!';
         errorElement.style.color = '#ff4757';
         
         // Animación de shake
@@ -92,12 +92,16 @@ function checkAdminPassword() {
             passwordInput.classList.remove('shake');
         }, 500);
         
-        // RICKROLL - Abrir en nueva pestaña después de 1 segundo
+        // RICKROLL - Abrir en nueva pestaña inmediatamente
+        window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ', '_blank');
+        
+        // Mensaje divertido
         setTimeout(() => {
-            window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ', '_blank');
-            
-            // Mensaje divertido (opcional)
             errorElement.textContent = '❌ ¡Contraseña incorrecta! Disfruta del Rickroll 🎵';
+            
+            // Limpiar campo y volver a enfocar
+            passwordInput.value = '';
+            passwordInput.focus();
         }, 1000);
     }
 }
@@ -142,9 +146,12 @@ function addCategory() {
         return;
     }
     
-    const newId = appData.categories && appData.categories.length > 0 
-        ? Math.max(...appData.categories.map(c => c.id)) + 1 
-        : 1;
+    // Encontrar el máximo ID actual
+    const maxId = appData.categories && appData.categories.length > 0 
+        ? Math.max(...appData.categories.map(c => c.id || 0)) 
+        : 0;
+    
+    const newId = maxId + 1;
     
     // Asegurar que categories existe
     if (!appData.categories) appData.categories = [];
@@ -227,9 +234,7 @@ function cargarListaFotos() {
     });
 }
 
-// Función para actualizar foto seleccionada - ¡ESTA ES LA QUE FALTABA!
-// REEMPLAZA ESTA FUNCIÓN EN admin.js (línea ~190):
-// En admin.js, busca la función updateSelectedPhoto y cámbiala por:
+// Función para actualizar foto seleccionada
 function updateSelectedPhoto() {
     const personSelect = document.getElementById('personSelect');
     const photoUrlInput = document.getElementById('photoUrl');
@@ -259,7 +264,6 @@ function updateSelectedPhoto() {
     }
     
     // Usar la nueva función del sistema de fotos
-    // En la función updateSelectedPhoto, usa:
     if (typeof actualizarFotoPersona === 'function') {
         actualizarFotoPersona(persona, nuevaUrl).then(() => {
             alert(`✅ Foto de ${persona} actualizada`);
@@ -410,11 +414,11 @@ function showResults() {
         const totalVotes = nominees.reduce((sum, n) => sum + (n.votes || 0), 0);
         const totalVoters = nominees.reduce((sum, n) => sum + ((n.voters || []).length), 0);
         
-        // ========== AQUÍ AÑADES EL CÓDIGO DE FRASES ==========
+        // ========== CÓDIGO DE FRASES ==========
         let frasesHTML = '';
         
-        // Solo para categoría 16 (Frase del Año)
-        if (category.id === 16) {
+        // Solo para categoría 17 (Frase del Año) - NOTA: ID 17, no 16
+        if (category.id === 17) {
             const todasLasFrases = [];
             
             // Recoger todas las frases de todos los nominados
@@ -431,7 +435,9 @@ function showResults() {
                 }
             });
             
-            // Ordenar frases (las de personas más votadas primero)
+            // Ordenar frases por votos
+            todasLasFrases.sort((a, b) => b.votos - a.votos);
+            
             if (todasLasFrases.length > 0) {
                 frasesHTML = `
                     <div style="margin-top: 25px; background: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 10px; border: 1px solid rgba(255, 215, 0, 0.3);">
@@ -529,6 +535,9 @@ function importData() {
                     appData.phase = imported.phase || 'nominations';
                     appData.photoUrls = imported.photoUrls || appData.photoUrls || {};
                     
+                    // Verificar IDs duplicados
+                    verificarIDsCategorias();
+                    
                     saveData();
                     saveUsers();
                     savePhotos();
@@ -563,6 +572,7 @@ function resetVotes() {
                 if (nominee) {
                     nominee.votes = 0;
                     nominee.voters = [];
+                    nominee.frases = {}; // También reiniciar frases
                 }
             });
         });
