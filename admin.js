@@ -337,7 +337,6 @@ function subirFotoArchivo() {
     input.click();
 }
 
-// ===== RESULTADOS =====
 function showResults() {
     const modal = document.getElementById('voteModal');
     const modalCategory = document.getElementById('modalCategory');
@@ -403,10 +402,69 @@ function showResults() {
         const totalVotes = nominees.reduce((sum, n) => sum + (n.votes || 0), 0);
         const totalVoters = nominees.reduce((sum, n) => sum + ((n.voters || []).length), 0);
         
+        // ========== AQUÍ AÑADES EL CÓDIGO DE FRASES ==========
+        let frasesHTML = '';
+        
+        // Solo para categoría 16 (Frase del Año)
+        if (category.id === 16) {
+            const todasLasFrases = [];
+            
+            // Recoger todas las frases de todos los nominados
+            nominees.forEach(nominee => {
+                if (nominee.frases && Object.keys(nominee.frases).length > 0) {
+                    Object.values(nominee.frases).forEach(fraseData => {
+                        todasLasFrases.push({
+                            persona: nominee.name,
+                            frase: fraseData.frase,
+                            votante: fraseData.voter,
+                            votos: nominee.votes || 0
+                        });
+                    });
+                }
+            });
+            
+            // Ordenar frases (las de personas más votadas primero)
+            if (todasLasFrases.length > 0) {
+                frasesHTML = `
+                    <div style="margin-top: 25px; background: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 10px; border: 1px solid rgba(255, 215, 0, 0.3);">
+                        <h4 style="color: var(--gold); text-align: center; margin-bottom: 15px;">
+                            💬 Frases Icónicas del Año
+                        </h4>
+                `;
+                
+                // Mostrar máximo 5 frases
+                todasLasFrases.slice(0, 5).forEach((item, index) => {
+                    frasesHTML += `
+                        <div style="margin: 12px 0; padding: 12px; background: rgba(0, 0, 0, 0.2); border-radius: 8px; border-left: 3px solid var(--gold);">
+                            <div style="font-style: italic; color: white; margin-bottom: 5px;">
+                                "${item.frase}"
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--silver);">
+                                <span><strong>${item.persona}</strong> (${item.votos} votos)</span>
+                                <span>Añadida por: ${item.votante}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                if (todasLasFrases.length > 5) {
+                    frasesHTML += `
+                        <div style="text-align: center; margin-top: 10px; font-size: 12px; color: var(--silver);">
+                            + ${todasLasFrases.length - 5} frases más...
+                        </div>
+                    `;
+                }
+                
+                frasesHTML += '</div>';
+            }
+        }
+        // ========== FIN DEL CÓDIGO DE FRASES ==========
+        
         resultItem.innerHTML = `
             <h3 style="color: var(--gold); text-align: center; margin-bottom: 15px;">${category.name || 'Sin nombre'}</h3>
             ${category.description ? `<p style="text-align: center; color: var(--silver); font-style: italic; margin-bottom: 15px;">${category.description}</p>` : ''}
             ${winner ? podiumHTML : '<p style="text-align: center; color: var(--silver);">Sin votos</p>'}
+            ${frasesHTML} <!-- ESTO MUESTRA LAS FRASES -->
             <div style="margin-top: 20px; color: var(--silver); font-size: 0.9rem; text-align: center;">
                 <p>Total votantes: ${totalVoters} | Total votos: ${totalVotes}</p>
             </div>

@@ -1381,3 +1381,71 @@ footer {
         padding: 20px;
     }
 }
+
+/* Estilos para la votación con frases */
+.frase-section {
+    margin: 20px 0;
+    padding: 15px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+    border-radius: 10px;
+    border-left: 4px solid var(--primary);
+}
+
+.frase-label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: bold;
+    color: var(--primary);
+}
+
+.frase-input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid var(--primary);
+    border-radius: 8px;
+    font-size: 16px;
+    margin-bottom: 10px;
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.frase-example {
+    font-size: 12px;
+    color: var(--silver);
+    font-style: italic;
+    margin-top: 5px;
+}
+
+/* Estilos para mostrar frases en resultados */
+.frases-container {
+    margin-top: 20px;
+}
+
+.frase-item {
+    background: rgba(255, 215, 0, 0.1);
+    border-left: 3px solid var(--gold);
+    padding: 10px 15px;
+    margin: 8px 0;
+    border-radius: 5px;
+}
+
+.frase-text {
+    font-style: italic;
+    color: white;
+    margin-bottom: 5px;
+}
+
+.frase-meta {
+    font-size: 12px;
+    color: var(--silver);
+}
+
+/* Badge para categoría con frases */
+.has-frases-badge {
+    background: var(--gold);
+    color: black;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    margin-left: 5px;
+    font-weight: bold;
+}
