@@ -415,11 +415,12 @@ function renderCategories() {
         card.onclick = () => openVoteModal(category.id);
         
         // VERSIÓN CON VOTOS DEBAJO DEL TÍTULO
+        // En renderCategories():
         card.innerHTML = `
             <h3>${category.name || 'Sin nombre'}</h3>
-            <div class="vote-count-title">${totalVotes} votos</div>
+            <div class="vote-count-simple">${totalVotes} votos</div>
             <p class="category-description">${category.description || ''}</p>
-            ${userVote ? `<div class="user-vote-indicator">✅ Tu voto: ${userVote.nomineeName || 'Anónimo'}</div>` : ''}
+            ${userVote ? `<div class="user-vote-simple">✅ Tu voto: ${userVote.nomineeName || 'Anónimo'}</div>` : ''}
         `;
         
         container.appendChild(card);
