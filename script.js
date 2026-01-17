@@ -844,9 +844,9 @@ function verResultadosUsuarios() {
 }
 
 
-// ===== VERSIÓN SIMPLIFICADA - SOLO 3 GANADORES =====
+// ===== VERSIÓN SUPER SIMPLE - SOLO GANADORES CENTRADOS =====
 function showCategoryResults(categoryId) {
-    console.log("Mostrando resultados para categoría:", categoryId);
+    console.log("Mostrando resultados simples para categoría:", categoryId);
     
     const category = appData.categories.find(c => c && c.id === categoryId);
     if (!category) return;
@@ -857,164 +857,147 @@ function showCategoryResults(categoryId) {
     
     if (!modal || !modalCategory || !nomineesList) return;
     
-    // Configurar modal
-    modalCategory.textContent = category.name;
-    if (category.description) {
-        modalCategory.innerHTML += `<br><small>${category.description}</small>`;
-    }
-    
+    // LIMPIAR TODO
     nomineesList.innerHTML = '';
     
-    // Obtener y ordenar nominados
+    // Título simple
+    modalCategory.innerHTML = `<div style="text-align: center;">
+        <h2 style="color: var(--gold); margin-bottom: 10px;">${category.name}</h2>
+        ${category.description ? `<p style="color: var(--silver);">${category.description}</p>` : ''}
+    </div>`;
+    
+    // Obtener top 3
     const nominees = category.nominees || [];
     const sortedNominees = [...nominees]
         .filter(n => n)
         .sort((a, b) => (b.votes || 0) - (a.votes || 0));
     
-    // Crear contenedor SIMPLE
-    const container = document.createElement('div');
-    container.style.cssText = `
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 30px;
-        padding: 40px 20px;
-        width: 100%;
-    `;
-    
-    // Solo mostrar top 3
     const top3 = sortedNominees.slice(0, 3);
     
-    // Título
-    const title = document.createElement('h3');
-    title.textContent = '🏆 GANADORES';
-    title.style.cssText = `
-        color: var(--gold);
-        font-size: 2rem;
-        margin-bottom: 20px;
+    // Crear contenedor principal - SIMPLE Y CENTRADO
+    const mainContainer = document.createElement('div');
+    mainContainer.style.cssText = `
+        display: block;
+        width: 100%;
         text-align: center;
-        width: 100%;
+        padding: 20px;
     `;
-    container.appendChild(title);
     
-    // Contenedor para los 3 ganadores
-    const winnersContainer = document.createElement('div');
-    winnersContainer.style.cssText = `
-        display: flex;
+    // Título de ganadores
+    const winnersTitle = document.createElement('h3');
+    winnersTitle.textContent = '🏆 GANADORES';
+    winnersTitle.style.cssText = `
+        color: var(--gold);
+        font-size: 1.8rem;
+        margin-bottom: 40px;
+        text-align: center;
+    `;
+    mainContainer.appendChild(winnersTitle);
+    
+    // Contenedor para los 3 ganadores en LÍNEA
+    const winnersRow = document.createElement('div');
+    winnersRow.style.cssText = `
+        display: inline-flex;
         justify-content: center;
-        gap: 30px;
+        align-items: flex-end;
+        gap: 25px;
         flex-wrap: wrap;
-        width: 100%;
-        max-width: 800px;
+        margin-bottom: 40px;
+        text-align: center;
     `;
     
     // 1er lugar
     if (top3[0]) {
-        const firstPlace = document.createElement('div');
-        firstPlace.style.cssText = `
+        const firstDiv = document.createElement('div');
+        firstDiv.style.cssText = `
+            display: inline-block;
             text-align: center;
-            padding: 30px;
-            background: linear-gradient(145deg, rgba(255, 215, 0, 0.2), rgba(212, 175, 55, 0.1));
-            border-radius: 20px;
+            padding: 25px;
+            background: rgba(255, 215, 0, 0.1);
             border: 3px solid var(--gold);
-            min-width: 200px;
-            box-shadow: 0 10px 25px rgba(255, 215, 0, 0.3);
+            border-radius: 15px;
+            min-width: 180px;
         `;
-        
-        firstPlace.innerHTML = `
-            <div style="font-size: 4rem; margin-bottom: 15px;">🥇</div>
-            <div style="color: var(--gold); font-size: 1.5rem; font-weight: bold; margin-bottom: 10px;">${top3[0].name}</div>
-            <div style="color: var(--gold); font-size: 1.8rem; font-weight: bold; margin-bottom: 15px;">${top3[0].votes || 0} votos</div>
-            <div style="color: var(--gold); font-weight: bold; background: rgba(255, 215, 0, 0.2); padding: 8px 15px; border-radius: 10px; display: inline-block;">
-                ¡GANADOR/A!
-            </div>
+        firstDiv.innerHTML = `
+            <div style="font-size: 3.5rem;">🥇</div>
+            <div style="color: var(--gold); font-weight: bold; font-size: 1.4rem; margin: 15px 0;">${top3[0].name}</div>
+            <div style="color: var(--gold); font-size: 1.6rem; font-weight: bold;">${top3[0].votes || 0} votos</div>
+            <div style="color: var(--gold); font-weight: bold; margin-top: 10px; font-size: 0.9rem;">¡GANADOR/A!</div>
         `;
-        
-        winnersContainer.appendChild(firstPlace);
+        winnersRow.appendChild(firstDiv);
     }
     
     // 2do lugar
     if (top3[1]) {
-        const secondPlace = document.createElement('div');
-        secondPlace.style.cssText = `
+        const secondDiv = document.createElement('div');
+        secondDiv.style.cssText = `
+            display: inline-block;
             text-align: center;
-            padding: 25px;
-            background: linear-gradient(145deg, rgba(192, 192, 192, 0.2), rgba(169, 169, 169, 0.1));
-            border-radius: 18px;
+            padding: 20px;
+            background: rgba(192, 192, 192, 0.1);
             border: 2px solid var(--silver);
-            min-width: 180px;
-            box-shadow: 0 8px 20px rgba(192, 192, 192, 0.2);
+            border-radius: 12px;
+            min-width: 160px;
         `;
-        
-        secondPlace.innerHTML = `
-            <div style="font-size: 3rem; margin-bottom: 15px;">🥈</div>
-            <div style="color: var(--silver); font-size: 1.3rem; font-weight: bold; margin-bottom: 10px;">${top3[1].name}</div>
-            <div style="color: var(--silver); font-size: 1.5rem; font-weight: bold;">${top3[1].votes || 0} votos</div>
+        secondDiv.innerHTML = `
+            <div style="font-size: 3rem;">🥈</div>
+            <div style="color: var(--silver); font-weight: bold; font-size: 1.3rem; margin: 12px 0;">${top3[1].name}</div>
+            <div style="color: var(--silver); font-size: 1.4rem; font-weight: bold;">${top3[1].votes || 0} votos</div>
         `;
-        
-        winnersContainer.appendChild(secondPlace);
+        winnersRow.appendChild(secondDiv);
     }
     
     // 3er lugar
     if (top3[2]) {
-        const thirdPlace = document.createElement('div');
-        thirdPlace.style.cssText = `
+        const thirdDiv = document.createElement('div');
+        thirdDiv.style.cssText = `
+            display: inline-block;
             text-align: center;
-            padding: 25px;
-            background: linear-gradient(145deg, rgba(205, 127, 50, 0.2), rgba(180, 110, 40, 0.1));
-            border-radius: 18px;
+            padding: 20px;
+            background: rgba(205, 127, 50, 0.1);
             border: 2px solid var(--bronze);
-            min-width: 180px;
-            box-shadow: 0 8px 20px rgba(205, 127, 50, 0.2);
+            border-radius: 12px;
+            min-width: 160px;
         `;
-        
-        thirdPlace.innerHTML = `
-            <div style="font-size: 2.5rem; margin-bottom: 15px;">🥉</div>
-            <div style="color: var(--bronze); font-size: 1.3rem; font-weight: bold; margin-bottom: 10px;">${top3[2].name}</div>
-            <div style="color: var(--bronze); font-size: 1.5rem; font-weight: bold;">${top3[2].votes || 0} votos</div>
+        thirdDiv.innerHTML = `
+            <div style="font-size: 2.5rem;">🥉</div>
+            <div style="color: var(--bronze); font-weight: bold; font-size: 1.3rem; margin: 12px 0;">${top3[2].name}</div>
+            <div style="color: var(--bronze); font-size: 1.4rem; font-weight: bold;">${top3[2].votes || 0} votos</div>
         `;
-        
-        winnersContainer.appendChild(thirdPlace);
+        winnersRow.appendChild(thirdDiv);
     }
-    
-    container.appendChild(winnersContainer);
     
     // Si no hay ganadores
     if (top3.length === 0) {
         const noWinners = document.createElement('div');
-        noWinners.style.cssText = `
-            text-align: center;
-            padding: 60px 20px;
-            color: var(--silver);
-            font-size: 1.2rem;
-        `;
+        noWinners.style.cssText = 'color: var(--silver); padding: 40px; text-align: center;';
         noWinners.textContent = 'No hay votos en esta categoría';
-        container.appendChild(noWinners);
+        winnersRow.appendChild(noWinners);
     }
     
-    // Añadir estadísticas simples
-    const stats = document.createElement('div');
-    stats.style.cssText = `
-        margin-top: 40px;
+    mainContainer.appendChild(winnersRow);
+    
+    // Estadísticas simples
+    const totalVotes = sortedNominees.reduce((sum, n) => sum + (n.votes || 0), 0);
+    const statsDiv = document.createElement('div');
+    statsDiv.style.cssText = `
+        display: inline-block;
+        text-align: center;
         padding: 20px;
         background: rgba(255, 255, 255, 0.05);
-        border-radius: 15px;
-        text-align: center;
-        max-width: 400px;
-        width: 100%;
+        border-radius: 10px;
+        margin-top: 20px;
     `;
-    
-    const totalVotes = sortedNominees.reduce((sum, n) => sum + (n.votes || 0), 0);
-    stats.innerHTML = `
-        <div style="color: var(--gold); font-weight: bold; margin-bottom: 15px;">📊 ESTADÍSTICAS</div>
+    statsDiv.innerHTML = `
+        <div style="color: var(--gold); font-weight: bold; margin-bottom: 15px; font-size: 1.1rem;">📊 ESTADÍSTICAS</div>
         <div style="color: var(--silver);">
             <div style="margin-bottom: 10px;">Total votos: <span style="color: var(--gold); font-weight: bold;">${totalVotes}</span></div>
             <div>Participantes: <span style="color: var(--silver);">${sortedNominees.length}</span></div>
         </div>
     `;
     
-    container.appendChild(stats);
-    nomineesList.appendChild(container);
+    mainContainer.appendChild(statsDiv);
+    nomineesList.appendChild(mainContainer);
     
     // Ocultar sección de añadir nominado
     const addSection = document.querySelector('.add-nominee-section');
@@ -1024,6 +1007,8 @@ function showCategoryResults(categoryId) {
     
     // Mostrar modal
     modal.style.display = 'block';
+    
+    console.log("Versión simple mostrada");
 }
 
 // ===== INICIALIZACIÓN =====
