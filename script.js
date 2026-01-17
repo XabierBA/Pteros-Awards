@@ -389,8 +389,6 @@ function updateVotersList() {
 }
 
 // ===== RENDERIZAR CATEGORÍAS =====
-// ===== RENDERIZAR CATEGORÍAS (VERSIÓN SIMPLIFICADA) =====
-// ===== RENDERIZAR CATEGORÍAS (SOLO TU VOTO) =====
 // ===== RENDERIZAR CATEGORÍAS (SOLO TU VOTO) =====
 function renderCategories() {
     const container = document.querySelector('.categories-container');
@@ -412,18 +410,22 @@ function renderCategories() {
         
         const card = document.createElement('div');
         card.className = 'category-card';
+        
+        // CORRECCIÓN: Comprobar fase actual para decidir el comportamiento
         card.onclick = () => {
             if (appData.phase === 'results') {
                 showCategoryResults(category.id);
             } else {
                 openVoteModal(category.id);
             }
-};
+        };
+        
+        // VERSIÓN CENTRADA
         card.innerHTML = `
             <h3>${category.name || 'Sin nombre'}</h3>
-            <div class="vote-count-simple">${totalVotes} votos</div>
+            <div class="vote-count-centered">${totalVotes} votos</div>
             <p class="category-description">${category.description || ''}</p>
-            ${userVote ? `<div class="user-vote-simple">✅ Tu voto: ${userVote.nomineeName || 'Anónimo'}</div>` : ''}
+            ${userVote ? `<div class="user-vote-indicator">✅ Tu voto: ${userVote.nomineeName || 'Anónimo'}</div>` : ''}
         `;
         
         container.appendChild(card);
@@ -440,53 +442,61 @@ function getNomineePhotoHTML(nominee) {
     return '👤';
 }
 
+// ===== ABRIR MODAL DE VOTACIÓN =====
 function openVoteModal(categoryId) {
-    function openVoteModal(categoryId) {
     // Si estamos en fase resultados, mostrar resultados en vez de votación
     if (appData.phase === 'results') {
         showCategoryResults(categoryId);
         return;
     }
-        if (!appData.currentUser) {
-            alert('Por favor, identifícate primero');
-            return;
-        }
+    
+    // Verificar que el usuario esté logueado
+    if (!appData.currentUser) {
+        alert('Por favor, identifícate primero');
+        return;
+    }
+    
+    currentCategoryId = categoryId;
+    const category = appData.categories.find(c => c && c.id === categoryId);
+    const modal = document.getElementById('voteModal');
+    const modalCategory = document.getElementById('modalCategory');
+    const nomineesList = document.getElementById('nomineesList');
+    
+    if (!category) {
+        alert('Error: Categoría no encontrada');
+        return;
+    }
+    
+    // Mostrar sección de añadir nominado (solo en fases de votación)
+    const addSection = document.querySelector('.add-nominee-section');
+    if (addSection) {
+        addSection.style.display = 'block';
+    }
+    
+    modalCategory.innerHTML = `${category.name}<br><small>${category.description || ''}</small>`;
+    nomineesList.innerHTML = '';
+    
+    const userVotes = appData.currentUser.votes || {};
+    const userVote = userVotes[categoryId];
+    
+    const nominees = category.nominees || [];
+    // Ordenar alfabéticamente para NO mostrar quién va ganando
+    const sortedNominees = [...nominees]
+        .filter(n => n)
+        .sort((a, b) => a.name.localeCompare(b.name));
+    
+    sortedNominees.forEach(nominee => {
+        const isVoted = userVote && userVote.nomineeName === nominee.name;
+        const voters = nominee.voters || [];
+        const hasVoted = voters.includes(appData.currentUser.id);
+        const photoUrl = nominee.photo || (appData.photoUrls && appData.photoUrls[nominee.name]);
         
-        currentCategoryId = categoryId;
-        const category = appData.categories.find(c => c && c.id === categoryId);
-        const modal = document.getElementById('voteModal');
-        const modalCategory = document.getElementById('modalCategory');
-        const nomineesList = document.getElementById('nomineesList');
+        const nomineeItem = document.createElement('div');
+        nomineeItem.className = `nominee-item ${isVoted ? 'voted' : ''}`;
+        nomineeItem.onclick = () => voteForNominee(nominee.name);
         
-        if (!category) {
-            alert('Error: Categoría no encontrada');
-            return;
-        }
-        
-        modalCategory.innerHTML = `${category.name}<br><small>${category.description || ''}</small>`;
-        nomineesList.innerHTML = '';
-        
-        const userVotes = appData.currentUser.votes || {};
-        const userVote = userVotes[categoryId];
-        
-        const nominees = category.nominees || [];
-        // Ordenar alfabéticamente para NO mostrar quién va ganando
-        const sortedNominees = [...nominees]
-            .filter(n => n)
-            .sort((a, b) => a.name.localeCompare(b.name));
-        
-        sortedNominees.forEach(nominee => {
-            const isVoted = userVote && userVote.nomineeName === nominee.name;
-            const voters = nominee.voters || [];
-            const hasVoted = voters.includes(appData.currentUser.id);
-            const photoUrl = nominee.photo || (appData.photoUrls && appData.photoUrls[nominee.name]);
-            
-            const nomineeItem = document.createElement('div');
-            nomineeItem.className = `nominee-item ${isVoted ? 'voted' : ''}`;
-            nomineeItem.onclick = () => voteForNominee(nominee.name);
-            
-            // CONTENIDO MODIFICADO: OCULTAR VOTOS INDIVIDUALES
-            nomineeItem.innerHTML = `
+        // Contenido SIN mostrar votos individuales
+        nomineeItem.innerHTML = `
             ${photoUrl ? 
                 `<img src="${photoUrl}" class="nominee-photo" alt="${nominee.name}" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';">` : 
                 ''
@@ -499,53 +509,51 @@ function openVoteModal(categoryId) {
             <h4 class="nominee-name">${nominee.name}</h4>
             ${hasVoted ? '<div class="voted-check">⭐ Tú votaste aquí</div>' : ''}
             ${isVoted ? '<div class="voted-check">✅ Tu voto actual</div>' : ''}
-            `;
+        `;
+        
+        // Añadir frases existentes (solo para Frase del Año)
+        if (category.id === 17 && nominee.frases && Object.keys(nominee.frases).length > 0) {
+            const frasesDiv = document.createElement('div');
+            frasesDiv.className = 'existing-frases';
+            frasesDiv.style.marginTop = '10px';
+            frasesDiv.style.padding = '8px';
+            frasesDiv.style.background = 'rgba(255, 215, 0, 0.1)';
+            frasesDiv.style.borderRadius = '5px';
+            frasesDiv.style.fontSize = '12px';
             
-            // AÑADIR FRASES EXISTENTES (solo para Frase del Año)
-            // AÑADIR FRASES EXISTENTES (solo para Frase del Año)
-            if (category.id === 17 && nominee.frases && Object.keys(nominee.frases).length > 0) {
-                const frasesDiv = document.createElement('div');
-                frasesDiv.className = 'existing-frases';
-                frasesDiv.style.marginTop = '10px';
-                frasesDiv.style.padding = '8px';
-                frasesDiv.style.background = 'rgba(255, 215, 0, 0.1)';
-                frasesDiv.style.borderRadius = '5px';
-                frasesDiv.style.fontSize = '12px';
-                
-                let frasesText = '<strong>💬 Frases añadidas:</strong><br>';
-                let contador = 0;
-                
-                // Mostrar máximo 2 frases
-                Object.values(nominee.frases).forEach(fraseData => {
-                    if (contador < 2) {
-                        frasesText += `"${fraseData.frase.substring(0, 40)}${fraseData.frase.length > 40 ? '...' : ''}"<br>`;
-                        contador++;
-                    }
-                });
-                
-                if (Object.keys(nominee.frases).length > 2) {
-                    frasesText += `... y ${Object.keys(nominee.frases).length - 2} más`;
+            let frasesText = '<strong>💬 Frases añadidas:</strong><br>';
+            let contador = 0;
+            
+            // Mostrar máximo 2 frases
+            Object.values(nominee.frases).forEach(fraseData => {
+                if (contador < 2) {
+                    frasesText += `"${fraseData.frase.substring(0, 40)}${fraseData.frase.length > 40 ? '...' : ''}"<br>`;
+                    contador++;
                 }
-                
-                frasesDiv.innerHTML = frasesText;
-                nomineeItem.appendChild(frasesDiv);
+            });
+            
+            if (Object.keys(nominee.frases).length > 2) {
+                frasesText += `... y ${Object.keys(nominee.frases).length - 2} más`;
             }
             
-            nomineesList.appendChild(nomineeItem);
-        });
+            frasesDiv.innerHTML = frasesText;
+            nomineeItem.appendChild(frasesDiv);
+        }
         
-        document.getElementById('photoPreview').innerHTML = '';
-        document.getElementById('newNomineeName').value = '';
-        photoPreviewFile = null;
-        
-        modal.style.display = 'block';
-    }
-
+        nomineesList.appendChild(nomineeItem);
+    });
+    
+    // Limpiar preview de foto
+    document.getElementById('photoPreview').innerHTML = '';
+    document.getElementById('newNomineeName').value = '';
+    photoPreviewFile = null;
+    
+    // Mostrar modal
+    modal.style.display = 'block';
 }
     
 // ===== VOTAR POR UN NOMINADO CON FRASE =====
-// ===== VOTAR POR UN NOMINADO CON FRASE =====
-// ===== VOTAR POR UN NOMINADO CON FRASE =====
+
 function voteForNominee(nomineeName) {
     console.log("🔴 voteForNominee LLAMADA con:", nomineeName);
     
@@ -835,7 +843,7 @@ function verResultadosUsuarios() {
     showResults();
 }
 
-// ===== MOSTRAR RESULTADOS DE UNA CATEGORÍA ESPECÍFICA =====
+
 // ===== MOSTRAR RESULTADOS CON ANIMACIÓN POR CLICS =====
 function showCategoryResults(categoryId) {
     const category = appData.categories.find(c => c && c.id === categoryId);
