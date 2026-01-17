@@ -493,6 +493,7 @@ function openVoteModal(categoryId) {
         `;
         
         // AÑADIR FRASES EXISTENTES (solo para Frase del Año)
+        // AÑADIR FRASES EXISTENTES (solo para Frase del Año)
         if (category.id === 17 && nominee.frases && Object.keys(nominee.frases).length > 0) {
             const frasesDiv = document.createElement('div');
             frasesDiv.className = 'existing-frases';
@@ -532,6 +533,7 @@ function openVoteModal(categoryId) {
 }
 
 // ===== VOTAR POR UN NOMINADO CON FRASE =====
+// ===== VOTAR POR UN NOMINADO CON FRASE =====
 function voteForNominee(nomineeName) {
     if (!appData.currentUser) {
         alert('Por favor, identifícate primero');
@@ -568,15 +570,17 @@ function voteForNominee(nomineeName) {
         
         // Si cancela el prompt, no votar
         if (fraseUsuario === null) {
+            console.log("❌ Voto cancelado por usuario");
             return;
         }
         
         // Limpiar la frase
         fraseUsuario = fraseUsuario.trim();
         
-        // Validar que no esté vacía
+        // Validar que no esté vacía (pero permitir vacío)
         if (!fraseUsuario) {
             if (!confirm("¿Votar sin añadir frase? (Puedes dejarla vacía)")) {
+                console.log("❌ Voto cancelado - sin frase");
                 return;
             }
         }
@@ -600,6 +604,7 @@ function voteForNominee(nomineeName) {
             // Eliminar frase si existe
             if (previousNominee.frases && previousNominee.frases[appData.currentUser.id]) {
                 delete previousNominee.frases[appData.currentUser.id];
+                console.log("🗑️ Frase anterior eliminada");
             }
             console.log("✅ Voto anterior eliminado de:", previousNominee.name);
         }
@@ -644,15 +649,19 @@ function voteForNominee(nomineeName) {
     })();
     
     // Mostrar confirmación
-    if (category.id === 17 && fraseUsuario) {
-        alert(`✅ ¡Voto registrado!\n\nHas votado por ${nomineeName}\nFrase añadida: "${fraseUsuario}"`);
+    if (category.id === 17) {
+        if (fraseUsuario) {
+            alert(`✅ ¡Voto registrado!\n\nHas votado por ${nomineeName}\nFrase añadida: "${fraseUsuario}"`);
+        } else {
+            alert(`✅ ¡Voto registrado!\nHas votado por ${nomineeName} (sin frase añadida)`);
+        }
     } else {
         alert(`✅ ¡Voto registrado!\nHas votado por ${nomineeName} en "${category.name}"`);
     }
     
     // Actualizar UI
     renderCategories();
-    openVoteModal(currentCategoryId);
+    openVoteModal(currentCategoryId); // Recargar modal
     updateVotersList();
 }
 
