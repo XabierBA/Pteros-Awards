@@ -1582,3 +1582,39 @@ footer {
     margin-top: 10px;
     font-weight: 500;
 }
+/* ===== BOTÓN DE RESULTADOS VISIBLE ===== */
+.btn-results {
+    background: linear-gradient(45deg, var(--gold), var(--gold-dark)) !important;
+    color: black !important;
+    border: 2px solid var(--gold) !important;
+    padding: 15px 30px !important;
+    border-radius: 25px !important;
+    font-size: 1.1rem !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 12px !important;
+    margin: 0 auto 25px !important;
+    font-weight: bold !important;
+    letter-spacing: 1px !important;
+    box-shadow: 0 5px 20px rgba(255, 215, 0, 0.3) !important;
+}
+
+.btn-results:hover {
+    transform: scale(1.05) !important;
+    box-shadow: 0 8px 30px rgba(255, 215, 0, 0.5) !important;
+    background: linear-gradient(45deg, #FFD700, #FFED4E) !important;
+}
+
+/* Animación para el botón de resultados */
+@keyframes pulse-gold {
+    0% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7); }
+    70% { box-shadow: 0 0 0 15px rgba(255, 215, 0, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); }
+}
+
+.phase-results .btn-results {
+    animation: pulse-gold 2s infinite;
+}

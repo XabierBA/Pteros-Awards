@@ -67,6 +67,12 @@
             <button class="btn-admin" onclick="openAdminPanel()">
                 <i class="fas fa-cog"></i> Panel Admin
             </button>
+            
+            <!-- Botón de resultados (visible solo en fase resultados) -->
+            <button id="resultsButton" class="btn-results" onclick="showResults()" style="display: none; margin-left: 10px;">
+                <i class="fas fa-trophy"></i> Ver Resultados Finales
+            </button>
+            
             <!-- Botón de verificación añadido -->
             <button onclick="verificarVotos()" class="btn-admin" style="background: linear-gradient(90deg, #FF6B6B, #FF8E53); margin-left: 10px;">
                 <i class="fas fa-bug"></i> Verificar Votos

@@ -116,11 +116,11 @@ function setPhase(phase) {
     
     appData.phase = phase;
     saveData();
-    updatePhaseBanner();
+    updatePhaseBanner(); // ← Esto actualizará el botón
     renderCategories();
     
     if (phase === 'results') {
-        showResults();
+        showResults(); // Muestra resultados automáticamente al admin
     }
     
     alert(`✅ Fase cambiada a: ${getPhaseName(phase)}`);

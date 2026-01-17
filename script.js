@@ -755,6 +755,7 @@ function closeModal() {
 function updatePhaseBanner() {
     const banner = document.getElementById('phaseBanner');
     const text = document.getElementById('phaseText');
+    const resultsButton = document.getElementById('resultsButton');
     
     if (!banner || !text) return;
     
@@ -762,14 +763,21 @@ function updatePhaseBanner() {
         case 'nominations':
             banner.style.background = 'linear-gradient(90deg, #FF416C, #FF4B2B)';
             text.textContent = '🎯 FASE DE NOMINACIONES - Vota por tus amigos';
+            if (resultsButton) resultsButton.style.display = 'none';
             break;
         case 'voting':
             banner.style.background = 'linear-gradient(90deg, #2196F3, #21CBF3)';
             text.textContent = '⭐ FASE FINAL - Vota entre los 3 más nominados';
+            if (resultsButton) resultsButton.style.display = 'none';
             break;
         case 'results':
             banner.style.background = 'linear-gradient(90deg, #4CAF50, #8BC34A)';
             text.textContent = '🏆 RESULTADOS FINALES - ¡Ganadores revelados!';
+            if (resultsButton) {
+                resultsButton.style.display = 'flex';
+                // Añadir clase para animación
+                banner.classList.add('phase-results');
+            }
             break;
     }
 }
@@ -797,6 +805,18 @@ function updateStats() {
     if (votersElement) votersElement.textContent = totalVoters;
     if (categoriesElement) categoriesElement.textContent = totalCategories;
     if (votesElement) votesElement.textContent = totalVotes;
+}
+
+// ===== VER RESULTADOS (PARA USUARIOS NORMALES) =====
+function verResultadosUsuarios() {
+    if (appData.phase !== 'results') {
+        alert('⚠️ Los resultados aún no están disponibles.\n\nEstamos en fase de ' + 
+              (appData.phase === 'nominations' ? 'nominaciones' : 'votación final') + 
+              '.\n\nEspera a que el admin active los resultados finales.');
+        return;
+    }
+    
+    showResults();
 }
 
 // ===== INICIALIZACIÓN =====
