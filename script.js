@@ -1176,20 +1176,425 @@ function showCategoryResults(categoryId) {
         }, 500);
     }
     
-    // Función para mostrar resultados completos en 3 COLUMNAS
+
+    // Función para mostrar resultados completos en 3 COLUMNAS (VERSIÓN COMPLETA)
     function showFullResults(category, sortedNominees) {
         nomineesList.innerHTML = '';
         
+        // Crear contenedor principal
+        const mainContainer = document.createElement('div');
+        mainContainer.style.cssText = `
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        `;
+        
+        // Título
+        const title = document.createElement('h3');
+        title.innerHTML = `🏆 ${category.name || 'Categoría'} - Resultados Completos`;
+        title.style.cssText = `
+            color: var(--gold);
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 2rem;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        `;
+        mainContainer.appendChild(title);
+        
+        // Contenedor de 3 columnas
+        const threeColumns = document.createElement('div');
+        threeColumns.style.cssText = `
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 25px;
+            width: 100%;
+            min-height: 600px;
+        `;
+        
+        // ===== COLUMNA IZQUIERDA: PODIO =====
+        const leftColumn = document.createElement('div');
+        leftColumn.style.cssText = `
+            background: linear-gradient(145deg, rgba(30, 30, 50, 0.8), rgba(15, 15, 25, 0.9));
+            padding: 25px;
+            border-radius: 20px;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        `;
+        
+        let podiumHTML = '<h4 style="color: var(--gold); text-align: center; margin-bottom: 30px; font-size: 1.4rem;">🏆 PODIO OFICIAL</h4>';
+        
+        if (sortedNominees.length >= 3) {
+            podiumHTML += `
+                <div style="display: flex; flex-direction: column; gap: 25px;">
+                    <!-- 1er lugar -->
+                    <div style="background: linear-gradient(145deg, rgba(255, 215, 0, 0.2), rgba(212, 175, 55, 0.1)); 
+                                padding: 25px; 
+                                border-radius: 15px; 
+                                border: 3px solid var(--gold);
+                                text-align: center;">
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 15px;">
+                            <div style="font-size: 3rem;">🥇</div>
+                            <div>
+                                <div style="font-weight: bold; color: var(--gold); font-size: 1.5rem;">${sortedNominees[0].name}</div>
+                                <div style="color: var(--gold); font-weight: bold; font-size: 1.3rem;">${sortedNominees[0].votes || 0} votos</div>
+                            </div>
+                        </div>
+                        <div style="color: var(--gold); font-size: 1.1rem; font-weight: bold;">¡GANADOR/A!</div>
+                    </div>
+                    
+                    <!-- 2do lugar -->
+                    <div style="background: linear-gradient(145deg, rgba(192, 192, 192, 0.2), rgba(169, 169, 169, 0.1)); 
+                                padding: 22px; 
+                                border-radius: 15px; 
+                                border: 2px solid var(--silver);
+                                text-align: center;">
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 10px;">
+                            <div style="font-size: 2.5rem;">🥈</div>
+                            <div>
+                                <div style="font-weight: bold; color: var(--silver); font-size: 1.4rem;">${sortedNominees[1].name}</div>
+                                <div style="color: var(--silver); font-weight: bold; font-size: 1.2rem;">${sortedNominees[1].votes || 0} votos</div>
+                            </div>
+                        </div>
+                        <div style="color: var(--silver); font-size: 1rem;">Segundo lugar</div>
+                    </div>
+                    
+                    <!-- 3er lugar -->
+                    <div style="background: linear-gradient(145deg, rgba(205, 127, 50, 0.2), rgba(180, 110, 40, 0.1)); 
+                                padding: 20px; 
+                                border-radius: 15px; 
+                                border: 2px solid var(--bronze);
+                                text-align: center;">
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 10px;">
+                            <div style="font-size: 2rem;">🥉</div>
+                            <div>
+                                <div style="font-weight: bold; color: var(--bronze); font-size: 1.3rem;">${sortedNominees[2].name}</div>
+                                <div style="color: var(--bronze); font-weight: bold; font-size: 1.1rem;">${sortedNominees[2].votes || 0} votos</div>
+                            </div>
+                        </div>
+                        <div style="color: var(--bronze); font-size: 1rem;">Tercer lugar</div>
+                    </div>
+                </div>
+            `;
+        } else if (sortedNominees.length >= 2) {
+            podiumHTML += `
+                <div style="display: flex; flex-direction: column; gap: 25px;">
+                    <div style="background: linear-gradient(145deg, rgba(255, 215, 0, 0.2), rgba(212, 175, 55, 0.1)); 
+                                padding: 25px; 
+                                border-radius: 15px; 
+                                border: 3px solid var(--gold);
+                                text-align: center;">
+                        <div style="font-size: 3rem; margin-bottom: 10px;">🥇</div>
+                        <div style="font-weight: bold; color: var(--gold); font-size: 1.5rem;">${sortedNominees[0].name}</div>
+                        <div style="color: var(--gold); font-weight: bold; font-size: 1.3rem;">${sortedNominees[0].votes || 0} votos</div>
+                    </div>
+                    
+                    <div style="background: linear-gradient(145deg, rgba(192, 192, 192, 0.2), rgba(169, 169, 169, 0.1)); 
+                                padding: 22px; 
+                                border-radius: 15px; 
+                                border: 2px solid var(--silver);
+                                text-align: center;">
+                        <div style="font-size: 2.5rem; margin-bottom: 10px;">🥈</div>
+                        <div style="font-weight: bold; color: var(--silver); font-size: 1.4rem;">${sortedNominees[1].name}</div>
+                        <div style="color: var(--silver); font-weight: bold; font-size: 1.2rem;">${sortedNominees[1].votes || 0} votos</div>
+                    </div>
+                </div>
+            `;
+        } else if (sortedNominees.length >= 1) {
+            podiumHTML += `
+                <div style="text-align: center;">
+                    <div style="background: linear-gradient(145deg, rgba(255, 215, 0, 0.2), rgba(212, 175, 55, 0.1)); 
+                                padding: 30px; 
+                                border-radius: 15px; 
+                                border: 3px solid var(--gold);
+                                display: inline-block;
+                                min-width: 200px;">
+                        <div style="font-size: 4rem; margin-bottom: 15px;">🏆</div>
+                        <div style="font-weight: bold; color: var(--gold); font-size: 1.8rem;">${sortedNominees[0].name}</div>
+                        <div style="color: var(--gold); font-weight: bold; font-size: 1.5rem; margin: 10px 0;">${sortedNominees[0].votes || 0} votos</div>
+                        <div style="color: var(--gold); font-weight: bold; font-size: 1.2rem;">¡Único participante!</div>
+                    </div>
+                </div>
+            `;
+        } else {
+            podiumHTML += '<div style="text-align: center; color: var(--silver); padding: 40px;">No hay votos registrados</div>';
+        }
+        
+        // Estadísticas del podio
+        const totalVotes = sortedNominees.reduce((sum, n) => sum + (n.votes || 0), 0);
+        const totalVoters = sortedNominees.reduce((sum, n) => sum + ((n.voters || []).length), 0);
+        
+        podiumHTML += `
+            <div style="margin-top: 30px; padding: 20px; background: rgba(255, 255, 255, 0.05); border-radius: 12px;">
+                <div style="color: var(--silver); font-size: 1.1rem; margin-bottom: 10px; text-align: center;">
+                    <strong>📊 Estadísticas:</strong>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div style="color: var(--silver); font-size: 0.95rem;">Total votos:</div>
+                    <div style="color: var(--gold); font-weight: bold; text-align: right;">${totalVotes}</div>
+                    
+                    <div style="color: var(--silver); font-size: 0.95rem;">Votantes únicos:</div>
+                    <div style="color: var(--silver); text-align: right;">${totalVoters}</div>
+                    
+                    <div style="color: var(--silver); font-size: 0.95rem;">Participantes:</div>
+                    <div style="color: var(--silver); text-align: right;">${sortedNominees.length}</div>
+                </div>
+            </div>
+        `;
+        
+        leftColumn.innerHTML = podiumHTML;
+        
+        // ===== COLUMNA CENTRAL: CLASIFICACIÓN COMPLETA =====
+        const centerColumn = document.createElement('div');
+        centerColumn.style.cssText = `
+            background: linear-gradient(145deg, rgba(30, 30, 50, 0.8), rgba(15, 15, 25, 0.9));
+            padding: 25px;
+            border-radius: 20px;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow-y: auto;
+            max-height: 700px;
+        `;
+        
+        let rankingHTML = '<h4 style="color: var(--gold); text-align: center; margin-bottom: 30px; font-size: 1.4rem;">📋 CLASIFICACIÓN COMPLETA</h4>';
+        
+        if (sortedNominees.length > 0) {
+            rankingHTML += `
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px;">
+                    ${sortedNominees.map((nominee, index) => {
+                        const position = index + 1;
+                        const isTop3 = position <= 3;
+                        const medal = position === 1 ? '🥇' : position === 2 ? '🥈' : position === 3 ? '🥉' : '🎯';
+                        const color = position === 1 ? 'var(--gold)' : 
+                                    position === 2 ? 'var(--silver)' : 
+                                    position === 3 ? 'var(--bronze)' : 'var(--silver)';
+                        const bgColor = position === 1 ? 'rgba(255, 215, 0, 0.1)' : 
+                                      position === 2 ? 'rgba(192, 192, 192, 0.1)' : 
+                                      position === 3 ? 'rgba(205, 127, 50, 0.1)' : 'rgba(255, 255, 255, 0.05)';
+                        
+                        return `
+                            <div style="background: ${bgColor}; 
+                                        padding: 20px; 
+                                        border-radius: 15px; 
+                                        border: 2px solid ${isTop3 ? color : 'rgba(255, 215, 0, 0.2)'};
+                                        text-align: center;
+                                        transition: all 0.3s ease;
+                                        cursor: pointer;"
+                                 onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 15px 30px rgba(0,0,0,0.4)';"
+                                 onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';"
+                                 onclick="alert('${nominee.name}: ${nominee.votes || 0} votos\\nPosición: ${position}º\\nVotantes: ${(nominee.voters || []).length}')">
+                                <div style="font-size: 2.5rem; margin-bottom: 10px; color: ${color};">
+                                    ${medal}
+                                </div>
+                                <div style="font-weight: bold; font-size: 1.3rem; color: ${color}; margin-bottom: 8px; word-break: break-word;">
+                                    ${nominee.name}
+                                </div>
+                                <div style="color: ${color}; font-size: 1.5rem; font-weight: bold; margin: 10px 0;">
+                                    ${nominee.votes || 0}
+                                </div>
+                                <div style="color: var(--silver); font-size: 0.9rem;">
+                                    ${position}º lugar
+                                </div>
+                                <div style="color: #aaa; font-size: 0.8rem; margin-top: 5px;">
+                                    ${(nominee.voters || []).length} votante${(nominee.voters || []).length !== 1 ? 's' : ''}
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        } else {
+            rankingHTML += '<div style="text-align: center; color: var(--silver); padding: 60px;">No hay participantes en esta categoría</div>';
+        }
+        
+        centerColumn.innerHTML = rankingHTML;
+        
+        // ===== COLUMNA DERECHA: FRASES O INFORMACIÓN ADICIONAL =====
+        const rightColumn = document.createElement('div');
+        rightColumn.style.cssText = `
+            background: linear-gradient(145deg, rgba(30, 30, 50, 0.8), rgba(15, 15, 25, 0.9));
+            padding: 25px;
+            border-radius: 20px;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow-y: auto;
+            max-height: 700px;
+        `;
+        
+        // Verificar si es categoría 17 (Frase del Año)
+        if (category.id === 17) {
+            const todasLasFrases = [];
+            
+            // Recoger todas las frases de todos los nominados
+            sortedNominees.forEach(nominee => {
+                if (nominee.frases && Object.keys(nominee.frases).length > 0) {
+                    Object.values(nominee.frases).forEach(fraseData => {
+                        todasLasFrases.push({
+                            persona: nominee.name,
+                            frase: fraseData.frase,
+                            votante: fraseData.voter,
+                            votos: nominee.votes || 0,
+                            posicion: sortedNominees.findIndex(n => n.name === nominee.name) + 1
+                        });
+                    });
+                }
+            });
+            
+            // Ordenar frases por votos (las más votadas primero)
+            todasLasFrases.sort((a, b) => b.votos - a.votos);
+            
+            let frasesHTML = '<h4 style="color: var(--gold); text-align: center; margin-bottom: 30px; font-size: 1.4rem;">💬 FRASES ICÓNICAS</h4>';
+            
+            if (todasLasFrases.length > 0) {
+                frasesHTML += `
+                    <div style="max-height: 600px; overflow-y: auto; padding-right: 10px;">
+                        ${todasLasFrases.map((item, index) => {
+                            const positionColor = item.posicion === 1 ? 'var(--gold)' : 
+                                                item.posicion === 2 ? 'var(--silver)' : 
+                                                item.posicion === 3 ? 'var(--bronze)' : 'var(--primary)';
+                            
+                            return `
+                                <div style="margin-bottom: 20px; 
+                                            padding: 20px; 
+                                            background: rgba(0, 0, 0, 0.2); 
+                                            border-radius: 12px; 
+                                            border-left: 5px solid ${positionColor};
+                                            transition: all 0.3s ease;"
+                                     onmouseover="this.style.transform='translateX(5px)'; this.style.boxShadow='0 5px 15px rgba(0,0,0,0.3)';"
+                                     onmouseout="this.style.transform='translateX(0)'; this.style.boxShadow='none';">
+                                    <div style="font-style: italic; 
+                                                color: white; 
+                                                margin-bottom: 15px; 
+                                                font-size: 1.1rem; 
+                                                line-height: 1.4;
+                                                word-break: break-word;
+                                                overflow-wrap: break-word;
+                                                white-space: normal;">
+                                        "${item.frase}"
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                                        <div>
+                                            <div style="font-weight: bold; color: ${positionColor}; font-size: 1.1rem;">
+                                                ${item.persona}
+                                            </div>
+                                            <div style="color: var(--silver); font-size: 0.85rem;">
+                                                Posición: ${item.posicion}º (${item.votos} votos)
+                                            </div>
+                                        </div>
+                                        <div style="text-align: right;">
+                                            <div style="color: var(--silver); font-size: 0.85rem;">Añadida por:</div>
+                                            <div style="font-weight: bold; color: var(--silver); font-size: 0.9rem;">
+                                                ${item.votante}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                        
+                        ${todasLasFrases.length > 10 ? `
+                            <div style="text-align: center; margin-top: 20px; padding: 15px; color: var(--silver); 
+                                        background: rgba(255, 215, 0, 0.1); border-radius: 10px; font-size: 0.9rem;">
+                                Mostrando ${todasLasFrases.length} frases icónicas
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            } else {
+                frasesHTML += `
+                    <div style="text-align: center; padding: 60px 20px; color: var(--silver);">
+                        <div style="font-size: 3rem; margin-bottom: 20px;">💭</div>
+                        <div style="font-size: 1.2rem; margin-bottom: 15px;">No hay frases añadidas</div>
+                        <div style="color: #aaa; font-size: 0.9rem;">
+                            Los votantes no añadieron frases<br>en esta categoría
+                        </div>
+                    </div>
+                `;
+            }
+            
+            rightColumn.innerHTML = frasesHTML;
+        } else {
+            // Para otras categorías, mostrar información adicional
+            const totalVotes = sortedNominees.reduce((sum, n) => sum + (n.votes || 0), 0);
+            const uniqueVoters = new Set();
+            sortedNominees.forEach(n => (n.voters || []).forEach(v => uniqueVoters.add(v)));
+            const participationRate = appData.users ? ((uniqueVoters.size / appData.users.length) * 100).toFixed(1) : 0;
+            
+            rightColumn.innerHTML = `
+                <h4 style="color: var(--gold); text-align: center; margin-bottom: 30px; font-size: 1.4rem;">📈 INFORMACIÓN ADICIONAL</h4>
+                
+                <div style="padding: 20px; background: rgba(255, 255, 255, 0.05); border-radius: 15px; margin-bottom: 25px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;">
+                        <div style="color: var(--silver);">Categoría:</div>
+                        <div style="color: var(--gold); font-weight: bold; text-align: right;">${category.name}</div>
+                        
+                        <div style="color: var(--silver);">Total votos:</div>
+                        <div style="color: var(--gold); font-weight: bold; text-align: right;">${totalVotes}</div>
+                        
+                        <div style="color: var(--silver);">Participantes:</div>
+                        <div style="color: var(--silver); text-align: right;">${sortedNominees.length}</div>
+                        
+                        <div style="color: var(--silver);">Votantes únicos:</div>
+                        <div style="color: var(--silver); text-align: right;">${uniqueVoters.size}</div>
+                        
+                        <div style="color: var(--silver);">Tasa participación:</div>
+                        <div style="color: ${participationRate > 50 ? '#4CAF50' : '#FFD700'}; font-weight: bold; text-align: right;">
+                            ${participationRate}%
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="padding: 20px; background: rgba(255, 255, 255, 0.05); border-radius: 15px;">
+                    <h5 style="color: var(--silver); margin-bottom: 15px; font-size: 1.1rem;">🏅 Distribución de votos:</h5>
+                    ${sortedNominees.slice(0, 5).map((nominee, index) => {
+                        const percentage = totalVotes > 0 ? ((nominee.votes / totalVotes) * 100).toFixed(1) : 0;
+                        return `
+                            <div style="margin-bottom: 12px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                    <span style="color: var(--silver); font-size: 0.9rem;">${index + 1}. ${nominee.name}</span>
+                                    <span style="color: var(--gold); font-size: 0.9rem; font-weight: bold;">${percentage}%</span>
+                                </div>
+                                <div style="height: 8px; background: rgba(255, 255, 255, 0.1); border-radius: 4px; overflow: hidden;">
+                                    <div style="height: 100%; width: ${percentage}%; background: linear-gradient(90deg, var(--gold), var(--gold-dark));"></div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                    ${sortedNominees.length > 5 ? `
+                        <div style="text-align: center; margin-top: 15px; color: var(--silver); font-size: 0.9rem;">
+                            + ${sortedNominees.length - 5} participantes más
+                        </div>
+                    ` : ''}
+                </div>
+                
+                <div style="text-align: center; margin-top: 25px; padding-top: 20px; border-top: 1px solid rgba(255, 215, 0, 0.2);">
+                    <div style="color: var(--silver); font-size: 0.9rem; margin-bottom: 10px;">
+                        Fase actual: <span style="color: var(--gold); font-weight: bold;">Resultados</span>
+                    </div>
+                    <div style="color: #aaa; font-size: 0.8rem;">
+                        Actualizado: ${new Date().toLocaleString()}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Añadir columnas al contenedor
+        threeColumns.appendChild(leftColumn);
+        threeColumns.appendChild(centerColumn);
+        threeColumns.appendChild(rightColumn);
+        
+        mainContainer.appendChild(threeColumns);
+        nomineesList.appendChild(mainContainer);
+        
         // Ocultar sección de añadir nuevo nominado
-        document.querySelector('.add-nominee-section').style.display = 'none';
+        const addSection = document.querySelector('.add-nominee-section');
+        if (addSection) {
+            addSection.style.display = 'none';
+        }
         
         // Restaurar cursor normal
         nomineesList.style.cursor = 'default';
         nomineesList.onclick = null;
-        
-        // Aquí va el código existente para mostrar las 3 columnas...
-        // [Mantén el código actual de showFullResults aquí]
-        // ... [todo el código de showFullResults que ya tienes] ...
     }
     
     // Empezar con paso 0
