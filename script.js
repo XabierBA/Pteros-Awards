@@ -836,6 +836,7 @@ function verResultadosUsuarios() {
 }
 
 // ===== MOSTRAR RESULTADOS DE UNA CATEGORÍA ESPECÍFICA =====
+// ===== MOSTRAR RESULTADOS CON ANIMACIÓN POR CLICS =====
 function showCategoryResults(categoryId) {
     const category = appData.categories.find(c => c && c.id === categoryId);
     if (!category) return;
@@ -862,56 +863,198 @@ function showCategoryResults(categoryId) {
     const second = sortedNominees[1];
     const third = sortedNominees[2];
     
-    // Mostrar podio con los 3 primeros
-    if (winner) {
-        const podiumHTML = `
-            <div style="display: flex; justify-content: center; gap: 20px; margin: 15px 0; flex-wrap: wrap;">
-                ${second ? `
-                    <div style="text-align: center; flex: 1; min-width: 100px;">
-                        <div style="font-size: 2rem;">🥈</div>
-                        <div style="font-weight: bold;">${second.name || 'Sin nombre'}</div>
-                        <div style="color: var(--silver); font-size: 0.9rem;">${second.votes || 0} votos</div>
-                        <div style="color: var(--silver);">Segundo lugar</div>
-                    </div>
-                ` : ''}
-                
-                <div style="text-align: center; flex: 1; min-width: 120px;">
-                    <div style="font-size: 3rem;">🥇</div>
-                    <div style="font-weight: bold; font-size: 1.3rem; color: var(--gold);">${winner.name || 'Sin nombre'}</div>
-                    <div style="color: var(--gold); font-weight: bold; font-size: 0.9rem;">${winner.votes || 0} votos</div>
-                    <div style="color: var(--gold); font-weight: bold;">¡GANADOR/A!</div>
+    // Estado de revelación
+    let revealedStep = 0;
+    
+    // Función para revelar siguiente paso
+    function revealNextStep() {
+        revealedStep++;
+        
+        // Limpiar y mostrar según el paso
+        nomineesList.innerHTML = '';
+        
+        // Crear contenedor principal
+        const container = document.createElement('div');
+        container.className = 'results-reveal-container';
+        container.style.textAlign = 'center';
+        
+        // Título de revelación
+        const title = document.createElement('h3');
+        title.style.color = 'var(--gold)';
+        title.style.marginBottom = '30px';
+        
+        // Contenedor del podio
+        const podiumContainer = document.createElement('div');
+        podiumContainer.style.display = 'flex';
+        podiumContainer.style.justifyContent = 'center';
+        podiumContainer.style.gap = '20px';
+        podiumContainer.style.margin = '30px 0';
+        podiumContainer.style.flexWrap = 'wrap';
+        
+        // Paso 0: Instrucciones iniciales
+        if (revealedStep === 0) {
+            title.innerHTML = '🎉 ¡REVELACIÓN DE RESULTADOS!';
+            
+            const instructions = document.createElement('div');
+            instructions.innerHTML = `
+                <div style="margin: 40px 0;">
+                    <div style="font-size: 4rem; margin-bottom: 20px; animation: pulse 2s infinite;">👇</div>
+                    <div style="font-size: 1.3rem; color: var(--gold); margin-bottom: 10px;">Haz clic para revelar los ganadores</div>
+                    <div style="color: var(--silver); font-size: 1rem;">Revelaremos de menos a más votos</div>
                 </div>
-                
+            `;
+            
+            container.appendChild(title);
+            container.appendChild(instructions);
+            
+            // Botón para empezar
+            const startButton = document.createElement('button');
+            startButton.className = 'btn-reveal';
+            startButton.innerHTML = '<i class="fas fa-play-circle"></i> EMPEZAR REVELACIÓN';
+            startButton.onclick = () => {
+                revealNextStep();
+                updateClickZone();
+            };
+            startButton.style.marginTop = '20px';
+            container.appendChild(startButton);
+        }
+        
+        // Paso 1: Revelar 3er lugar (bronce)
+        else if (revealedStep === 1 && third) {
+            title.innerHTML = '🥉 TERCER LUGAR';
+            
+            podiumContainer.innerHTML = `
+                <div style="text-align: center; flex: 1; min-width: 120px; opacity: 0; transform: translateY(50px); animation: slideUpFade 0.8s ease forwards 0.3s;">
+                    <div style="font-size: 2rem; animation: bounceIn 0.6s ease 0.5s forwards, rotateBronze 2s ease-in-out 1s infinite;">🥉</div>
+                    <div style="font-weight: bold; font-size: 1.3rem; margin: 10px 0; color: var(--bronze);">${third.name || 'Sin nombre'}</div>
+                    <div style="color: var(--bronze); font-size: 1.2rem; font-weight: bold; margin-bottom: 5px;">${third.votes || 0} votos</div>
+                    <div style="color: var(--silver);">Tercer lugar</div>
+                </div>
+            `;
+            
+            container.appendChild(title);
+            container.appendChild(podiumContainer);
+        }
+        
+        // Paso 2: Revelar 2do lugar (plata)
+        else if (revealedStep === 2 && second) {
+            title.innerHTML = '🥈 SEGUNDO LUGAR';
+            
+            podiumContainer.innerHTML = `
                 ${third ? `
-                    <div style="text-align: center; flex: 1; min-width: 100px;">
+                    <div style="text-align: center; flex: 1; min-width: 100px; opacity: 0.7; transform: scale(0.9);">
                         <div style="font-size: 1.5rem;">🥉</div>
                         <div style="font-weight: bold;">${third.name || 'Sin nombre'}</div>
                         <div style="color: var(--bronze); font-size: 0.9rem;">${third.votes || 0} votos</div>
-                        <div style="color: var(--bronze);">Tercer lugar</div>
                     </div>
                 ` : ''}
-            </div>
-        `;
+                
+                <div style="text-align: center; flex: 1; min-width: 120px; opacity: 0; transform: translateY(50px); animation: slideUpFade 0.8s ease forwards 0.3s;">
+                    <div style="font-size: 2.5rem; animation: bounceIn 0.6s ease 0.5s forwards, rotateSilver 2s ease-in-out 1s infinite;">🥈</div>
+                    <div style="font-weight: bold; font-size: 1.4rem; margin: 10px 0; color: var(--silver);">${second.name || 'Sin nombre'}</div>
+                    <div style="color: var(--silver); font-size: 1.2rem; font-weight: bold; margin-bottom: 5px;">${second.votes || 0} votos</div>
+                    <div style="color: var(--silver);">Segundo lugar</div>
+                </div>
+            `;
+            
+            container.appendChild(title);
+            container.appendChild(podiumContainer);
+        }
         
-        const podiumItem = document.createElement('div');
-        podiumItem.className = 'nominee-item';
-        podiumItem.style.background = 'linear-gradient(145deg, rgba(255, 215, 0, 0.15), rgba(212, 175, 55, 0.1))';
-        podiumItem.style.border = '2px solid var(--gold)';
-        podiumItem.innerHTML = podiumHTML;
-        nomineesList.appendChild(podiumItem);
+        // Paso 3: Revelar 1er lugar (oro)
+        else if (revealedStep === 3 && winner) {
+            title.innerHTML = '🥇 ¡PRIMER LUGAR!';
+            
+            podiumContainer.innerHTML = `
+                ${second ? `
+                    <div style="text-align: center; flex: 1; min-width: 100px; opacity: 0.7; transform: scale(0.9);">
+                        <div style="font-size: 1.5rem;">🥈</div>
+                        <div style="font-weight: bold;">${second.name || 'Sin nombre'}</div>
+                        <div style="color: var(--silver); font-size: 0.9rem;">${second.votes || 0} votos</div>
+                    </div>
+                ` : ''}
+                
+                <div style="text-align: center; flex: 1; min-width: 140px; opacity: 0; transform: translateY(50px); animation: slideUpFade 0.8s ease forwards 0.3s;">
+                    <div style="font-size: 3.5rem; animation: bounceIn 0.6s ease 0.5s forwards, goldGlow 2s ease-in-out infinite, float 3s ease-in-out infinite;">🥇</div>
+                    <div style="font-weight: bold; font-size: 1.6rem; margin: 15px 0; color: var(--gold); text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">${winner.name || 'Sin nombre'}</div>
+                    <div style="color: var(--gold); font-size: 1.4rem; font-weight: bold; margin-bottom: 5px; text-shadow: 0 0 5px rgba(255, 215, 0, 0.3);">${winner.votes || 0} votos</div>
+                    <div style="color: var(--gold); font-weight: bold; font-size: 1.1rem;">¡GANADOR/A!</div>
+                </div>
+                
+                ${third ? `
+                    <div style="text-align: center; flex: 1; min-width: 100px; opacity: 0.7; transform: scale(0.9);">
+                        <div style="font-size: 1.5rem;">🥉</div>
+                        <div style="font-weight: bold;">${third.name || 'Sin nombre'}</div>
+                        <div style="color: var(--bronze); font-size: 0.9rem;">${third.votes || 0} votos</div>
+                    </div>
+                ` : ''}
+            `;
+            
+            container.appendChild(title);
+            container.appendChild(podiumContainer);
+            
+            // Añadir confeti visual
+            const confetti = document.createElement('div');
+            confetti.innerHTML = '🎉 🎊 🏆 🎉 🎊';
+            confetti.style.fontSize = '2rem';
+            confetti.style.margin = '20px 0';
+            confetti.style.animation = 'pulse 1s infinite';
+            container.appendChild(confetti);
+            
+            // Botón para ver resultados completos
+            const fullResultsBtn = document.createElement('button');
+            fullResultsBtn.className = 'btn-reveal';
+            fullResultsBtn.innerHTML = '<i class="fas fa-chart-bar"></i> VER TODOS LOS RESULTADOS';
+            fullResultsBtn.onclick = () => showFullResults(category, sortedNominees);
+            fullResultsBtn.style.marginTop = '20px';
+            container.appendChild(fullResultsBtn);
+        }
+        
+        // Paso 4: Mostrar todos los resultados
+        else if (revealedStep >= 4) {
+            showFullResults(category, sortedNominees);
+            return;
+        }
+        
+        // Añadir zona de clic para siguiente paso (excepto en último)
+        if (revealedStep < 3) {
+            updateClickZone();
+        }
+        
+        nomineesList.appendChild(container);
     }
+    
+    // Función para actualizar zona de clic
+    function updateClickZone() {
+        setTimeout(() => {
+            nomineesList.style.cursor = 'pointer';
+            nomineesList.title = 'Haz clic para revelar el siguiente lugar';
+            
+            // Remover evento anterior y añadir nuevo
+            nomineesList.onclick = null;
+            nomineesList.onclick = revealNextStep;
+        }, 500);
+    }
+    
+    // Función para mostrar resultados completos
+    // ===== MOSTRAR RESULTADOS COMPLETOS =====
+function showFullResults(category, sortedNominees) {
+    const nomineesList = document.getElementById('nomineesList');
+    nomineesList.innerHTML = '';
     
     // Mostrar todos los participantes con sus votos
     const allParticipantsHTML = `
         <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255, 215, 0, 0.3);">
-            <h4 style="color: var(--gold); text-align: center; margin-bottom: 15px;">📊 Todos los participantes</h4>
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px;">
+            <h4 style="color: var(--gold); text-align: center; margin-bottom: 15px;">📊 Clasificación completa</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px;">
                 ${sortedNominees.map((nominee, index) => `
-                    <div style="background: rgba(255, 255, 255, 0.05); padding: 10px; border-radius: 8px; text-align: center; border: 1px solid rgba(255, 215, 0, 0.1);">
-                        <div style="font-weight: bold; color: ${index === 0 ? 'var(--gold)' : index === 1 ? 'var(--silver)' : index === 2 ? 'var(--bronze)' : 'white'}">
+                    <div style="background: rgba(255, 255, 255, 0.05); padding: 12px; border-radius: 8px; text-align: center; border: 1px solid rgba(255, 215, 0, 0.1); transition: all 0.3s ease;"
+                         onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 5px 15px rgba(255, 215, 0, 0.2)'"
+                         onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none'">
+                        <div style="font-weight: bold; color: ${index === 0 ? 'var(--gold)' : index === 1 ? 'var(--silver)' : index === 2 ? 'var(--bronze)' : 'white'}; font-size: ${index < 3 ? '1.1rem' : '1rem'}">
                             ${index + 1}º ${nominee.name || 'Sin nombre'}
                         </div>
-                        <div style="color: var(--silver); font-size: 0.9rem;">${nominee.votes || 0} votos</div>
+                        <div style="color: var(--silver); font-size: 0.9rem; margin: 5px 0;">${nominee.votes || 0} votos</div>
                         <div style="color: #aaa; font-size: 0.8rem;">${nominee.voters ? nominee.voters.length : 0} votantes</div>
                     </div>
                 `).join('')}
@@ -919,11 +1062,8 @@ function showCategoryResults(categoryId) {
         </div>
     `;
     
-    const participantsItem = document.createElement('div');
-    participantsItem.innerHTML = allParticipantsHTML;
-    nomineesList.appendChild(participantsItem);
-    
     // Añadir frases si es categoría 17
+    let frasesHTML = '';
     if (category.id === 17) {
         const todasLasFrases = [];
         
@@ -941,10 +1081,9 @@ function showCategoryResults(categoryId) {
         });
         
         if (todasLasFrases.length > 0) {
-            // Ordenar frases por votos
             todasLasFrases.sort((a, b) => b.votos - a.votos);
             
-            const frasesHTML = `
+            frasesHTML = `
                 <div style="margin-top: 25px; background: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 10px; border: 1px solid rgba(255, 215, 0, 0.3);">
                     <h4 style="color: var(--gold); text-align: center; margin-bottom: 15px;">
                         💬 Frases Icónicas del Año
@@ -967,34 +1106,25 @@ function showCategoryResults(categoryId) {
                     ` : ''}
                 </div>
             `;
-            
-            const frasesItem = document.createElement('div');
-            frasesItem.innerHTML = frasesHTML;
-            nomineesList.appendChild(frasesItem);
         }
     }
     
-    // Mostrar estadísticas
-    const totalVotes = nominees.reduce((sum, n) => sum + (n.votes || 0), 0);
-    const totalVoters = nominees.reduce((sum, n) => sum + ((n.voters || []).length), 0);
+    const fullContent = document.createElement('div');
+    fullContent.innerHTML = allParticipantsHTML + frasesHTML;
+    nomineesList.appendChild(fullContent);
     
-    const statsHTML = `
-        <div style="margin-top: 20px; text-align: center; color: var(--silver); font-size: 0.9rem;">
-            <p>${totalVotes} votos totales | ${totalVoters} votos únicos</p>
-            <p>${nominees.length} participantes</p>
-        </div>
-    `;
+    // Restaurar cursor normal
+    nomineesList.style.cursor = 'default';
+    nomineesList.onclick = null;
+}
     
-    const statsItem = document.createElement('div');
-    statsItem.innerHTML = statsHTML;
-    nomineesList.appendChild(statsItem);
-    
-    // Ocultar sección de añadir nuevo nominado
-    document.querySelector('.add-nominee-section').style.display = 'none';
+    // Empezar con paso 0
+    revealNextStep();
     
     // Mostrar modal
     modal.style.display = 'block';
 }
+
 
 // ===== INICIALIZACIÓN =====
 document.addEventListener('DOMContentLoaded', function() {
