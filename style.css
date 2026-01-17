@@ -1818,3 +1818,98 @@ footer {
 ::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 215, 0, 0.5);
 }
+
+/* Añade esto si no existe */
+@keyframes slideUpFade {
+    0% {
+        opacity: 0;
+        transform: translateY(50px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes bounceIn {
+    0% {
+        transform: scale(0.3);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    80% {
+        transform: scale(0.9);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes goldGlow {
+    0%, 100% {
+        filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));
+    }
+    50% {
+        filter: drop-shadow(0 0 25px rgba(255, 215, 0, 0.9));
+    }
+}
+
+@keyframes rotateBronze {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-8deg); }
+    75% { transform: rotate(8deg); }
+}
+
+@keyframes rotateSilver {
+    0%, 100% { transform: rotate(0deg); }
+    33% { transform: rotate(-10deg); }
+    66% { transform: rotate(10deg); }
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-15px);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+}
+
+.btn-reveal {
+    background: linear-gradient(45deg, rgba(255, 107, 107, 0.9), rgba(255, 142, 83, 0.9)) !important;
+    color: white !important;
+    border: none !important;
+    padding: 15px 30px !important;
+    border-radius: 25px !important;
+    font-size: 1.1rem !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px !important;
+    font-weight: bold !important;
+    letter-spacing: 1px !important;
+    box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3) !important;
+    animation: pulse 1.5s infinite !important;
+}
+
+.btn-reveal:hover {
+    transform: scale(1.05) !important;
+    box-shadow: 0 8px 20px rgba(255, 107, 107, 0.5) !important;
+    animation: none !important;
+}
