@@ -391,6 +391,7 @@ function updateVotersList() {
 // ===== RENDERIZAR CATEGORÍAS =====
 // ===== RENDERIZAR CATEGORÍAS (VERSIÓN SIMPLIFICADA) =====
 // ===== RENDERIZAR CATEGORÍAS (SOLO TU VOTO) =====
+// ===== RENDERIZAR CATEGORÍAS (SOLO TU VOTO) =====
 function renderCategories() {
     const container = document.querySelector('.categories-container');
     if (!container) return;
@@ -409,25 +410,16 @@ function renderCategories() {
         const totalVotes = nominees.reduce((sum, n) => sum + (n.votes || 0), 0);
         const userVote = appData.currentUser ? (appData.currentUser.votes || {})[category.id] : null;
         
-        // VERSIÓN MODIFICADA: Solo categoría y TU voto
         const card = document.createElement('div');
         card.className = 'category-card';
         card.onclick = () => openVoteModal(category.id);
         
-        // Ocultar contador total si quieres, si no déjalo
-        const voteCountHTML = `<div class="vote-count">${totalVotes} votos</div>`;
-        
-        // Mostrar solo si TÚ votaste
-        let userVoteHTML = '';
-        if (userVote) {
-            userVoteHTML = `<div class="user-vote-indicator">✅ Tu voto: ${userVote.nomineeName || 'Anónimo'}</div>`;
-        }
-        
+        // VERSIÓN CON VOTOS DEBAJO DEL TÍTULO
         card.innerHTML = `
             <h3>${category.name || 'Sin nombre'}</h3>
+            <div class="vote-count-title">${totalVotes} votos</div>
             <p class="category-description">${category.description || ''}</p>
-            ${voteCountHTML}
-            ${userVoteHTML}
+            ${userVote ? `<div class="user-vote-indicator">✅ Tu voto: ${userVote.nomineeName || 'Anónimo'}</div>` : ''}
         `;
         
         container.appendChild(card);

@@ -1532,3 +1532,36 @@ footer {
     font-size: 0.8em;
     opacity: 0.8;
 }
+
+/* ===== ESTILOS PARA VOTOS DEBAJO DEL TÍTULO ===== */
+.vote-count-title {
+    color: var(--gold);
+    font-size: 1.1rem;
+    font-weight: bold;
+    text-align: center;
+    margin: 5px 0 15px 0;
+    padding: 8px 15px;
+    background: linear-gradient(45deg, rgba(255, 215, 0, 0.1), rgba(212, 175, 55, 0.1));
+    border-radius: 15px;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    display: inline-block;
+    width: auto;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Ajustar el título */
+.category-card h3 {
+    margin-bottom: 5px !important;
+}
+
+/* Ajustar la descripción */
+.category-description {
+    margin-top: 10px !important;
+    margin-bottom: 15px !important;
+}
+
+/* Quitar el antiguo vote-count de la esquina */
+.vote-count {
+    display: none !important;
+}
