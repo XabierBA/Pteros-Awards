@@ -1758,3 +1758,36 @@ footer {
         filter: brightness(1.3);
     }
 }
+
+/* Contenedor de 3 columnas para resultados */
+.results-three-columns {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    gap: 20px;
+    width: 100%;
+    margin-top: 20px;
+}
+
+/* Responsive para móviles */
+@media (max-width: 1024px) {
+    .results-three-columns {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Animación para las tarjetas de clasificación */
+@keyframes cardAppear {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.participant-card {
+    animation: cardAppear 0.5s ease forwards;
+    animation-delay: calc(var(--index, 0) * 0.1s);
+}
