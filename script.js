@@ -845,6 +845,7 @@ function verResultadosUsuarios() {
 
 
 // ===== MOSTRAR RESULTADOS CON ANIMACIÓN POR CLICS =====
+// ===== MOSTRAR RESULTADOS CON ANIMACIÓN CENTRADA Y 3 COLUMNAS =====
 function showCategoryResults(categoryId) {
     const category = appData.categories.find(c => c && c.id === categoryId);
     if (!category) return;
@@ -874,7 +875,7 @@ function showCategoryResults(categoryId) {
     // Estado de revelación
     let revealedStep = 0;
     
-    // FUNCIÓN AUXILIAR PARA CENTRAR CONTENIDO
+    // Función para crear contenedor centrado
     function crearContenedorCentrado() {
         const container = document.createElement('div');
         container.className = 'centered-animation-container';
@@ -883,10 +884,26 @@ function showCategoryResults(categoryId) {
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 600px;
+            min-height: 70vh;
             width: 100%;
             text-align: center;
-            padding: 30px;
+            padding: 40px 20px;
+        `;
+        return container;
+    }
+    
+    // Función para crear paso de animación
+    function crearPasoAnimacion(titulo, contenidoHTML) {
+        const container = crearContenedorCentrado();
+        container.innerHTML = `
+            <div style="width: 100%; max-width: 1200px; margin: 0 auto;">
+                <h3 style="color: var(--gold); font-size: 2.5rem; margin-bottom: 50px; text-align: center; text-shadow: 0 0 15px rgba(255, 215, 0, 0.4);">
+                    ${titulo}
+                </h3>
+                <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+                    ${contenidoHTML}
+                </div>
+            </div>
         `;
         return container;
     }
@@ -898,30 +915,29 @@ function showCategoryResults(categoryId) {
         // Limpiar y mostrar según el paso
         nomineesList.innerHTML = '';
         
-        const container = crearContenedorCentrado();
-        
         // Paso 0: Instrucciones iniciales
         if (revealedStep === 0) {
+            const container = crearContenedorCentrado();
             container.innerHTML = `
-                <div style="max-width: 800px; margin: 0 auto;">
-                    <h3 style="color: var(--gold); font-size: 2.2rem; margin-bottom: 40px; text-align: center;">
+                <div style="width: 100%; max-width: 800px; margin: 0 auto;">
+                    <h3 style="color: var(--gold); font-size: 2.8rem; margin-bottom: 50px; text-align: center; text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);">
                         🎉 ¡REVELACIÓN DE RESULTADOS!
                     </h3>
                     
-                    <div style="font-size: 6rem; margin: 40px 0; animation: pulse 2s infinite;">
+                    <div style="font-size: 8rem; margin: 50px 0; animation: pulse 2s infinite; color: var(--gold);">
                         👇
                     </div>
                     
-                    <div style="font-size: 1.5rem; color: var(--gold); margin-bottom: 20px; font-weight: bold;">
-                        ¡Descubre quién ganó!
+                    <div style="font-size: 1.8rem; color: var(--gold); margin-bottom: 25px; font-weight: bold; line-height: 1.4;">
+                        ¡Prepárate para descubrir quién ganó!
                     </div>
                     
-                    <div style="color: var(--silver); font-size: 1.2rem; line-height: 1.6; margin-bottom: 50px;">
-                        Haz clic para revelar los ganadores<br>
-                        de menos a más votos
+                    <div style="color: var(--silver); font-size: 1.3rem; line-height: 1.6; margin-bottom: 60px; max-width: 600px; margin-left: auto; margin-right: auto;">
+                        Haz clic para revelar los ganadores de menos a más votos.<br>
+                        ¡La tensión está en el aire! 🏆
                     </div>
                     
-                    <button class="btn-reveal" style="margin: 20px auto; display: block;">
+                    <button class="btn-reveal" style="font-size: 1.3rem; padding: 20px 40px; margin: 30px auto; display: block;">
                         <i class="fas fa-play-circle"></i> EMPEZAR REVELACIÓN
                     </button>
                 </div>
@@ -933,209 +949,230 @@ function showCategoryResults(categoryId) {
                 revealNextStep();
                 updateClickZone();
             };
+            
+            nomineesList.appendChild(container);
         }
         
-        // Paso 1: Revelar 3er lugar (bronce) - CENTRADO
+        // Paso 1: Revelar 3er lugar
         else if (revealedStep === 1 && third) {
-            container.innerHTML = `
-                <div style="max-width: 800px; margin: 0 auto;">
-                    <h3 style="color: var(--bronze); font-size: 2.2rem; margin-bottom: 40px; text-align: center;">
-                        🥉 TERCER LUGAR
-                    </h3>
-                    
-                    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
-                        <div style="text-align: center; width: 100%; opacity: 0; transform: translateY(50px); animation: slideUpFade 0.8s ease forwards 0.3s;">
-                            <div style="margin: 40px 0;">
-                                <div style="font-size: 8rem; animation: bounceIn 0.6s ease 0.5s forwards, rotateBronze 2s ease-in-out 1s infinite;">
-                                    🥉
-                                </div>
-                            </div>
-                            
-                            <div style="background: linear-gradient(145deg, rgba(205, 127, 50, 0.3), rgba(205, 127, 50, 0.1)); 
-                                        padding: 35px 25px; 
-                                        border-radius: 20px; 
-                                        border: 4px solid var(--bronze);
-                                        max-width: 400px;
-                                        margin: 0 auto;
-                                        box-shadow: 0 10px 30px rgba(205, 127, 50, 0.3);">
-                                <div style="font-weight: bold; font-size: 2rem; margin: 20px 0; color: var(--bronze);">
-                                    ${third.name || 'Sin nombre'}
-                                </div>
-                                <div style="color: var(--bronze); font-size: 1.8rem; font-weight: bold; margin-bottom: 15px;">
-                                    ${third.votes || 0} votos
-                                </div>
-                                <div style="color: var(--silver); font-size: 1.3rem; font-style: italic;">
-                                    Tercer lugar
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-        
-        // Paso 2: Revelar 2do lugar (plata) - CENTRADO
-        else if (revealedStep === 2 && second) {
-            container.innerHTML = `
-                <div style="max-width: 900px; margin: 0 auto;">
-                    <h3 style="color: var(--silver); font-size: 2.2rem; margin-bottom: 40px; text-align: center;">
-                        🥈 SEGUNDO LUGAR
-                    </h3>
-                    
-                    <div style="display: flex; justify-content: center; align-items: flex-end; gap: 50px; margin: 40px 0;">
-                        <!-- 3er lugar (más pequeño) -->
-                        <div style="text-align: center; width: 200px; opacity: 0.8; transform: scale(0.9);">
-                            <div style="height: 120px; display: flex; align-items: flex-end; justify-content: center;">
-                                <div style="font-size: 4rem;">🥉</div>
-                            </div>
-                            <div style="background: linear-gradient(145deg, rgba(205, 127, 50, 0.2), rgba(205, 127, 50, 0.05)); 
-                                        padding: 20px 15px; 
-                                        border-radius: 15px; 
-                                        margin-top: 20px; 
-                                        border: 2px solid var(--bronze);">
-                                <div style="font-weight: bold; font-size: 1.3rem; color: var(--bronze); margin-bottom: 8px;">
-                                    ${third.name || 'Sin nombre'}
-                                </div>
-                                <div style="color: var(--bronze); font-size: 1.1rem;">
-                                    ${third.votes || 0} votos
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- 2do lugar (centro, más grande) -->
-                        <div style="text-align: center; width: 250px; opacity: 0; transform: translateY(50px); animation: slideUpFade 0.8s ease forwards 0.3s;">
-                            <div style="margin: 30px 0;">
-                                <div style="font-size: 9rem; animation: bounceIn 0.6s ease 0.5s forwards, rotateSilver 2s ease-in-out 1s infinite;">
-                                    🥈
-                                </div>
-                            </div>
-                            
-                            <div style="background: linear-gradient(145deg, rgba(192, 192, 192, 0.3), rgba(192, 192, 192, 0.1)); 
-                                        padding: 35px 25px; 
-                                        border-radius: 20px; 
-                                        border: 4px solid var(--silver);
-                                        box-shadow: 0 10px 30px rgba(192, 192, 192, 0.3);">
-                                <div style="font-weight: bold; font-size: 2rem; margin: 20px 0; color: var(--silver);">
-                                    ${second.name || 'Sin nombre'}
-                                </div>
-                                <div style="color: var(--silver); font-size: 1.8rem; font-weight: bold; margin-bottom: 15px;">
-                                    ${second.votes || 0} votos
-                                </div>
-                                <div style="color: var(--silver); font-size: 1.3rem; font-style: italic;">
-                                    Segundo lugar
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-        
-        // Paso 3: Revelar 1er lugar (oro) - CENTRADO
-        else if (revealedStep === 3 && winner) {
-            container.innerHTML = `
-                <div style="max-width: 1000px; margin: 0 auto;">
-                    <h3 style="color: var(--gold); font-size: 2.5rem; margin-bottom: 40px; text-align: center; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">
-                        🥇 ¡PRIMER LUGAR!
-                    </h3>
-                    
-                    <div style="display: flex; justify-content: center; align-items: flex-end; gap: 40px; margin: 40px 0;">
-                        <!-- 3er lugar -->
-                        <div style="text-align: center; width: 200px; opacity: 0.8; transform: scale(0.9);">
-                            <div style="height: 120px; display: flex; align-items: flex-end; justify-content: center;">
-                                <div style="font-size: 4rem;">🥉</div>
-                            </div>
-                            <div style="background: linear-gradient(145deg, rgba(205, 127, 50, 0.2), rgba(205, 127, 50, 0.05)); 
-                                        padding: 20px 15px; 
-                                        border-radius: 15px; 
-                                        margin-top: 20px; 
-                                        border: 2px solid var(--bronze);">
-                                <div style="font-weight: bold; font-size: 1.3rem; color: var(--bronze); margin-bottom: 8px;">
-                                    ${third.name || 'Sin nombre'}
-                                </div>
-                                <div style="color: var(--bronze); font-size: 1.1rem;">
-                                    ${third.votes || 0} votos
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- 1er lugar (GRANDE, CENTRO) -->
-                        <div style="text-align: center; width: 300px; opacity: 0; transform: translateY(50px); animation: slideUpFade 0.8s ease forwards 0.3s;">
-                            <div style="margin: 40px 0;">
-                                <div style="font-size: 12rem; 
-                                            animation: bounceIn 0.6s ease 0.5s forwards, 
-                                                       goldGlow 2s ease-in-out infinite, 
-                                                       float 3s ease-in-out infinite;
-                                            filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.7));">
-                                    🥇
-                                </div>
-                            </div>
-                            
-                            <div style="background: linear-gradient(145deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.1)); 
-                                        padding: 40px 30px; 
-                                        border-radius: 25px; 
-                                        border: 5px solid var(--gold);
-                                        box-shadow: 0 15px 40px rgba(255, 215, 0, 0.4),
-                                                    inset 0 0 30px rgba(255, 215, 0, 0.2);">
-                                <div style="font-weight: bold; font-size: 2.5rem; margin: 25px 0; color: var(--gold); 
-                                            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">
-                                    ${winner.name || 'Sin nombre'}
-                                </div>
-                                <div style="color: var(--gold); font-size: 2rem; font-weight: bold; margin-bottom: 20px;
-                                            text-shadow: 0 0 5px rgba(255, 215, 0, 0.3);">
-                                    ${winner.votes || 0} votos
-                                </div>
-                                <div style="color: var(--gold); font-weight: bold; font-size: 1.5rem; 
-                                            padding: 10px 20px;
-                                            background: rgba(255, 215, 0, 0.2);
-                                            border-radius: 10px;
-                                            display: inline-block;">
-                                    ¡GANADOR/A!
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- 2do lugar -->
-                        <div style="text-align: center; width: 200px; opacity: 0.8; transform: scale(0.9);">
-                            <div style="height: 140px; display: flex; align-items: flex-end; justify-content: center;">
-                                <div style="font-size: 5rem;">🥈</div>
-                            </div>
-                            <div style="background: linear-gradient(145deg, rgba(192, 192, 192, 0.2), rgba(192, 192, 192, 0.05)); 
-                                        padding: 20px 15px; 
-                                        border-radius: 15px; 
-                                        margin-top: 20px; 
-                                        border: 2px solid var(--silver);">
-                                <div style="font-weight: bold; font-size: 1.3rem; color: var(--silver); margin-bottom: 8px;">
-                                    ${second.name || 'Sin nombre'}
-                                </div>
-                                <div style="color: var(--silver); font-size: 1.1rem;">
-                                    ${second.votes || 0} votos
-                                </div>
-                            </div>
+            const contenido = `
+                <div style="width: 100%; text-align: center; opacity: 0; transform: translateY(60px); animation: slideUpFade 1s ease forwards 0.3s;">
+                    <div style="margin: 40px 0;">
+                        <div style="font-size: 10rem; 
+                                    animation: bounceIn 0.8s ease 0.5s forwards, 
+                                               rotateBronze 2.5s ease-in-out 1s infinite;
+                                    filter: drop-shadow(0 0 15px rgba(205, 127, 50, 0.6));">
+                            🥉
                         </div>
                     </div>
                     
-                    <!-- Confeti -->
-                    <div style="margin: 50px 0; text-align: center;">
-                        <div style="font-size: 3rem; animation: pulse 1s infinite; color: var(--gold);">
-                            🎉 🎊 🏆 🎉 🎊
+                    <div style="background: linear-gradient(145deg, rgba(205, 127, 50, 0.25), rgba(205, 127, 50, 0.1)); 
+                                padding: 40px 30px; 
+                                border-radius: 25px; 
+                                border: 5px solid var(--bronze);
+                                max-width: 500px;
+                                margin: 0 auto;
+                                box-shadow: 0 15px 35px rgba(205, 127, 50, 0.3),
+                                            inset 0 0 30px rgba(205, 127, 50, 0.15);">
+                        <div style="font-weight: bold; font-size: 2.2rem; margin: 25px 0; color: var(--bronze); 
+                                    text-shadow: 0 0 8px rgba(205, 127, 50, 0.5);">
+                            ${third.name || 'Sin nombre'}
                         </div>
-                    </div>
-                    
-                    <!-- Botón para ver resultados completos -->
-                    <div style="text-align: center; margin-top: 30px;">
-                        <button class="btn-reveal" style="font-size: 1.2rem; padding: 18px 35px;">
-                            <i class="fas fa-chart-bar"></i> VER RESULTADOS COMPLETOS
-                        </button>
+                        <div style="color: var(--bronze); font-size: 2rem; font-weight: bold; margin-bottom: 20px;
+                                    text-shadow: 0 0 5px rgba(205, 127, 50, 0.3);">
+                            ${third.votes || 0} votos
+                        </div>
+                        <div style="color: var(--bronze); font-size: 1.5rem; font-style: italic; 
+                                    padding: 12px 25px;
+                                    background: rgba(205, 127, 50, 0.2);
+                                    border-radius: 12px;
+                                    display: inline-block;">
+                            ¡Tercer lugar!
+                        </div>
                     </div>
                 </div>
             `;
             
+            const container = crearPasoAnimacion('🥉 TERCER LUGAR', contenido);
+            nomineesList.appendChild(container);
+        }
+        
+        // Paso 2: Revelar 2do lugar
+        else if (revealedStep === 2 && second) {
+            const contenido = `
+                <div style="display: flex; justify-content: center; align-items: flex-end; gap: 60px; width: 100%;">
+                    <!-- 3er lugar (pequeño) -->
+                    <div style="text-align: center; width: 220px; opacity: 0.7; transform: scale(0.85); transition: all 0.5s ease;">
+                        <div style="height: 140px; display: flex; align-items: flex-end; justify-content: center;">
+                            <div style="font-size: 5rem; opacity: 0.7;">🥉</div>
+                        </div>
+                        <div style="background: linear-gradient(145deg, rgba(205, 127, 50, 0.15), rgba(205, 127, 50, 0.05)); 
+                                    padding: 25px 18px; 
+                                    border-radius: 18px; 
+                                    margin-top: 25px; 
+                                    border: 3px solid var(--bronze);">
+                            <div style="font-weight: bold; font-size: 1.4rem; color: var(--bronze); margin-bottom: 10px;">
+                                ${third.name || 'Sin nombre'}
+                            </div>
+                            <div style="color: var(--bronze); font-size: 1.2rem; font-weight: bold;">
+                                ${third.votes || 0} votos
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 2do lugar (centro, grande) -->
+                    <div style="text-align: center; width: 280px; opacity: 0; transform: translateY(60px); animation: slideUpFade 1s ease forwards 0.3s;">
+                        <div style="margin: 40px 0;">
+                            <div style="font-size: 12rem; 
+                                        animation: bounceIn 0.8s ease 0.5s forwards, 
+                                                   rotateSilver 2.5s ease-in-out 1s infinite;
+                                        filter: drop-shadow(0 0 20px rgba(192, 192, 192, 0.7));">
+                                🥈
+                            </div>
+                        </div>
+                        
+                        <div style="background: linear-gradient(145deg, rgba(192, 192, 192, 0.25), rgba(192, 192, 192, 0.1)); 
+                                    padding: 45px 35px; 
+                                    border-radius: 25px; 
+                                    border: 5px solid var(--silver);
+                                    box-shadow: 0 20px 40px rgba(192, 192, 192, 0.3),
+                                                inset 0 0 35px rgba(192, 192, 192, 0.15);">
+                            <div style="font-weight: bold; font-size: 2.3rem; margin: 30px 0; color: var(--silver); 
+                                        text-shadow: 0 0 10px rgba(192, 192, 192, 0.5);">
+                                ${second.name || 'Sin nombre'}
+                            </div>
+                            <div style="color: var(--silver); font-size: 2.1rem; font-weight: bold; margin-bottom: 25px;
+                                        text-shadow: 0 0 6px rgba(192, 192, 192, 0.3);">
+                                ${second.votes || 0} votos
+                            </div>
+                            <div style="color: var(--silver); font-size: 1.6rem; font-weight: bold; 
+                                        padding: 15px 30px;
+                                        background: rgba(192, 192, 192, 0.2);
+                                        border-radius: 15px;
+                                        display: inline-block;">
+                                ¡Segundo lugar!
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            const container = crearPasoAnimacion('🥈 SEGUNDO LUGAR', contenido);
+            nomineesList.appendChild(container);
+        }
+        
+        // Paso 3: Revelar 1er lugar
+        else if (revealedStep === 3 && winner) {
+            const contenido = `
+                <div style="display: flex; justify-content: center; align-items: flex-end; gap: 50px; width: 100%; max-width: 1200px;">
+                    <!-- 3er lugar -->
+                    <div style="text-align: center; width: 220px; opacity: 0.7; transform: scale(0.85);">
+                        <div style="height: 140px; display: flex; align-items: flex-end; justify-content: center;">
+                            <div style="font-size: 5rem; opacity: 0.7;">🥉</div>
+                        </div>
+                        <div style="background: linear-gradient(145deg, rgba(205, 127, 50, 0.15), rgba(205, 127, 50, 0.05)); 
+                                    padding: 25px 18px; 
+                                    border-radius: 18px; 
+                                    margin-top: 25px; 
+                                    border: 3px solid var(--bronze);">
+                            <div style="font-weight: bold; font-size: 1.4rem; color: var(--bronze); margin-bottom: 10px;">
+                                ${third.name || 'Sin nombre'}
+                            </div>
+                            <div style="color: var(--bronze); font-size: 1.2rem; font-weight: bold;">
+                                ${third.votes || 0} votos
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 1er lugar (CENTRO, ENORME) -->
+                    <div style="text-align: center; width: 350px; opacity: 0; transform: translateY(60px); animation: slideUpFade 1s ease forwards 0.3s;">
+                        <div style="margin: 50px 0;">
+                            <div style="font-size: 15rem; 
+                                        animation: bounceIn 0.9s ease 0.5s forwards, 
+                                                   goldGlow 2s ease-in-out infinite, 
+                                                   float 3s ease-in-out infinite;
+                                        filter: drop-shadow(0 0 30px rgba(255, 215, 0, 0.9));
+                                        transform-origin: center;">
+                            🥇
+                            </div>
+                        </div>
+                        
+                        <div style="background: linear-gradient(145deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.15)); 
+                                    padding: 50px 40px; 
+                                    border-radius: 30px; 
+                                    border: 6px solid var(--gold);
+                                    box-shadow: 0 25px 50px rgba(255, 215, 0, 0.5),
+                                                inset 0 0 50px rgba(255, 215, 0, 0.25),
+                                                0 0 100px rgba(255, 215, 0, 0.2);">
+                            <div style="font-weight: bold; font-size: 2.8rem; margin: 35px 0; color: var(--gold); 
+                                        text-shadow: 0 0 15px rgba(255, 215, 0, 0.7);">
+                                ${winner.name || 'Sin nombre'}
+                            </div>
+                            <div style="color: var(--gold); font-size: 2.5rem; font-weight: bold; margin-bottom: 30px;
+                                        text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">
+                                ${winner.votes || 0} votos
+                            </div>
+                            <div style="color: var(--gold); font-weight: bold; font-size: 1.8rem; 
+                                        padding: 18px 40px;
+                                        background: rgba(255, 215, 0, 0.25);
+                                        border-radius: 20px;
+                                        display: inline-block;
+                                        border: 3px solid var(--gold);
+                                        text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);">
+                                ¡GANADOR/A ABSOLUTO/A!
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 2do lugar -->
+                    <div style="text-align: center; width: 220px; opacity: 0.7; transform: scale(0.85);">
+                        <div style="height: 160px; display: flex; align-items: flex-end; justify-content: center;">
+                            <div style="font-size: 6rem; opacity: 0.7;">🥈</div>
+                        </div>
+                        <div style="background: linear-gradient(145deg, rgba(192, 192, 192, 0.15), rgba(192, 192, 192, 0.05)); 
+                                    padding: 25px 18px; 
+                                    border-radius: 18px; 
+                                    margin-top: 25px; 
+                                    border: 3px solid var(--silver);">
+                            <div style="font-weight: bold; font-size: 1.4rem; color: var(--silver); margin-bottom: 10px;">
+                                ${second.name || 'Sin nombre'}
+                            </div>
+                            <div style="color: var(--silver); font-size: 1.2rem; font-weight: bold;">
+                                ${second.votes || 0} votos
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Confeti y efectos -->
+                <div style="margin: 60px 0; text-align: center; width: 100%;">
+                    <div style="font-size: 4rem; animation: pulse 1.2s infinite; color: var(--gold);">
+                        🎉 🎊 🏆 🎉 🎊
+                    </div>
+                </div>
+                
+                <!-- Botón para ver resultados completos -->
+                <div style="text-align: center; margin-top: 40px; width: 100%;">
+                    <button class="btn-reveal" style="font-size: 1.4rem; padding: 22px 45px; margin: 0 auto; display: block;">
+                        <i class="fas fa-chart-bar"></i> VER RESULTADOS COMPLETOS EN 3 COLUMNAS
+                    </button>
+                </div>
+            `;
+            
+            const container = crearPasoAnimacion('🥇 ¡PRIMER LUGAR!', contenido);
+            
             // Agregar evento al botón
-            container.querySelector('.btn-reveal').onclick = (e) => {
-                e.stopPropagation();
-                showFullResults(category, sortedNominees);
-            };
+            setTimeout(() => {
+                const button = container.querySelector('.btn-reveal');
+                if (button) {
+                    button.onclick = (e) => {
+                        e.stopPropagation();
+                        showFullResults(category, sortedNominees);
+                    };
+                }
+            }, 100);
+            
+            nomineesList.appendChild(container);
         }
         
         // Paso 4: Mostrar todos los resultados
@@ -1146,24 +1183,24 @@ function showCategoryResults(categoryId) {
         
         // Añadir zona de clic para siguiente paso (excepto en último)
         if (revealedStep < 3) {
-            updateClickZone(container);
+            updateClickZone();
         }
-        
-        nomineesList.appendChild(container);
     }
     
     // Función para actualizar zona de clic
-    function updateClickZone(container) {
+    function updateClickZone() {
         setTimeout(() => {
             // Instrucción centrada
             const clickHint = document.createElement('div');
             clickHint.innerHTML = `
-                <div style="margin-top: 50px; color: var(--gold); font-size: 1.2rem; 
-                            animation: pulse 2s infinite; text-align: center;">
+                <div style="margin-top: 60px; color: var(--gold); font-size: 1.4rem; 
+                            animation: pulse 2s infinite; text-align: center; width: 100%;
+                            padding: 20px; background: rgba(255, 215, 0, 0.1); border-radius: 15px;">
                     👇 Haz clic en cualquier lugar para continuar
                 </div>
             `;
             
+            const container = nomineesList.querySelector('.centered-animation-container');
             if (container) {
                 container.appendChild(clickHint);
             }
@@ -1173,171 +1210,202 @@ function showCategoryResults(categoryId) {
             nomineesList.title = 'Haz clic para revelar el siguiente lugar';
             nomineesList.onclick = null;
             nomineesList.onclick = revealNextStep;
-        }, 500);
+        }, 800);
     }
     
-
-    // Función para mostrar resultados completos en 3 COLUMNAS (VERSIÓN COMPLETA)
+    // Función para mostrar resultados completos en 3 COLUMNAS (VERSIÓN MEJORADA)
     function showFullResults(category, sortedNominees) {
         nomineesList.innerHTML = '';
         
-        // Crear contenedor principal
+        // Crear contenedor principal con mejor espaciado
         const mainContainer = document.createElement('div');
         mainContainer.style.cssText = `
             width: 100%;
             max-width: 1400px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 30px 20px;
         `;
         
-        // Título
+        // Título mejorado
         const title = document.createElement('h3');
         title.innerHTML = `🏆 ${category.name || 'Categoría'} - Resultados Completos`;
         title.style.cssText = `
             color: var(--gold);
             text-align: center;
-            margin-bottom: 40px;
-            font-size: 2rem;
-            text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+            margin-bottom: 50px;
+            font-size: 2.2rem;
+            text-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+            padding-bottom: 20px;
+            border-bottom: 2px solid rgba(255, 215, 0, 0.3);
         `;
         mainContainer.appendChild(title);
         
-        // Contenedor de 3 columnas
+        // Contenedor de 3 columnas MEJORADO
         const threeColumns = document.createElement('div');
         threeColumns.style.cssText = `
             display: grid;
             grid-template-columns: 1fr 2fr 1fr;
-            gap: 25px;
+            gap: 30px;
             width: 100%;
-            min-height: 600px;
+            min-height: 700px;
+            align-items: start;
         `;
         
         // ===== COLUMNA IZQUIERDA: PODIO =====
         const leftColumn = document.createElement('div');
         leftColumn.style.cssText = `
-            background: linear-gradient(145deg, rgba(30, 30, 50, 0.8), rgba(15, 15, 25, 0.9));
-            padding: 25px;
-            border-radius: 20px;
-            border: 2px solid rgba(255, 215, 0, 0.3);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(145deg, rgba(26, 26, 46, 0.95), rgba(15, 15, 25, 0.98));
+            padding: 30px;
+            border-radius: 25px;
+            border: 2px solid rgba(255, 215, 0, 0.4);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
         `;
         
-        let podiumHTML = '<h4 style="color: var(--gold); text-align: center; margin-bottom: 30px; font-size: 1.4rem;">🏆 PODIO OFICIAL</h4>';
+        let podiumHTML = `
+            <h4 style="color: var(--gold); text-align: center; margin-bottom: 35px; font-size: 1.5rem; 
+                       padding-bottom: 15px; border-bottom: 1px solid rgba(255, 215, 0, 0.3);">
+                🏆 PODIO OFICIAL
+            </h4>
+            <div style="flex: 1;">
+        `;
         
         if (sortedNominees.length >= 3) {
             podiumHTML += `
-                <div style="display: flex; flex-direction: column; gap: 25px;">
+                <div style="display: flex; flex-direction: column; gap: 30px;">
                     <!-- 1er lugar -->
-                    <div style="background: linear-gradient(145deg, rgba(255, 215, 0, 0.2), rgba(212, 175, 55, 0.1)); 
-                                padding: 25px; 
-                                border-radius: 15px; 
-                                border: 3px solid var(--gold);
-                                text-align: center;">
-                        <div style="display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 15px;">
-                            <div style="font-size: 3rem;">🥇</div>
-                            <div>
-                                <div style="font-weight: bold; color: var(--gold); font-size: 1.5rem;">${sortedNominees[0].name}</div>
-                                <div style="color: var(--gold); font-weight: bold; font-size: 1.3rem;">${sortedNominees[0].votes || 0} votos</div>
-                            </div>
+                    <div style="background: linear-gradient(145deg, rgba(255, 215, 0, 0.25), rgba(212, 175, 55, 0.15)); 
+                                padding: 30px; 
+                                border-radius: 20px; 
+                                border: 4px solid var(--gold);
+                                text-align: center;
+                                box-shadow: 0 10px 25px rgba(255, 215, 0, 0.3);">
+                        <div style="font-size: 4rem; margin-bottom: 20px; animation: goldGlow 2s infinite;">🥇</div>
+                        <div style="font-weight: bold; color: var(--gold); font-size: 1.8rem; margin-bottom: 10px;">
+                            ${sortedNominees[0].name}
                         </div>
-                        <div style="color: var(--gold); font-size: 1.1rem; font-weight: bold;">¡GANADOR/A!</div>
+                        <div style="color: var(--gold); font-weight: bold; font-size: 1.6rem; margin-bottom: 15px;">
+                            ${sortedNominees[0].votes || 0} votos
+                        </div>
+                        <div style="color: var(--gold); font-size: 1.2rem; font-weight: bold; 
+                                    padding: 10px 20px;
+                                    background: rgba(255, 215, 0, 0.2);
+                                    border-radius: 10px;
+                                    display: inline-block;">
+                            ¡GANADOR/A!
+                        </div>
                     </div>
                     
                     <!-- 2do lugar -->
-                    <div style="background: linear-gradient(145deg, rgba(192, 192, 192, 0.2), rgba(169, 169, 169, 0.1)); 
-                                padding: 22px; 
-                                border-radius: 15px; 
-                                border: 2px solid var(--silver);
-                                text-align: center;">
-                        <div style="display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 10px;">
-                            <div style="font-size: 2.5rem;">🥈</div>
-                            <div>
-                                <div style="font-weight: bold; color: var(--silver); font-size: 1.4rem;">${sortedNominees[1].name}</div>
-                                <div style="color: var(--silver); font-weight: bold; font-size: 1.2rem;">${sortedNominees[1].votes || 0} votos</div>
-                            </div>
+                    <div style="background: linear-gradient(145deg, rgba(192, 192, 192, 0.25), rgba(169, 169, 169, 0.15)); 
+                                padding: 25px; 
+                                border-radius: 18px; 
+                                border: 3px solid var(--silver);
+                                text-align: center;
+                                box-shadow: 0 8px 20px rgba(192, 192, 192, 0.2);">
+                        <div style="font-size: 3rem; margin-bottom: 15px;">🥈</div>
+                        <div style="font-weight: bold; color: var(--silver); font-size: 1.6rem; margin-bottom: 8px;">
+                            ${sortedNominees[1].name}
                         </div>
-                        <div style="color: var(--silver); font-size: 1rem;">Segundo lugar</div>
+                        <div style="color: var(--silver); font-weight: bold; font-size: 1.4rem; margin-bottom: 10px;">
+                            ${sortedNominees[1].votes || 0} votos
+                        </div>
+                        <div style="color: var(--silver); font-size: 1.1rem;">
+                            Segundo lugar
+                        </div>
                     </div>
                     
                     <!-- 3er lugar -->
-                    <div style="background: linear-gradient(145deg, rgba(205, 127, 50, 0.2), rgba(180, 110, 40, 0.1)); 
-                                padding: 20px; 
-                                border-radius: 15px; 
-                                border: 2px solid var(--bronze);
-                                text-align: center;">
-                        <div style="display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 10px;">
-                            <div style="font-size: 2rem;">🥉</div>
-                            <div>
-                                <div style="font-weight: bold; color: var(--bronze); font-size: 1.3rem;">${sortedNominees[2].name}</div>
-                                <div style="color: var(--bronze); font-weight: bold; font-size: 1.1rem;">${sortedNominees[2].votes || 0} votos</div>
-                            </div>
+                    <div style="background: linear-gradient(145deg, rgba(205, 127, 50, 0.25), rgba(180, 110, 40, 0.15)); 
+                                padding: 25px; 
+                                border-radius: 18px; 
+                                border: 3px solid var(--bronze);
+                                text-align: center;
+                                box-shadow: 0 8px 20px rgba(205, 127, 50, 0.2);">
+                        <div style="font-size: 2.5rem; margin-bottom: 15px;">🥉</div>
+                        <div style="font-weight: bold; color: var(--bronze); font-size: 1.6rem; margin-bottom: 8px;">
+                            ${sortedNominees[2].name}
                         </div>
-                        <div style="color: var(--bronze); font-size: 1rem;">Tercer lugar</div>
+                        <div style="color: var(--bronze); font-weight: bold; font-size: 1.4rem; margin-bottom: 10px;">
+                            ${sortedNominees[2].votes || 0} votos
+                        </div>
+                        <div style="color: var(--bronze); font-size: 1.1rem;">
+                            Tercer lugar
+                        </div>
                     </div>
                 </div>
             `;
         } else if (sortedNominees.length >= 2) {
             podiumHTML += `
-                <div style="display: flex; flex-direction: column; gap: 25px;">
-                    <div style="background: linear-gradient(145deg, rgba(255, 215, 0, 0.2), rgba(212, 175, 55, 0.1)); 
-                                padding: 25px; 
-                                border-radius: 15px; 
-                                border: 3px solid var(--gold);
+                <div style="display: flex; flex-direction: column; gap: 30px;">
+                    <div style="background: linear-gradient(145deg, rgba(255, 215, 0, 0.25), rgba(212, 175, 55, 0.15)); 
+                                padding: 30px; 
+                                border-radius: 20px; 
+                                border: 4px solid var(--gold);
                                 text-align: center;">
-                        <div style="font-size: 3rem; margin-bottom: 10px;">🥇</div>
-                        <div style="font-weight: bold; color: var(--gold); font-size: 1.5rem;">${sortedNominees[0].name}</div>
-                        <div style="color: var(--gold); font-weight: bold; font-size: 1.3rem;">${sortedNominees[0].votes || 0} votos</div>
+                        <div style="font-size: 4rem; margin-bottom: 15px;">🥇</div>
+                        <div style="font-weight: bold; color: var(--gold); font-size: 1.8rem;">${sortedNominees[0].name}</div>
+                        <div style="color: var(--gold); font-weight: bold; font-size: 1.6rem; margin: 10px 0;">${sortedNominees[0].votes || 0} votos</div>
                     </div>
                     
-                    <div style="background: linear-gradient(145deg, rgba(192, 192, 192, 0.2), rgba(169, 169, 169, 0.1)); 
-                                padding: 22px; 
-                                border-radius: 15px; 
-                                border: 2px solid var(--silver);
+                    <div style="background: linear-gradient(145deg, rgba(192, 192, 192, 0.25), rgba(169, 169, 169, 0.15)); 
+                                padding: 25px; 
+                                border-radius: 18px; 
+                                border: 3px solid var(--silver);
                                 text-align: center;">
-                        <div style="font-size: 2.5rem; margin-bottom: 10px;">🥈</div>
-                        <div style="font-weight: bold; color: var(--silver); font-size: 1.4rem;">${sortedNominees[1].name}</div>
-                        <div style="color: var(--silver); font-weight: bold; font-size: 1.2rem;">${sortedNominees[1].votes || 0} votos</div>
+                        <div style="font-size: 3rem; margin-bottom: 15px;">🥈</div>
+                        <div style="font-weight: bold; color: var(--silver); font-size: 1.6rem;">${sortedNominees[1].name}</div>
+                        <div style="color: var(--silver); font-weight: bold; font-size: 1.4rem; margin: 10px 0;">${sortedNominees[1].votes || 0} votos</div>
                     </div>
                 </div>
             `;
         } else if (sortedNominees.length >= 1) {
             podiumHTML += `
-                <div style="text-align: center;">
-                    <div style="background: linear-gradient(145deg, rgba(255, 215, 0, 0.2), rgba(212, 175, 55, 0.1)); 
-                                padding: 30px; 
-                                border-radius: 15px; 
-                                border: 3px solid var(--gold);
+                <div style="text-align: center; padding: 40px 20px;">
+                    <div style="background: linear-gradient(145deg, rgba(255, 215, 0, 0.25), rgba(212, 175, 55, 0.15)); 
+                                padding: 40px; 
+                                border-radius: 20px; 
+                                border: 4px solid var(--gold);
                                 display: inline-block;
-                                min-width: 200px;">
-                        <div style="font-size: 4rem; margin-bottom: 15px;">🏆</div>
-                        <div style="font-weight: bold; color: var(--gold); font-size: 1.8rem;">${sortedNominees[0].name}</div>
-                        <div style="color: var(--gold); font-weight: bold; font-size: 1.5rem; margin: 10px 0;">${sortedNominees[0].votes || 0} votos</div>
-                        <div style="color: var(--gold); font-weight: bold; font-size: 1.2rem;">¡Único participante!</div>
+                                min-width: 250px;">
+                        <div style="font-size: 5rem; margin-bottom: 20px;">🏆</div>
+                        <div style="font-weight: bold; color: var(--gold); font-size: 2rem; margin-bottom: 15px;">${sortedNominees[0].name}</div>
+                        <div style="color: var(--gold); font-weight: bold; font-size: 1.8rem; margin: 15px 0;">${sortedNominees[0].votes || 0} votos</div>
+                        <div style="color: var(--gold); font-size: 1.3rem; padding: 10px 20px; background: rgba(255, 215, 0, 0.2); border-radius: 10px;">
+                            ¡Único participante!
+                        </div>
                     </div>
                 </div>
             `;
         } else {
-            podiumHTML += '<div style="text-align: center; color: var(--silver); padding: 40px;">No hay votos registrados</div>';
+            podiumHTML += '<div style="text-align: center; color: var(--silver); padding: 60px 20px; font-size: 1.2rem;">No hay votos registrados</div>';
         }
+        
+        podiumHTML += '</div>'; // Cierra el flex: 1
         
         // Estadísticas del podio
         const totalVotes = sortedNominees.reduce((sum, n) => sum + (n.votes || 0), 0);
         const totalVoters = sortedNominees.reduce((sum, n) => sum + ((n.voters || []).length), 0);
         
         podiumHTML += `
-            <div style="margin-top: 30px; padding: 20px; background: rgba(255, 255, 255, 0.05); border-radius: 12px;">
-                <div style="color: var(--silver); font-size: 1.1rem; margin-bottom: 10px; text-align: center;">
-                    <strong>📊 Estadísticas:</strong>
+            <div style="margin-top: 40px; padding: 25px; background: rgba(255, 255, 255, 0.07); border-radius: 15px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <div style="color: var(--gold); font-size: 1.2rem; margin-bottom: 20px; text-align: center; font-weight: bold;">
+                    📊 ESTADÍSTICAS DEL PODIO
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <div style="color: var(--silver); font-size: 0.95rem;">Total votos:</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 1rem;">
+                    <div style="color: var(--silver);">Total votos:</div>
                     <div style="color: var(--gold); font-weight: bold; text-align: right;">${totalVotes}</div>
                     
-                    <div style="color: var(--silver); font-size: 0.95rem;">Votantes únicos:</div>
+                    <div style="color: var(--silver);">Votantes únicos:</div>
                     <div style="color: var(--silver); text-align: right;">${totalVoters}</div>
                     
-                    <div style="color: var(--silver); font-size: 0.95rem;">Participantes:</div>
+                    <div style="color: var(--silver);">Participantes:</div>
                     <div style="color: var(--silver); text-align: right;">${sortedNominees.length}</div>
+                    
+                    <div style="color: var(--silver);">Promedio votos:</div>
+                    <div style="color: var(--silver); text-align: right;">${sortedNominees.length > 0 ? (totalVotes / sortedNominees.length).toFixed(1) : 0}</div>
                 </div>
             </div>
         `;
@@ -1347,55 +1415,64 @@ function showCategoryResults(categoryId) {
         // ===== COLUMNA CENTRAL: CLASIFICACIÓN COMPLETA =====
         const centerColumn = document.createElement('div');
         centerColumn.style.cssText = `
-            background: linear-gradient(145deg, rgba(30, 30, 50, 0.8), rgba(15, 15, 25, 0.9));
-            padding: 25px;
-            border-radius: 20px;
-            border: 2px solid rgba(255, 215, 0, 0.3);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(145deg, rgba(26, 26, 46, 0.95), rgba(15, 15, 25, 0.98));
+            padding: 30px;
+            border-radius: 25px;
+            border: 2px solid rgba(255, 215, 0, 0.4);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
             overflow-y: auto;
-            max-height: 700px;
+            max-height: 750px;
+            height: 100%;
         `;
         
-        let rankingHTML = '<h4 style="color: var(--gold); text-align: center; margin-bottom: 30px; font-size: 1.4rem;">📋 CLASIFICACIÓN COMPLETA</h4>';
+        let rankingHTML = `
+            <h4 style="color: var(--gold); text-align: center; margin-bottom: 35px; font-size: 1.5rem; 
+                       padding-bottom: 15px; border-bottom: 1px solid rgba(255, 215, 0, 0.3);">
+                📋 CLASIFICACIÓN COMPLETA
+            </h4>
+        `;
         
         if (sortedNominees.length > 0) {
             rankingHTML += `
-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 25px; padding: 10px;">
                     ${sortedNominees.map((nominee, index) => {
                         const position = index + 1;
                         const isTop3 = position <= 3;
-                        const medal = position === 1 ? '🥇' : position === 2 ? '🥈' : position === 3 ? '🥉' : '🎯';
+                        const medal = position === 1 ? '🥇' : position === 2 ? '🥈' : position === 3 ? '🥉' : position < 10 ? `${position}º` : '🎯';
                         const color = position === 1 ? 'var(--gold)' : 
                                     position === 2 ? 'var(--silver)' : 
-                                    position === 3 ? 'var(--bronze)' : 'var(--silver)';
-                        const bgColor = position === 1 ? 'rgba(255, 215, 0, 0.1)' : 
-                                      position === 2 ? 'rgba(192, 192, 192, 0.1)' : 
-                                      position === 3 ? 'rgba(205, 127, 50, 0.1)' : 'rgba(255, 255, 255, 0.05)';
+                                    position === 3 ? 'var(--bronze)' : 
+                                    position <= 10 ? '#FF6B6B' : 'var(--silver)';
+                        const bgColor = position === 1 ? 'rgba(255, 215, 0, 0.15)' : 
+                                      position === 2 ? 'rgba(192, 192, 192, 0.15)' : 
+                                      position === 3 ? 'rgba(205, 127, 50, 0.15)' : 
+                                      'rgba(255, 255, 255, 0.07)';
                         
                         return `
                             <div style="background: ${bgColor}; 
-                                        padding: 20px; 
-                                        border-radius: 15px; 
-                                        border: 2px solid ${isTop3 ? color : 'rgba(255, 215, 0, 0.2)'};
+                                        padding: 25px 20px; 
+                                        border-radius: 18px; 
+                                        border: 2px solid ${isTop3 ? color : 'rgba(255, 215, 0, 0.3)'};
                                         text-align: center;
                                         transition: all 0.3s ease;
                                         cursor: pointer;"
-                                 onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 15px 30px rgba(0,0,0,0.4)';"
-                                 onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';"
-                                 onclick="alert('${nominee.name}: ${nominee.votes || 0} votos\\nPosición: ${position}º\\nVotantes: ${(nominee.voters || []).length}')">
-                                <div style="font-size: 2.5rem; margin-bottom: 10px; color: ${color};">
+                                 onmouseover="this.style.transform='translateY(-8px)'; this.style.boxShadow='0 20px 40px rgba(0,0,0,0.5)'; this.style.borderColor='${color}';"
+                                 onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'; this.style.borderColor='${isTop3 ? color : 'rgba(255, 215, 0, 0.3)'}';"
+                                 onclick="alert('${nominee.name}\\n\\n🏆 Posición: ${position}º\\n📊 Votos: ${nominee.votes || 0}\\n👥 Votantes: ${(nominee.voters || []).length}\\n📈 Porcentaje: ${totalVotes > 0 ? ((nominee.votes / totalVotes) * 100).toFixed(1) : 0}%')">
+                                <div style="font-size: ${isTop3 ? '3rem' : '2rem'}; margin-bottom: 15px; color: ${color};">
                                     ${medal}
                                 </div>
-                                <div style="font-weight: bold; font-size: 1.3rem; color: ${color}; margin-bottom: 8px; word-break: break-word;">
+                                <div style="font-weight: bold; font-size: 1.4rem; color: ${color}; margin-bottom: 12px; 
+                                            word-break: break-word; line-height: 1.3;">
                                     ${nominee.name}
                                 </div>
-                                <div style="color: ${color}; font-size: 1.5rem; font-weight: bold; margin: 10px 0;">
+                                <div style="color: ${color}; font-size: 1.8rem; font-weight: bold; margin: 15px 0;">
                                     ${nominee.votes || 0}
                                 </div>
-                                <div style="color: var(--silver); font-size: 0.9rem;">
+                                <div style="color: var(--silver); font-size: 1rem; margin-bottom: 5px;">
                                     ${position}º lugar
                                 </div>
-                                <div style="color: #aaa; font-size: 0.8rem; margin-top: 5px;">
+                                <div style="color: #aaa; font-size: 0.9rem;">
                                     ${(nominee.voters || []).length} votante${(nominee.voters || []).length !== 1 ? 's' : ''}
                                 </div>
                             </div>
@@ -1404,7 +1481,7 @@ function showCategoryResults(categoryId) {
                 </div>
             `;
         } else {
-            rankingHTML += '<div style="text-align: center; color: var(--silver); padding: 60px;">No hay participantes en esta categoría</div>';
+            rankingHTML += '<div style="text-align: center; color: var(--silver); padding: 80px 20px; font-size: 1.3rem;">No hay participantes en esta categoría</div>';
         }
         
         centerColumn.innerHTML = rankingHTML;
@@ -1412,13 +1489,14 @@ function showCategoryResults(categoryId) {
         // ===== COLUMNA DERECHA: FRASES O INFORMACIÓN ADICIONAL =====
         const rightColumn = document.createElement('div');
         rightColumn.style.cssText = `
-            background: linear-gradient(145deg, rgba(30, 30, 50, 0.8), rgba(15, 15, 25, 0.9));
-            padding: 25px;
-            border-radius: 20px;
-            border: 2px solid rgba(255, 215, 0, 0.3);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(145deg, rgba(26, 26, 46, 0.95), rgba(15, 15, 25, 0.98));
+            padding: 30px;
+            border-radius: 25px;
+            border: 2px solid rgba(255, 215, 0, 0.4);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
             overflow-y: auto;
-            max-height: 700px;
+            max-height: 750px;
+            height: 100%;
         `;
         
         // Verificar si es categoría 17 (Frase del Año)
@@ -1443,7 +1521,12 @@ function showCategoryResults(categoryId) {
             // Ordenar frases por votos (las más votadas primero)
             todasLasFrases.sort((a, b) => b.votos - a.votos);
             
-            let frasesHTML = '<h4 style="color: var(--gold); text-align: center; margin-bottom: 30px; font-size: 1.4rem;">💬 FRASES ICÓNICAS</h4>';
+            let frasesHTML = `
+                <h4 style="color: var(--gold); text-align: center; margin-bottom: 35px; font-size: 1.5rem; 
+                           padding-bottom: 15px; border-bottom: 1px solid rgba(255, 215, 0, 0.3);">
+                    💬 FRASES ICÓNICAS
+                </h4>
+            `;
             
             if (todasLasFrases.length > 0) {
                 frasesHTML += `
@@ -1454,36 +1537,37 @@ function showCategoryResults(categoryId) {
                                                 item.posicion === 3 ? 'var(--bronze)' : 'var(--primary)';
                             
                             return `
-                                <div style="margin-bottom: 20px; 
-                                            padding: 20px; 
-                                            background: rgba(0, 0, 0, 0.2); 
-                                            border-radius: 12px; 
-                                            border-left: 5px solid ${positionColor};
+                                <div style="margin-bottom: 25px; 
+                                            padding: 25px; 
+                                            background: rgba(0, 0, 0, 0.25); 
+                                            border-radius: 15px; 
+                                            border-left: 6px solid ${positionColor};
                                             transition: all 0.3s ease;"
-                                     onmouseover="this.style.transform='translateX(5px)'; this.style.boxShadow='0 5px 15px rgba(0,0,0,0.3)';"
+                                     onmouseover="this.style.transform='translateX(5px)'; this.style.boxShadow='0 10px 25px rgba(0,0,0,0.4)';"
                                      onmouseout="this.style.transform='translateX(0)'; this.style.boxShadow='none';">
                                     <div style="font-style: italic; 
                                                 color: white; 
-                                                margin-bottom: 15px; 
-                                                font-size: 1.1rem; 
-                                                line-height: 1.4;
+                                                margin-bottom: 20px; 
+                                                font-size: 1.2rem; 
+                                                line-height: 1.5;
                                                 word-break: break-word;
                                                 overflow-wrap: break-word;
-                                                white-space: normal;">
+                                                white-space: normal;
+                                                padding: 10px;">
                                         "${item.frase}"
                                     </div>
-                                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; padding-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
                                         <div>
-                                            <div style="font-weight: bold; color: ${positionColor}; font-size: 1.1rem;">
+                                            <div style="font-weight: bold; color: ${positionColor}; font-size: 1.2rem;">
                                                 ${item.persona}
                                             </div>
-                                            <div style="color: var(--silver); font-size: 0.85rem;">
-                                                Posición: ${item.posicion}º (${item.votos} votos)
+                                            <div style="color: var(--silver); font-size: 0.9rem; margin-top: 5px;">
+                                                Posición: ${item.posicion}º • ${item.votos} votos
                                             </div>
                                         </div>
                                         <div style="text-align: right;">
-                                            <div style="color: var(--silver); font-size: 0.85rem;">Añadida por:</div>
-                                            <div style="font-weight: bold; color: var(--silver); font-size: 0.9rem;">
+                                            <div style="color: var(--silver); font-size: 0.9rem; margin-bottom: 5px;">Añadida por:</div>
+                                            <div style="font-weight: bold; color: var(--silver); font-size: 1rem;">
                                                 ${item.votante}
                                             </div>
                                         </div>
@@ -1492,9 +1576,9 @@ function showCategoryResults(categoryId) {
                             `;
                         }).join('')}
                         
-                        ${todasLasFrases.length > 10 ? `
-                            <div style="text-align: center; margin-top: 20px; padding: 15px; color: var(--silver); 
-                                        background: rgba(255, 215, 0, 0.1); border-radius: 10px; font-size: 0.9rem;">
+                        ${todasLasFrases.length > 8 ? `
+                            <div style="text-align: center; margin-top: 25px; padding: 20px; color: var(--silver); 
+                                        background: rgba(255, 215, 0, 0.1); border-radius: 12px; font-size: 1rem;">
                                 Mostrando ${todasLasFrases.length} frases icónicas
                             </div>
                         ` : ''}
@@ -1502,10 +1586,10 @@ function showCategoryResults(categoryId) {
                 `;
             } else {
                 frasesHTML += `
-                    <div style="text-align: center; padding: 60px 20px; color: var(--silver);">
-                        <div style="font-size: 3rem; margin-bottom: 20px;">💭</div>
-                        <div style="font-size: 1.2rem; margin-bottom: 15px;">No hay frases añadidas</div>
-                        <div style="color: #aaa; font-size: 0.9rem;">
+                    <div style="text-align: center; padding: 80px 20px; color: var(--silver);">
+                        <div style="font-size: 4rem; margin-bottom: 25px; opacity: 0.5;">💭</div>
+                        <div style="font-size: 1.4rem; margin-bottom: 20px;">No hay frases añadidas</div>
+                        <div style="color: #aaa; font-size: 1rem; line-height: 1.5;">
                             Los votantes no añadieron frases<br>en esta categoría
                         </div>
                     </div>
@@ -1515,63 +1599,70 @@ function showCategoryResults(categoryId) {
             rightColumn.innerHTML = frasesHTML;
         } else {
             // Para otras categorías, mostrar información adicional
-            const totalVotes = sortedNominees.reduce((sum, n) => sum + (n.votes || 0), 0);
             const uniqueVoters = new Set();
             sortedNominees.forEach(n => (n.voters || []).forEach(v => uniqueVoters.add(v)));
             const participationRate = appData.users ? ((uniqueVoters.size / appData.users.length) * 100).toFixed(1) : 0;
             
             rightColumn.innerHTML = `
-                <h4 style="color: var(--gold); text-align: center; margin-bottom: 30px; font-size: 1.4rem;">📈 INFORMACIÓN ADICIONAL</h4>
+                <h4 style="color: var(--gold); text-align: center; margin-bottom: 35px; font-size: 1.5rem; 
+                           padding-bottom: 15px; border-bottom: 1px solid rgba(255, 215, 0, 0.3);">
+                    📈 INFORMACIÓN ADICIONAL
+                </h4>
                 
-                <div style="padding: 20px; background: rgba(255, 255, 255, 0.05); border-radius: 15px; margin-bottom: 25px;">
+                <div style="padding: 25px; background: rgba(255, 255, 255, 0.07); border-radius: 18px; margin-bottom: 30px; border: 1px solid rgba(255, 215, 0, 0.2);">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;">
-                        <div style="color: var(--silver);">Categoría:</div>
-                        <div style="color: var(--gold); font-weight: bold; text-align: right;">${category.name}</div>
+                        <div style="color: var(--silver); font-size: 1rem;">Categoría:</div>
+                        <div style="color: var(--gold); font-weight: bold; text-align: right; font-size: 1rem;">${category.name}</div>
                         
-                        <div style="color: var(--silver);">Total votos:</div>
-                        <div style="color: var(--gold); font-weight: bold; text-align: right;">${totalVotes}</div>
+                        <div style="color: var(--silver); font-size: 1rem;">Total votos:</div>
+                        <div style="color: var(--gold); font-weight: bold; text-align: right; font-size: 1rem;">${totalVotes}</div>
                         
-                        <div style="color: var(--silver);">Participantes:</div>
-                        <div style="color: var(--silver); text-align: right;">${sortedNominees.length}</div>
+                        <div style="color: var(--silver); font-size: 1rem;">Participantes:</div>
+                        <div style="color: var(--silver); text-align: right; font-size: 1rem;">${sortedNominees.length}</div>
                         
-                        <div style="color: var(--silver);">Votantes únicos:</div>
-                        <div style="color: var(--silver); text-align: right;">${uniqueVoters.size}</div>
+                        <div style="color: var(--silver); font-size: 1rem;">Votantes únicos:</div>
+                        <div style="color: var(--silver); text-align: right; font-size: 1rem;">${uniqueVoters.size}</div>
                         
-                        <div style="color: var(--silver);">Tasa participación:</div>
-                        <div style="color: ${participationRate > 50 ? '#4CAF50' : '#FFD700'}; font-weight: bold; text-align: right;">
+                        <div style="color: var(--silver); font-size: 1rem;">Tasa participación:</div>
+                        <div style="color: ${participationRate > 50 ? '#4CAF50' : '#FFD700'}; font-weight: bold; text-align: right; font-size: 1rem;">
                             ${participationRate}%
                         </div>
                     </div>
                 </div>
                 
-                <div style="padding: 20px; background: rgba(255, 255, 255, 0.05); border-radius: 15px;">
-                    <h5 style="color: var(--silver); margin-bottom: 15px; font-size: 1.1rem;">🏅 Distribución de votos:</h5>
+                <div style="padding: 25px; background: rgba(255, 255, 255, 0.07); border-radius: 18px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                    <h5 style="color: var(--silver); margin-bottom: 20px; font-size: 1.1rem; text-align: center;">🏅 Distribución de votos (Top 5)</h5>
                     ${sortedNominees.slice(0, 5).map((nominee, index) => {
                         const percentage = totalVotes > 0 ? ((nominee.votes / totalVotes) * 100).toFixed(1) : 0;
+                        const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🎯';
                         return `
-                            <div style="margin-bottom: 12px;">
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                                    <span style="color: var(--silver); font-size: 0.9rem;">${index + 1}. ${nominee.name}</span>
-                                    <span style="color: var(--gold); font-size: 0.9rem; font-weight: bold;">${percentage}%</span>
+                            <div style="margin-bottom: 18px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span style="font-size: 1.2rem;">${medal}</span>
+                                        <span style="color: var(--silver); font-size: 0.95rem;">${nominee.name}</span>
+                                    </div>
+                                    <span style="color: var(--gold); font-size: 1rem; font-weight: bold;">${percentage}%</span>
                                 </div>
-                                <div style="height: 8px; background: rgba(255, 255, 255, 0.1); border-radius: 4px; overflow: hidden;">
-                                    <div style="height: 100%; width: ${percentage}%; background: linear-gradient(90deg, var(--gold), var(--gold-dark));"></div>
+                                <div style="height: 10px; background: rgba(255, 255, 255, 0.1); border-radius: 5px; overflow: hidden;">
+                                    <div style="height: 100%; width: ${percentage}%; background: linear-gradient(90deg, var(--gold), var(--gold-dark)); 
+                                            border-radius: 5px;"></div>
                                 </div>
                             </div>
                         `;
                     }).join('')}
                     ${sortedNominees.length > 5 ? `
-                        <div style="text-align: center; margin-top: 15px; color: var(--silver); font-size: 0.9rem;">
+                        <div style="text-align: center; margin-top: 20px; color: var(--silver); font-size: 0.9rem; padding-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
                             + ${sortedNominees.length - 5} participantes más
                         </div>
                     ` : ''}
                 </div>
                 
-                <div style="text-align: center; margin-top: 25px; padding-top: 20px; border-top: 1px solid rgba(255, 215, 0, 0.2);">
+                <div style="text-align: center; margin-top: 30px; padding-top: 25px; border-top: 1px solid rgba(255, 215, 0, 0.2);">
                     <div style="color: var(--silver); font-size: 0.9rem; margin-bottom: 10px;">
                         Fase actual: <span style="color: var(--gold); font-weight: bold;">Resultados</span>
                     </div>
-                    <div style="color: #aaa; font-size: 0.8rem;">
+                    <div style="color: #aaa; font-size: 0.85rem;">
                         Actualizado: ${new Date().toLocaleString()}
                     </div>
                 </div>
