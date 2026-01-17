@@ -847,199 +847,282 @@ function verResultadosUsuarios() {
 // ===== MOSTRAR RESULTADOS CON ANIMACIÓN POR CLICS =====
 // ===== MOSTRAR RESULTADOS CON ANIMACIÓN CENTRADA Y 3 COLUMNAS =====
 // ===== FUNCIÓN SIMPLIFICADA Y FUNCIONAL PARA MOSTRAR RESULTADOS =====
+// ===== MOSTRAR RESULTADOS - VERSIÓN BASE =====
 function showCategoryResults(categoryId) {
+    console.log("Iniciando showCategoryResults para categoría:", categoryId);
+    
     const category = appData.categories.find(c => c && c.id === categoryId);
-    if (!category) return;
+    if (!category) {
+        console.error("Categoría no encontrada");
+        return;
+    }
     
     const modal = document.getElementById('voteModal');
     const modalCategory = document.getElementById('modalCategory');
     const nomineesList = document.getElementById('nomineesList');
     
-    if (!modal || !modalCategory || !nomineesList) return;
+    if (!modal || !modalCategory || !nomineesList) {
+        console.error("Elementos del modal no encontrados");
+        return;
+    }
     
-    // Configurar modal para resultados
+    // Configurar modal
     modalCategory.innerHTML = `🏆 ${category.name || 'Categoría'}<br><small>${category.description || ''}</small>`;
     nomineesList.innerHTML = '';
     
+    // Obtener datos
     const nominees = category.nominees || [];
-    
-    // Ordenar por votos (de mayor a menor)
     const sortedNominees = [...nominees]
         .filter(n => n)
         .sort((a, b) => (b.votes || 0) - (a.votes || 0));
     
-    // Obtener top 3
     const winner = sortedNominees[0];
     const second = sortedNominees[1];
     const third = sortedNominees[2];
     
-    // Crear contenedor principal
-    const container = document.createElement('div');
-    container.className = 'results-container';
-    container.style.cssText = 'width: 100%; padding: 20px;';
+    // Estado simple
+    let step = 0;
     
-    // Crear estructura simple de 3 columnas
-    const columnsHTML = `
-        <div class="results-three-columns" style="display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 20px; width: 100%;">
-            <!-- COLUMNA IZQUIERDA: PODIO -->
-            <div class="results-column podium-column" style="background: linear-gradient(145deg, rgba(30, 30, 50, 0.8), rgba(15, 15, 25, 0.9)); 
-                     border-radius: 15px; padding: 20px; border: 2px solid rgba(255, 215, 0, 0.3);">
-                <h3 style="color: var(--gold); text-align: center; margin-bottom: 20px; font-size: 1.3rem;">🏆 PODIO</h3>
-                ${winner ? `
-                    <div class="podium-item gold" style="text-align: center; margin-bottom: 20px; padding: 15px; 
-                         background: rgba(255, 215, 0, 0.1); border-radius: 10px; border: 2px solid var(--gold);">
-                        <div style="font-size: 2.5rem;">🥇</div>
-                        <div style="font-weight: bold; color: var(--gold); margin: 10px 0; font-size: 1.2rem;">${winner.name}</div>
-                        <div style="color: var(--gold); font-weight: bold;">${winner.votes || 0} votos</div>
-                    </div>
-                ` : ''}
-                
-                ${second ? `
-                    <div class="podium-item silver" style="text-align: center; margin-bottom: 20px; padding: 15px; 
-                         background: rgba(192, 192, 192, 0.1); border-radius: 10px; border: 2px solid var(--silver);">
-                        <div style="font-size: 2rem;">🥈</div>
-                        <div style="font-weight: bold; color: var(--silver); margin: 10px 0; font-size: 1.1rem;">${second.name}</div>
-                        <div style="color: var(--silver); font-weight: bold;">${second.votes || 0} votos</div>
-                    </div>
-                ` : ''}
-                
-                ${third ? `
-                    <div class="podium-item bronze" style="text-align: center; padding: 15px; 
-                         background: rgba(205, 127, 50, 0.1); border-radius: 10px; border: 2px solid var(--bronze);">
-                        <div style="font-size: 1.5rem;">🥉</div>
-                        <div style="font-weight: bold; color: var(--bronze); margin: 10px 0; font-size: 1rem;">${third.name}</div>
-                        <div style="color: var(--bronze); font-weight: bold;">${third.votes || 0} votos</div>
-                    </div>
-                ` : ''}
-                
-                <div style="margin-top: 20px; padding: 15px; background: rgba(255, 255, 255, 0.05); border-radius: 10px;">
-                    <div style="color: var(--silver); font-size: 0.9rem; margin-bottom: 10px;">📊 Estadísticas:</div>
-                    <div style="font-size: 0.85rem; color: var(--silver);">
-                        <div>Total votos: <span style="color: var(--gold); font-weight: bold;">${sortedNominees.reduce((sum, n) => sum + (n.votes || 0), 0)}</span></div>
-                        <div>Participantes: <span style="color: var(--silver);">${sortedNominees.length}</span></div>
-                    </div>
+    // Función para mostrar paso actual
+    function showStep(stepNumber) {
+        console.log("Mostrando paso:", stepNumber);
+        nomineesList.innerHTML = '';
+        
+        // Contenedor centrado
+        const container = document.createElement('div');
+        container.className = 'animation-container';
+        container.style.cssText = `
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+            width: 100%;
+            text-align: center;
+            padding: 20px;
+        `;
+        
+        if (stepNumber === 0) {
+            // Paso 0: Instrucciones
+            container.innerHTML = `
+                <div style="max-width: 600px;">
+                    <h3 style="color: var(--gold); margin-bottom: 30px;">🎉 ¡REVELACIÓN DE RESULTADOS!</h3>
+                    <div style="font-size: 4rem; margin: 30px 0;">👇</div>
+                    <p style="color: var(--silver); margin-bottom: 20px;">Haz clic para revelar los ganadores</p>
+                    <button class="btn-reveal" style="margin-top: 20px;">
+                        <i class="fas fa-play-circle"></i> Empezar
+                    </button>
                 </div>
-            </div>
+            `;
             
-            <!-- COLUMNA CENTRAL: CLASIFICACIÓN COMPLETA -->
-            <div class="results-column ranking-column" style="background: linear-gradient(145deg, rgba(30, 30, 50, 0.8), rgba(15, 15, 25, 0.9)); 
-                     border-radius: 15px; padding: 20px; border: 2px solid rgba(255, 215, 0, 0.3); max-height: 600px; overflow-y: auto;">
-                <h3 style="color: var(--gold); text-align: center; margin-bottom: 20px; font-size: 1.3rem;">📋 CLASIFICACIÓN</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px;">
-                    ${sortedNominees.map((nominee, index) => {
-                        const position = index + 1;
-                        const medal = position === 1 ? '🥇' : position === 2 ? '🥈' : position === 3 ? '🥉' : position < 10 ? `${position}º` : '🎯';
-                        const color = position === 1 ? 'var(--gold)' : 
-                                    position === 2 ? 'var(--silver)' : 
-                                    position === 3 ? 'var(--bronze)' : 'var(--silver)';
-                        
-                        return `
-                            <div class="ranking-item" style="background: rgba(255, 255, 255, 0.05); padding: 15px; 
-                                 border-radius: 10px; text-align: center; border: 1px solid rgba(255, 215, 0, 0.2);
-                                 transition: all 0.3s ease; cursor: pointer;"
-                                 onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 10px 20px rgba(0,0,0,0.3)';"
-                                 onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';"
-                                 onclick="alert('${nominee.name}\\nPosición: ${position}º\\nVotos: ${nominee.votes || 0}')">
-                                <div style="font-size: 1.5rem; margin-bottom: 8px; color: ${color};">${medal}</div>
-                                <div style="font-weight: bold; font-size: 1.1rem; color: ${color}; margin-bottom: 5px;">${nominee.name}</div>
-                                <div style="color: ${color}; font-weight: bold;">${nominee.votes || 0}</div>
-                                <div style="color: #aaa; font-size: 0.8rem; margin-top: 5px;">${position}º lugar</div>
+            // Evento del botón
+            container.querySelector('.btn-reveal').onclick = () => {
+                step = 1;
+                showStep(step);
+            };
+            
+        } else if (stepNumber === 1 && third) {
+            // Paso 1: 3er lugar
+            container.innerHTML = `
+                <div style="max-width: 600px;">
+                    <h3 style="color: var(--bronze); margin-bottom: 30px;">🥉 TERCER LUGAR</h3>
+                    <div style="font-size: 6rem; margin: 30px 0;">🥉</div>
+                    <div style="background: rgba(205, 127, 50, 0.1); padding: 20px; border-radius: 15px; border: 2px solid var(--bronze);">
+                        <h4 style="color: var(--bronze); margin: 0 0 10px 0;">${third.name}</h4>
+                        <p style="color: var(--bronze); font-size: 1.2rem; margin: 0;">${third.votes || 0} votos</p>
+                    </div>
+                    <p style="color: var(--silver); margin-top: 20px;">Haz clic para continuar</p>
+                </div>
+            `;
+            
+            // Hacer clickeable
+            container.style.cursor = 'pointer';
+            container.onclick = () => {
+                step = 2;
+                showStep(step);
+            };
+            
+        } else if (stepNumber === 2 && second) {
+            // Paso 2: 2do lugar
+            container.innerHTML = `
+                <div style="max-width: 600px;">
+                    <h3 style="color: var(--silver); margin-bottom: 30px;">🥈 SEGUNDO LUGAR</h3>
+                    <div style="display: flex; justify-content: center; gap: 30px; margin: 30px 0;">
+                        ${third ? `
+                            <div style="text-align: center; opacity: 0.7;">
+                                <div style="font-size: 3rem;">🥉</div>
+                                <div style="color: var(--bronze); font-size: 0.9rem;">${third.name}</div>
                             </div>
-                        `;
-                    }).join('')}
-                </div>
-            </div>
-            
-            <!-- COLUMNA DERECHA: FRASES O INFO -->
-            <div class="results-column info-column" style="background: linear-gradient(145deg, rgba(30, 30, 50, 0.8), rgba(15, 15, 25, 0.9)); 
-                     border-radius: 15px; padding: 20px; border: 2px solid rgba(255, 215, 0, 0.3); max-height: 600px; overflow-y: auto;">
-                ${category.id === 17 ? `
-                    <h3 style="color: var(--gold); text-align: center; margin-bottom: 20px; font-size: 1.3rem;">💬 FRASES</h3>
-                    ${(() => {
-                        const todasLasFrases = [];
-                        sortedNominees.forEach(nominee => {
-                            if (nominee.frases && Object.keys(nominee.frases).length > 0) {
-                                Object.values(nominee.frases).forEach(fraseData => {
-                                    todasLasFrases.push({
-                                        persona: nominee.name,
-                                        frase: fraseData.frase,
-                                        votante: fraseData.voter,
-                                        votos: nominee.votes || 0
-                                    });
-                                });
-                            }
-                        });
-                        
-                        if (todasLasFrases.length > 0) {
-                            todasLasFrases.sort((a, b) => b.votos - a.votos);
-                            return `
-                                <div style="max-height: 500px; overflow-y: auto; padding-right: 10px;">
-                                    ${todasLasFrases.map((item, index) => `
-                                        <div style="margin-bottom: 15px; padding: 15px; background: rgba(0, 0, 0, 0.2); 
-                                             border-radius: 10px; border-left: 3px solid var(--gold);">
-                                            <div style="font-style: italic; color: white; margin-bottom: 10px; font-size: 0.95rem;">
-                                                "${item.frase}"
-                                            </div>
-                                            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--silver);">
-                                                <div><strong>${item.persona}</strong></div>
-                                                <div>Por: ${item.votante}</div>
-                                            </div>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            `;
-                        } else {
-                            return `
-                                <div style="text-align: center; padding: 40px 20px; color: var(--silver);">
-                                    <div style="font-size: 2rem; margin-bottom: 15px;">💭</div>
-                                    <div>No hay frases añadidas</div>
-                                </div>
-                            `;
-                        }
-                    })()}
-                ` : `
-                    <h3 style="color: var(--gold); text-align: center; margin-bottom: 20px; font-size: 1.3rem;">📊 INFO</h3>
-                    <div style="padding: 15px; background: rgba(255, 255, 255, 0.05); border-radius: 10px;">
-                        <div style="color: var(--silver); margin-bottom: 15px; font-size: 0.9rem;">
-                            <strong>Categoría:</strong><br>
-                            <span style="color: var(--gold);">${category.name}</span>
-                        </div>
-                        <div style="color: var(--silver); margin-bottom: 15px; font-size: 0.9rem;">
-                            <strong>Participantes:</strong><br>
-                            <span style="color: var(--silver);">${sortedNominees.length}</span>
-                        </div>
-                        <div style="color: var(--silver); margin-bottom: 15px; font-size: 0.9rem;">
-                            <strong>Total votos:</strong><br>
-                            <span style="color: var(--gold); font-weight: bold;">${sortedNominees.reduce((sum, n) => sum + (n.votes || 0), 0)}</span>
-                        </div>
-                        <div style="color: var(--silver); font-size: 0.9rem;">
-                            <strong>Fase:</strong><br>
-                            <span style="color: var(--gold);">Resultados</span>
+                        ` : ''}
+                        <div>
+                            <div style="font-size: 8rem;">🥈</div>
+                            <div style="background: rgba(192, 192, 192, 0.1); padding: 20px; border-radius: 15px; border: 2px solid var(--silver); margin-top: 20px;">
+                                <h4 style="color: var(--silver); margin: 0 0 10px 0;">${second.name}</h4>
+                                <p style="color: var(--silver); font-size: 1.2rem; margin: 0;">${second.votes || 0} votos</p>
+                            </div>
                         </div>
                     </div>
-                    ${winner ? `
-                        <div style="margin-top: 20px; padding: 15px; background: rgba(255, 215, 0, 0.1); border-radius: 10px; text-align: center;">
-                            <div style="color: var(--gold); font-weight: bold; margin-bottom: 5px;">¡GANADOR/A!</div>
-                            <div style="color: var(--gold); font-size: 1.1rem;">${winner.name}</div>
-                            <div style="color: var(--gold); font-size: 0.9rem;">${winner.votes || 0} votos</div>
+                    <p style="color: var(--silver); margin-top: 20px;">Haz clic para continuar</p>
+                </div>
+            `;
+            
+            container.style.cursor = 'pointer';
+            container.onclick = () => {
+                step = 3;
+                showStep(step);
+            };
+            
+        } else if (stepNumber === 3 && winner) {
+            // Paso 3: 1er lugar
+            container.innerHTML = `
+                <div style="max-width: 800px;">
+                    <h3 style="color: var(--gold); margin-bottom: 30px;">🥇 ¡PRIMER LUGAR!</h3>
+                    <div style="display: flex; justify-content: center; gap: 30px; margin: 30px 0;">
+                        ${third ? `
+                            <div style="text-align: center; opacity: 0.7;">
+                                <div style="font-size: 3rem;">🥉</div>
+                                <div style="color: var(--bronze); font-size: 0.9rem;">${third.name}</div>
+                            </div>
+                        ` : ''}
+                        
+                        <div style="text-align: center;">
+                            <div style="font-size: 10rem;">🥇</div>
+                            <div style="background: rgba(255, 215, 0, 0.1); padding: 25px; border-radius: 15px; border: 3px solid var(--gold); margin-top: 20px;">
+                                <h4 style="color: var(--gold); margin: 0 0 10px 0; font-size: 1.5rem;">${winner.name}</h4>
+                                <p style="color: var(--gold); font-size: 1.5rem; font-weight: bold; margin: 0;">${winner.votes || 0} votos</p>
+                            </div>
+                        </div>
+                        
+                        ${second ? `
+                            <div style="text-align: center; opacity: 0.7;">
+                                <div style="font-size: 4rem;">🥈</div>
+                                <div style="color: var(--silver); font-size: 0.9rem;">${second.name}</div>
+                            </div>
+                        ` : ''}
+                    </div>
+                    
+                    <button class="btn-reveal" style="margin-top: 30px;">
+                        <i class="fas fa-chart-bar"></i> Ver resultados completos
+                    </button>
+                </div>
+            `;
+            
+            // Evento para mostrar 3 columnas
+            container.querySelector('.btn-reveal').onclick = () => {
+                showThreeColumns(category, sortedNominees);
+            };
+        }
+        
+        nomineesList.appendChild(container);
+    }
+    
+    // Función para mostrar 3 columnas
+    function showThreeColumns(category, sortedNominees) {
+        console.log("Mostrando 3 columnas");
+        nomineesList.innerHTML = '';
+        
+        // Contenedor principal
+        const mainContainer = document.createElement('div');
+        mainContainer.style.cssText = `
+            width: 100%;
+            padding: 20px;
+        `;
+        
+        // Grid de 3 columnas
+        mainContainer.innerHTML = `
+            <div style="display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 20px; width: 100%;">
+                <!-- COLUMNA IZQUIERDA -->
+                <div style="background: rgba(30, 30, 50, 0.8); padding: 20px; border-radius: 15px; border: 1px solid rgba(255, 215, 0, 0.3);">
+                    <h4 style="color: var(--gold); text-align: center; margin-bottom: 20px;">🏆 PODIO</h4>
+                    ${sortedNominees[0] ? `
+                        <div style="text-align: center; margin-bottom: 20px;">
+                            <div style="font-size: 3rem;">🥇</div>
+                            <div style="color: var(--gold); font-weight: bold; margin: 10px 0;">${sortedNominees[0].name}</div>
+                            <div style="color: var(--gold);">${sortedNominees[0].votes || 0} votos</div>
                         </div>
                     ` : ''}
-                `}
+                    ${sortedNominees[1] ? `
+                        <div style="text-align: center; margin-bottom: 20px;">
+                            <div style="font-size: 2.5rem;">🥈</div>
+                            <div style="color: var(--silver); font-weight: bold; margin: 10px 0;">${sortedNominees[1].name}</div>
+                            <div style="color: var(--silver);">${sortedNominees[1].votes || 0} votos</div>
+                        </div>
+                    ` : ''}
+                    ${sortedNominees[2] ? `
+                        <div style="text-align: center;">
+                            <div style="font-size: 2rem;">🥉</div>
+                            <div style="color: var(--bronze); font-weight: bold; margin: 10px 0;">${sortedNominees[2].name}</div>
+                            <div style="color: var(--bronze);">${sortedNominees[2].votes || 0} votos</div>
+                        </div>
+                    ` : ''}
+                </div>
+                
+                <!-- COLUMNA CENTRAL -->
+                <div style="background: rgba(30, 30, 50, 0.8); padding: 20px; border-radius: 15px; border: 1px solid rgba(255, 215, 0, 0.3); max-height: 500px; overflow-y: auto;">
+                    <h4 style="color: var(--gold); text-align: center; margin-bottom: 20px;">📋 CLASIFICACIÓN</h4>
+                    <div>
+                        ${sortedNominees.map((nominee, index) => `
+                            <div style="display: flex; justify-content: space-between; align-items: center; 
+                                        padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <span style="color: var(--gold);">${index + 1}º</span>
+                                    <span>${nominee.name}</span>
+                                </div>
+                                <div style="color: var(--silver);">${nominee.votes || 0} votos</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                
+                <!-- COLUMNA DERECHA -->
+                <div style="background: rgba(30, 30, 50, 0.8); padding: 20px; border-radius: 15px; border: 1px solid rgba(255, 215, 0, 0.3);">
+                    ${category.id === 17 ? `
+                        <h4 style="color: var(--gold); text-align: center; margin-bottom: 20px;">💬 FRASES</h4>
+                        <div style="max-height: 400px; overflow-y: auto;">
+                            ${(() => {
+                                const frases = [];
+                                sortedNominees.forEach(nominee => {
+                                    if (nominee.frases) {
+                                        Object.values(nominee.frases).forEach(f => {
+                                            frases.push(`<div style="margin-bottom: 15px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                                                <div style="color: white; font-style: italic;">"${f.frase}"</div>
+                                                <div style="color: var(--silver); font-size: 0.9rem; margin-top: 5px;">
+                                                    - ${nominee.name} (por ${f.voter})
+                                                </div>
+                                            </div>`);
+                                        });
+                                    }
+                                });
+                                return frases.length > 0 ? frases.join('') : '<p style="color: var(--silver); text-align: center;">No hay frases</p>';
+                            })()}
+                        </div>
+                    ` : `
+                        <h4 style="color: var(--gold); text-align: center; margin-bottom: 20px;">📊 INFO</h4>
+                        <div style="color: var(--silver);">
+                            <p><strong>Categoría:</strong><br>${category.name}</p>
+                            <p><strong>Participantes:</strong><br>${sortedNominees.length}</p>
+                            <p><strong>Total votos:</strong><br>${sortedNominees.reduce((sum, n) => sum + (n.votes || 0), 0)}</p>
+                        </div>
+                    `}
+                </div>
             </div>
-        </div>
-    `;
-    
-    container.innerHTML = columnsHTML;
-    nomineesList.appendChild(container);
-    
-    // Ocultar sección de añadir nuevo nominado
-    const addSection = document.querySelector('.add-nominee-section');
-    if (addSection) {
-        addSection.style.display = 'none';
+        `;
+        
+        nomineesList.appendChild(mainContainer);
+        
+        // Ocultar sección de añadir nominado
+        const addSection = document.querySelector('.add-nominee-section');
+        if (addSection) {
+            addSection.style.display = 'none';
+        }
     }
+    
+    // Iniciar con paso 0
+    showStep(0);
     
     // Mostrar modal
     modal.style.display = 'block';
+    console.log("Modal mostrado correctamente");
 }
 
 
