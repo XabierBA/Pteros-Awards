@@ -389,6 +389,8 @@ function updateVotersList() {
 }
 
 // ===== RENDERIZAR CATEGORÍAS =====
+// ===== RENDERIZAR CATEGORÍAS (VERSIÓN SIMPLIFICADA) =====
+// ===== RENDERIZAR CATEGORÍAS (SOLO TU VOTO) =====
 function renderCategories() {
     const container = document.querySelector('.categories-container');
     if (!container) return;
@@ -407,29 +409,25 @@ function renderCategories() {
         const totalVotes = nominees.reduce((sum, n) => sum + (n.votes || 0), 0);
         const userVote = appData.currentUser ? (appData.currentUser.votes || {})[category.id] : null;
         
-        // MOSTRAR TOP 3 CON VOTOS (como antes)
-        const top3 = nominees
-            .filter(n => n)
-            .sort((a, b) => (b.votes || 0) - (a.votes || 0))
-            .slice(0, 3);
-        
+        // VERSIÓN MODIFICADA: Solo categoría y TU voto
         const card = document.createElement('div');
         card.className = 'category-card';
         card.onclick = () => openVoteModal(category.id);
         
+        // Ocultar contador total si quieres, si no déjalo
+        const voteCountHTML = `<div class="vote-count">${totalVotes} votos</div>`;
+        
+        // Mostrar solo si TÚ votaste
+        let userVoteHTML = '';
+        if (userVote) {
+            userVoteHTML = `<div class="user-vote-indicator">✅ Tu voto: ${userVote.nomineeName || 'Anónimo'}</div>`;
+        }
+        
         card.innerHTML = `
             <h3>${category.name || 'Sin nombre'}</h3>
             <p class="category-description">${category.description || ''}</p>
-            <div class="vote-count">${totalVotes} votos</div>
-            <div class="nominees-preview">
-                ${top3.map(n => `
-                    <div class="nominee-tag">
-                        ${getNomineePhotoHTML(n)}
-                        ${n.name || 'Sin nombre'} (${n.votes || 0})
-                    </div>
-                `).join('')}
-            </div>
-            ${userVote ? `<div class="user-vote-indicator">✅ Tu voto: ${userVote.nomineeName || 'Anónimo'}</div>` : ''}
+            ${voteCountHTML}
+            ${userVoteHTML}
         `;
         
         container.appendChild(card);
@@ -487,20 +485,18 @@ function openVoteModal(categoryId) {
         
         // CONTENIDO MODIFICADO: OCULTAR VOTOS INDIVIDUALES
         nomineeItem.innerHTML = `
-            ${photoUrl ? 
-                `<img src="${photoUrl}" class="nominee-photo" alt="${nominee.name}" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';">` : 
-                ''
-            }
-            ${!photoUrl ? `
-                <div class="nominee-photo" style="background:linear-gradient(45deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;">
-                    <i class="fas fa-user" style="font-size:3rem;color:white;"></i>
-                </div>
-            ` : ''}
-            <h4 class="nominee-name">${nominee.name}</h4>
-            <!-- VOTOS OCULTOS: <div class="vote-count-small">${nominee.votes || 0} votos</div> -->
-            <!-- VOTANTES OCULTOS: <div class="voters-count">${voters.length} persona${voters.length !== 1 ? 's' : ''}</div> -->
-            ${hasVoted ? '<div class="voted-check">⭐ Tú votaste aquí</div>' : ''}
-            ${isVoted ? '<div class="voted-check">✅ Tu voto actual</div>' : ''}
+        ${photoUrl ? 
+            `<img src="${photoUrl}" class="nominee-photo" alt="${nominee.name}" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';">` : 
+            ''
+        }
+        ${!photoUrl ? `
+            <div class="nominee-photo" style="background:linear-gradient(45deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;">
+                <i class="fas fa-user" style="font-size:3rem;color:white;"></i>
+            </div>
+        ` : ''}
+        <h4 class="nominee-name">${nominee.name}</h4>
+        ${hasVoted ? '<div class="voted-check">⭐ Tú votaste aquí</div>' : ''}
+        ${isVoted ? '<div class="voted-check">✅ Tu voto actual</div>' : ''}
         `;
         
         // AÑADIR FRASES EXISTENTES (solo para Frase del Año)
