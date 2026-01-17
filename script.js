@@ -1026,7 +1026,6 @@ function showCategoryResults(categoryId) {
     modal.style.display = 'block';
 }
 
-
 // ===== INICIALIZACIÓN =====
 document.addEventListener('DOMContentLoaded', function() {
     console.log("🚀 Iniciando aplicación Pteros Awards...");
