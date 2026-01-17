@@ -412,10 +412,13 @@ function renderCategories() {
         
         const card = document.createElement('div');
         card.className = 'category-card';
-        card.onclick = () => openVoteModal(category.id);
-        
-        // VERSIÓN CON VOTOS DEBAJO DEL TÍTULO
-        // En renderCategories():
+        card.onclick = () => {
+            if (appData.phase === 'results') {
+                showCategoryResults(category.id);
+            } else {
+                openVoteModal(category.id);
+            }
+};
         card.innerHTML = `
             <h3>${category.name || 'Sin nombre'}</h3>
             <div class="vote-count-simple">${totalVotes} votos</div>
@@ -438,100 +441,108 @@ function getNomineePhotoHTML(nominee) {
 }
 
 function openVoteModal(categoryId) {
-    if (!appData.currentUser) {
-        alert('Por favor, identifícate primero');
+    function openVoteModal(categoryId) {
+    // Si estamos en fase resultados, mostrar resultados en vez de votación
+    if (appData.phase === 'results') {
+        showCategoryResults(categoryId);
         return;
     }
-    
-    currentCategoryId = categoryId;
-    const category = appData.categories.find(c => c && c.id === categoryId);
-    const modal = document.getElementById('voteModal');
-    const modalCategory = document.getElementById('modalCategory');
-    const nomineesList = document.getElementById('nomineesList');
-    
-    if (!category) {
-        alert('Error: Categoría no encontrada');
-        return;
-    }
-    
-    modalCategory.innerHTML = `${category.name}<br><small>${category.description || ''}</small>`;
-    nomineesList.innerHTML = '';
-    
-    const userVotes = appData.currentUser.votes || {};
-    const userVote = userVotes[categoryId];
-    
-    const nominees = category.nominees || [];
-    // Ordenar alfabéticamente para NO mostrar quién va ganando
-    const sortedNominees = [...nominees]
-        .filter(n => n)
-        .sort((a, b) => a.name.localeCompare(b.name));
-    
-    sortedNominees.forEach(nominee => {
-        const isVoted = userVote && userVote.nomineeName === nominee.name;
-        const voters = nominee.voters || [];
-        const hasVoted = voters.includes(appData.currentUser.id);
-        const photoUrl = nominee.photo || (appData.photoUrls && appData.photoUrls[nominee.name]);
-        
-        const nomineeItem = document.createElement('div');
-        nomineeItem.className = `nominee-item ${isVoted ? 'voted' : ''}`;
-        nomineeItem.onclick = () => voteForNominee(nominee.name);
-        
-        // CONTENIDO MODIFICADO: OCULTAR VOTOS INDIVIDUALES
-        nomineeItem.innerHTML = `
-        ${photoUrl ? 
-            `<img src="${photoUrl}" class="nominee-photo" alt="${nominee.name}" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';">` : 
-            ''
+        if (!appData.currentUser) {
+            alert('Por favor, identifícate primero');
+            return;
         }
-        ${!photoUrl ? `
-            <div class="nominee-photo" style="background:linear-gradient(45deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;">
-                <i class="fas fa-user" style="font-size:3rem;color:white;"></i>
-            </div>
-        ` : ''}
-        <h4 class="nominee-name">${nominee.name}</h4>
-        ${hasVoted ? '<div class="voted-check">⭐ Tú votaste aquí</div>' : ''}
-        ${isVoted ? '<div class="voted-check">✅ Tu voto actual</div>' : ''}
-        `;
         
-        // AÑADIR FRASES EXISTENTES (solo para Frase del Año)
-        // AÑADIR FRASES EXISTENTES (solo para Frase del Año)
-        if (category.id === 17 && nominee.frases && Object.keys(nominee.frases).length > 0) {
-            const frasesDiv = document.createElement('div');
-            frasesDiv.className = 'existing-frases';
-            frasesDiv.style.marginTop = '10px';
-            frasesDiv.style.padding = '8px';
-            frasesDiv.style.background = 'rgba(255, 215, 0, 0.1)';
-            frasesDiv.style.borderRadius = '5px';
-            frasesDiv.style.fontSize = '12px';
+        currentCategoryId = categoryId;
+        const category = appData.categories.find(c => c && c.id === categoryId);
+        const modal = document.getElementById('voteModal');
+        const modalCategory = document.getElementById('modalCategory');
+        const nomineesList = document.getElementById('nomineesList');
+        
+        if (!category) {
+            alert('Error: Categoría no encontrada');
+            return;
+        }
+        
+        modalCategory.innerHTML = `${category.name}<br><small>${category.description || ''}</small>`;
+        nomineesList.innerHTML = '';
+        
+        const userVotes = appData.currentUser.votes || {};
+        const userVote = userVotes[categoryId];
+        
+        const nominees = category.nominees || [];
+        // Ordenar alfabéticamente para NO mostrar quién va ganando
+        const sortedNominees = [...nominees]
+            .filter(n => n)
+            .sort((a, b) => a.name.localeCompare(b.name));
+        
+        sortedNominees.forEach(nominee => {
+            const isVoted = userVote && userVote.nomineeName === nominee.name;
+            const voters = nominee.voters || [];
+            const hasVoted = voters.includes(appData.currentUser.id);
+            const photoUrl = nominee.photo || (appData.photoUrls && appData.photoUrls[nominee.name]);
             
-            let frasesText = '<strong>💬 Frases añadidas:</strong><br>';
-            let contador = 0;
+            const nomineeItem = document.createElement('div');
+            nomineeItem.className = `nominee-item ${isVoted ? 'voted' : ''}`;
+            nomineeItem.onclick = () => voteForNominee(nominee.name);
             
-            // Mostrar máximo 2 frases
-            Object.values(nominee.frases).forEach(fraseData => {
-                if (contador < 2) {
-                    frasesText += `"${fraseData.frase.substring(0, 40)}${fraseData.frase.length > 40 ? '...' : ''}"<br>`;
-                    contador++;
+            // CONTENIDO MODIFICADO: OCULTAR VOTOS INDIVIDUALES
+            nomineeItem.innerHTML = `
+            ${photoUrl ? 
+                `<img src="${photoUrl}" class="nominee-photo" alt="${nominee.name}" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';">` : 
+                ''
+            }
+            ${!photoUrl ? `
+                <div class="nominee-photo" style="background:linear-gradient(45deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;">
+                    <i class="fas fa-user" style="font-size:3rem;color:white;"></i>
+                </div>
+            ` : ''}
+            <h4 class="nominee-name">${nominee.name}</h4>
+            ${hasVoted ? '<div class="voted-check">⭐ Tú votaste aquí</div>' : ''}
+            ${isVoted ? '<div class="voted-check">✅ Tu voto actual</div>' : ''}
+            `;
+            
+            // AÑADIR FRASES EXISTENTES (solo para Frase del Año)
+            // AÑADIR FRASES EXISTENTES (solo para Frase del Año)
+            if (category.id === 17 && nominee.frases && Object.keys(nominee.frases).length > 0) {
+                const frasesDiv = document.createElement('div');
+                frasesDiv.className = 'existing-frases';
+                frasesDiv.style.marginTop = '10px';
+                frasesDiv.style.padding = '8px';
+                frasesDiv.style.background = 'rgba(255, 215, 0, 0.1)';
+                frasesDiv.style.borderRadius = '5px';
+                frasesDiv.style.fontSize = '12px';
+                
+                let frasesText = '<strong>💬 Frases añadidas:</strong><br>';
+                let contador = 0;
+                
+                // Mostrar máximo 2 frases
+                Object.values(nominee.frases).forEach(fraseData => {
+                    if (contador < 2) {
+                        frasesText += `"${fraseData.frase.substring(0, 40)}${fraseData.frase.length > 40 ? '...' : ''}"<br>`;
+                        contador++;
+                    }
+                });
+                
+                if (Object.keys(nominee.frases).length > 2) {
+                    frasesText += `... y ${Object.keys(nominee.frases).length - 2} más`;
                 }
-            });
-            
-            if (Object.keys(nominee.frases).length > 2) {
-                frasesText += `... y ${Object.keys(nominee.frases).length - 2} más`;
+                
+                frasesDiv.innerHTML = frasesText;
+                nomineeItem.appendChild(frasesDiv);
             }
             
-            frasesDiv.innerHTML = frasesText;
-            nomineeItem.appendChild(frasesDiv);
-        }
+            nomineesList.appendChild(nomineeItem);
+        });
         
-        nomineesList.appendChild(nomineeItem);
-    });
-    
-    document.getElementById('photoPreview').innerHTML = '';
-    document.getElementById('newNomineeName').value = '';
-    photoPreviewFile = null;
-    
-    modal.style.display = 'block';
-}
+        document.getElementById('photoPreview').innerHTML = '';
+        document.getElementById('newNomineeName').value = '';
+        photoPreviewFile = null;
+        
+        modal.style.display = 'block';
+    }
 
+}
+    
 // ===== VOTAR POR UN NOMINADO CON FRASE =====
 // ===== VOTAR POR UN NOMINADO CON FRASE =====
 // ===== VOTAR POR UN NOMINADO CON FRASE =====
@@ -749,7 +760,11 @@ function addNomineeToCategory(nominee, category) {
 
 // ===== UTILIDADES =====
 function closeModal() {
-    document.getElementById('voteModal').style.display = 'none';
+    const modal = document.getElementById('voteModal');
+    const addSection = document.querySelector('.add-nominee-section');
+    
+    if (modal) modal.style.display = 'none';
+    if (addSection) addSection.style.display = 'block'; // Restaurar visibilidad
 }
 
 function updatePhaseBanner() {
@@ -772,7 +787,8 @@ function updatePhaseBanner() {
             break;
         case 'results':
             banner.style.background = 'linear-gradient(90deg, #4CAF50, #8BC34A)';
-            text.textContent = '🏆 RESULTADOS FINALES - ¡Ganadores revelados!';
+            text.textContent = '🏆 RESULTADOS FINALES - ¡Haz clic en una categoría para ver resultados!';
+            document.body.classList.add('phase-results');
             if (resultsButton) {
                 resultsButton.style.display = 'flex';
                 // Añadir clase para animación
@@ -817,6 +833,167 @@ function verResultadosUsuarios() {
     }
     
     showResults();
+}
+
+// ===== MOSTRAR RESULTADOS DE UNA CATEGORÍA ESPECÍFICA =====
+function showCategoryResults(categoryId) {
+    const category = appData.categories.find(c => c && c.id === categoryId);
+    if (!category) return;
+    
+    const modal = document.getElementById('voteModal');
+    const modalCategory = document.getElementById('modalCategory');
+    const nomineesList = document.getElementById('nomineesList');
+    
+    if (!modal || !modalCategory || !nomineesList) return;
+    
+    // Configurar modal para resultados
+    modalCategory.innerHTML = `🏆 ${category.name || 'Categoría'}<br><small>${category.description || ''}</small>`;
+    nomineesList.innerHTML = '';
+    
+    const nominees = category.nominees || [];
+    
+    // Ordenar por votos (de mayor a menor)
+    const sortedNominees = [...nominees]
+        .filter(n => n)
+        .sort((a, b) => (b.votes || 0) - (a.votes || 0));
+    
+    // Obtener top 3
+    const winner = sortedNominees[0];
+    const second = sortedNominees[1];
+    const third = sortedNominees[2];
+    
+    // Mostrar podio con los 3 primeros
+    if (winner) {
+        const podiumHTML = `
+            <div style="display: flex; justify-content: center; gap: 20px; margin: 15px 0; flex-wrap: wrap;">
+                ${second ? `
+                    <div style="text-align: center; flex: 1; min-width: 100px;">
+                        <div style="font-size: 2rem;">🥈</div>
+                        <div style="font-weight: bold;">${second.name || 'Sin nombre'}</div>
+                        <div style="color: var(--silver); font-size: 0.9rem;">${second.votes || 0} votos</div>
+                        <div style="color: var(--silver);">Segundo lugar</div>
+                    </div>
+                ` : ''}
+                
+                <div style="text-align: center; flex: 1; min-width: 120px;">
+                    <div style="font-size: 3rem;">🥇</div>
+                    <div style="font-weight: bold; font-size: 1.3rem; color: var(--gold);">${winner.name || 'Sin nombre'}</div>
+                    <div style="color: var(--gold); font-weight: bold; font-size: 0.9rem;">${winner.votes || 0} votos</div>
+                    <div style="color: var(--gold); font-weight: bold;">¡GANADOR/A!</div>
+                </div>
+                
+                ${third ? `
+                    <div style="text-align: center; flex: 1; min-width: 100px;">
+                        <div style="font-size: 1.5rem;">🥉</div>
+                        <div style="font-weight: bold;">${third.name || 'Sin nombre'}</div>
+                        <div style="color: var(--bronze); font-size: 0.9rem;">${third.votes || 0} votos</div>
+                        <div style="color: var(--bronze);">Tercer lugar</div>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+        
+        const podiumItem = document.createElement('div');
+        podiumItem.className = 'nominee-item';
+        podiumItem.style.background = 'linear-gradient(145deg, rgba(255, 215, 0, 0.15), rgba(212, 175, 55, 0.1))';
+        podiumItem.style.border = '2px solid var(--gold)';
+        podiumItem.innerHTML = podiumHTML;
+        nomineesList.appendChild(podiumItem);
+    }
+    
+    // Mostrar todos los participantes con sus votos
+    const allParticipantsHTML = `
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255, 215, 0, 0.3);">
+            <h4 style="color: var(--gold); text-align: center; margin-bottom: 15px;">📊 Todos los participantes</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px;">
+                ${sortedNominees.map((nominee, index) => `
+                    <div style="background: rgba(255, 255, 255, 0.05); padding: 10px; border-radius: 8px; text-align: center; border: 1px solid rgba(255, 215, 0, 0.1);">
+                        <div style="font-weight: bold; color: ${index === 0 ? 'var(--gold)' : index === 1 ? 'var(--silver)' : index === 2 ? 'var(--bronze)' : 'white'}">
+                            ${index + 1}º ${nominee.name || 'Sin nombre'}
+                        </div>
+                        <div style="color: var(--silver); font-size: 0.9rem;">${nominee.votes || 0} votos</div>
+                        <div style="color: #aaa; font-size: 0.8rem;">${nominee.voters ? nominee.voters.length : 0} votantes</div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+    
+    const participantsItem = document.createElement('div');
+    participantsItem.innerHTML = allParticipantsHTML;
+    nomineesList.appendChild(participantsItem);
+    
+    // Añadir frases si es categoría 17
+    if (category.id === 17) {
+        const todasLasFrases = [];
+        
+        sortedNominees.forEach(nominee => {
+            if (nominee.frases && Object.keys(nominee.frases).length > 0) {
+                Object.values(nominee.frases).forEach(fraseData => {
+                    todasLasFrases.push({
+                        persona: nominee.name,
+                        frase: fraseData.frase,
+                        votante: fraseData.voter,
+                        votos: nominee.votes || 0
+                    });
+                });
+            }
+        });
+        
+        if (todasLasFrases.length > 0) {
+            // Ordenar frases por votos
+            todasLasFrases.sort((a, b) => b.votos - a.votos);
+            
+            const frasesHTML = `
+                <div style="margin-top: 25px; background: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 10px; border: 1px solid rgba(255, 215, 0, 0.3);">
+                    <h4 style="color: var(--gold); text-align: center; margin-bottom: 15px;">
+                        💬 Frases Icónicas del Año
+                    </h4>
+                    ${todasLasFrases.slice(0, 5).map((item, index) => `
+                        <div style="margin: 12px 0; padding: 12px; background: rgba(0, 0, 0, 0.2); border-radius: 8px; border-left: 3px solid var(--gold);">
+                            <div style="font-style: italic; color: white; margin-bottom: 5px;">
+                                "${item.frase}"
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--silver);">
+                                <span><strong>${item.persona}</strong></span>
+                                <span>Añadida por: ${item.votante}</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                    ${todasLasFrases.length > 5 ? `
+                        <div style="text-align: center; margin-top: 10px; font-size: 12px; color: var(--silver);">
+                            + ${todasLasFrases.length - 5} frases más...
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            const frasesItem = document.createElement('div');
+            frasesItem.innerHTML = frasesHTML;
+            nomineesList.appendChild(frasesItem);
+        }
+    }
+    
+    // Mostrar estadísticas
+    const totalVotes = nominees.reduce((sum, n) => sum + (n.votes || 0), 0);
+    const totalVoters = nominees.reduce((sum, n) => sum + ((n.voters || []).length), 0);
+    
+    const statsHTML = `
+        <div style="margin-top: 20px; text-align: center; color: var(--silver); font-size: 0.9rem;">
+            <p>${totalVotes} votos totales | ${totalVoters} votos únicos</p>
+            <p>${nominees.length} participantes</p>
+        </div>
+    `;
+    
+    const statsItem = document.createElement('div');
+    statsItem.innerHTML = statsHTML;
+    nomineesList.appendChild(statsItem);
+    
+    // Ocultar sección de añadir nuevo nominado
+    document.querySelector('.add-nominee-section').style.display = 'none';
+    
+    // Mostrar modal
+    modal.style.display = 'block';
 }
 
 // ===== INICIALIZACIÓN =====
