@@ -534,7 +534,10 @@ function openVoteModal(categoryId) {
 
 // ===== VOTAR POR UN NOMINADO CON FRASE =====
 // ===== VOTAR POR UN NOMINADO CON FRASE =====
+// ===== VOTAR POR UN NOMINADO CON FRASE =====
 function voteForNominee(nomineeName) {
+    console.log("🔴 voteForNominee LLAMADA con:", nomineeName);
+    
     if (!appData.currentUser) {
         alert('Por favor, identifícate primero');
         return;
@@ -546,10 +549,7 @@ function voteForNominee(nomineeName) {
         return;
     }
     
-    console.log("🗳️ INICIANDO VOTO ==========");
-    console.log("Usuario:", appData.currentUser.name);
-    console.log("Categoría ID:", category.id, "Nombre:", category.name);
-    console.log("Nominado seleccionado:", nomineeName);
+    console.log("🗳️ VOTANDO EN CATEGORÍA:", category.id, category.name);
     
     const nominees = category.nominees || [];
     const nominee = nominees.find(n => n && n.name === nomineeName);
@@ -558,43 +558,53 @@ function voteForNominee(nomineeName) {
         return;
     }
     
-    // ===== SISTEMA DE FRASES =====
+    // ===== SISTEMA DE FRASES (SOLO CATEGORÍA 17) =====
     let fraseUsuario = '';
     
-    // Solo pedir frase para la categoría 17 (Frase del Año)
+    // VERIFICACIÓN EXPLÍCITA
+    console.log("🔍 CATEGORÍA ID:", category.id, "¿Es 17?", category.id === 17);
+    
     if (category.id === 17) {
+        console.log("📝 MOSTRANDO PROMPT PARA FRASE...");
+        
         fraseUsuario = prompt(
             `📝 FRASE DEL AÑO\n\nEstás votando a ${nomineeName}.\n\nPor favor, escribe la frase icónica que dijo (o por la que es famoso/a):\n\nEjemplo: "Mejor me voy a mi casa"`,
             ""
         );
         
-        // Si cancela el prompt, no votar
+        console.log("📝 RESPUESTA DEL PROMPT:", fraseUsuario);
+        
+        // Si cancela el prompt
         if (fraseUsuario === null) {
-            console.log("❌ Voto cancelado por usuario");
+            console.log("❌ Usuario canceló el prompt");
             return;
         }
         
-        // Limpiar la frase
+        // Limpiar
         fraseUsuario = fraseUsuario.trim();
         
-        // Validar que no esté vacía (pero permitir vacío)
+        // Validar
         if (!fraseUsuario) {
-            if (!confirm("¿Votar sin añadir frase? (Puedes dejarla vacía)")) {
-                console.log("❌ Voto cancelado - sin frase");
+            const confirmar = confirm("⚠️ ¿Votar sin añadir frase?\n\n(Puedes votar sin frase, pero es más divertido con una)");
+            if (!confirmar) {
+                console.log("❌ Usuario no confirmó voto sin frase");
                 return;
             }
         }
     }
     
     // ===== PROCESAR EL VOTO =====
+    console.log("🔄 PROCESANDO VOTO...");
+    
     if (!appData.currentUser.votes) appData.currentUser.votes = {};
     if (!nominee.voters) nominee.voters = [];
     if (!nominee.frases) nominee.frases = {};
     
-    // Quitar voto anterior si existe
+    // 1. ELIMINAR VOTO ANTERIOR (si existe)
     if (appData.currentUser.votes[category.id]) {
         const previousVote = appData.currentUser.votes[category.id];
         console.log("🗑️ Eliminando voto anterior:", previousVote);
+        
         const previousNominee = nominees.find(n => n && n.name === previousVote.nomineeName);
         if (previousNominee) {
             // Restar voto
@@ -606,60 +616,58 @@ function voteForNominee(nomineeName) {
                 delete previousNominee.frases[appData.currentUser.id];
                 console.log("🗑️ Frase anterior eliminada");
             }
-            console.log("✅ Voto anterior eliminado de:", previousNominee.name);
         }
     }
     
-    // Guardar el nuevo voto
+    // 2. GUARDAR NUEVO VOTO
     appData.currentUser.votes[category.id] = {
         nomineeName: nomineeName,
         frase: fraseUsuario || null,
         timestamp: new Date().toISOString()
     };
     
-    // Actualizar nominado
+    // 3. ACTUALIZAR NOMINADO
     nominee.votes = (nominee.votes || 0) + 1;
     
     if (!nominee.voters.includes(appData.currentUser.id)) {
         nominee.voters.push(appData.currentUser.id);
     }
     
-    // Guardar frase si existe
-    if (fraseUsuario) {
+    // 4. GUARDAR FRASE (si existe)
+    if (fraseUsuario && fraseUsuario.trim() !== '') {
         nominee.frases[appData.currentUser.id] = {
             frase: fraseUsuario,
             voter: appData.currentUser.name,
             timestamp: new Date().toISOString()
         };
-        console.log("💬 Frase guardada:", fraseUsuario.substring(0, 30) + "...");
+        console.log("💾 Frase guardada:", fraseUsuario.substring(0, 50));
     }
     
-    console.log("✅ Voto registrado:", nomineeName, "ahora tiene", nominee.votes, "votos");
+    console.log("✅ Voto completado para", nomineeName, "- Votos totales:", nominee.votes);
     
-    // GUARDAR DATOS
+    // 5. GUARDAR EN BASE DE DATOS
     (async () => {
         try {
             await saveData();
             await saveUsers();
             console.log("💾 Datos guardados correctamente");
         } catch (error) {
-            console.error("❌ Error guardando datos:", error);
+            console.error("❌ Error guardando:", error);
         }
-        console.log("🗳️ FIN VOTO ==========\n");
     })();
     
-    // Mostrar confirmación
+    // 6. MOSTRAR CONFIRMACIÓN
     if (category.id === 17) {
-        if (fraseUsuario) {
-            alert(`✅ ¡Voto registrado!\n\nHas votado por ${nomineeName}\nFrase añadida: "${fraseUsuario}"`);
+        if (fraseUsuario && fraseUsuario.trim() !== '') {
+            alert(`✅ ¡Voto registrado!\n\nHas votado por ${nomineeName}\n\nFrase añadida:\n"${fraseUsuario}"`);
         } else {
-            alert(`✅ ¡Voto registrado!\nHas votado por ${nomineeName} (sin frase añadida)`);
+            alert(`✅ ¡Voto registrado!\nHas votado por ${nomineeName} (sin frase)`);
         }
     } else {
         alert(`✅ ¡Voto registrado!\nHas votado por ${nomineeName} en "${category.name}"`);
     }
     
-    // Actualizar UI
+    // 7. ACTUALIZAR INTERFAZ
     renderCategories();
     openVoteModal(currentCategoryId); // Recargar modal
     updateVotersList();

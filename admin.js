@@ -384,13 +384,14 @@ function showResults() {
         
         let podiumHTML = '';
         if (winner) {
-            // MODIFICADO: NO MOSTRAR NÚMERO DE VOTOS
+            // MODIFICADO: MOSTRAR VOTOS DE CADA UNO
             podiumHTML = `
                 <div style="display: flex; justify-content: center; gap: 20px; margin: 15px 0; flex-wrap: wrap;">
                     ${second ? `
                         <div style="text-align: center; flex: 1; min-width: 100px;">
                             <div style="font-size: 2rem;">🥈</div>
                             <div style="font-weight: bold;">${second.name || 'Sin nombre'}</div>
+                            <div style="color: var(--silver); font-size: 0.9rem;">${second.votes || 0} votos</div>
                             <div style="color: var(--silver);">Segundo lugar</div>
                         </div>
                     ` : ''}
@@ -398,6 +399,7 @@ function showResults() {
                     <div style="text-align: center; flex: 1; min-width: 120px;">
                         <div style="font-size: 3rem;">🥇</div>
                         <div style="font-weight: bold; font-size: 1.3rem; color: var(--gold);">${winner.name || 'Sin nombre'}</div>
+                        <div style="color: var(--gold); font-weight: bold; font-size: 0.9rem;">${winner.votes || 0} votos</div>
                         <div style="color: var(--gold); font-weight: bold;">¡GANADOR/A!</div>
                     </div>
                     
@@ -405,13 +407,14 @@ function showResults() {
                         <div style="text-align: center; flex: 1; min-width: 100px;">
                             <div style="font-size: 1.5rem;">🥉</div>
                             <div style="font-weight: bold;">${third.name || 'Sin nombre'}</div>
+                            <div style="color: var(--bronze); font-size: 0.9rem;">${third.votes || 0} votos</div>
                             <div style="color: var(--bronze);">Tercer lugar</div>
                         </div>
                     ` : ''}
                 </div>
             `;
         }
-        
+    
         const totalVotes = nominees.reduce((sum, n) => sum + (n.votes || 0), 0);
         const totalVoters = nominees.reduce((sum, n) => sum + ((n.voters || []).length), 0);
         
