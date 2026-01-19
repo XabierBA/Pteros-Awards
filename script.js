@@ -787,27 +787,52 @@ function closeModal() {
     if (votingContainer) {
         votingContainer.style.display = 'block';
         votingContainer.classList.add('active');
+        votingContainer.innerHTML = `
+            <div class="nominees-grid" id="nomineesList">
+                <!-- Se recargará cuando sea necesario -->
+            </div>
+        `;
     }
     
     if (resultsContainer) {
         resultsContainer.style.display = 'none';
         resultsContainer.classList.remove('active');
+        // LIMPIAR TODO el contenido
+        resultsContainer.innerHTML = `
+            <div id="resultsList"></div>
+        `;
     }
     
     if (addSection) {
         addSection.style.display = 'block';
     }
     
-    // Limpiar confetti si existe
-    const confetti = document.querySelector('.confetti-container');
-    if (confetti) confetti.remove();
+    // Resetear variables de revelación
+    currentRevelationStep = 0;
+    categoryForRevelation = null;
+    top3Nominees = [];
+    window.allVotesData = null;
     
-    // Limpiar ambos contenedores
-    const nomineesList = document.getElementById('nomineesList');
-    const resultsList = document.getElementById('resultsList');
+    // Eliminar elementos creados dinámicamente
+    const elementsToRemove = [
+        '.confetti-container',
+        '.firework',
+        '.spotlight',
+        '.curtain-container',
+        '.buttons-container-final',
+        '#detailsContainer',
+        '#allVotesContainer',
+        '#backToWinnersButton',
+        '#winnerCurtain', // <-- Añade esto
+        '#finalCountdown' // <-- Y esto
+    ];
     
-    if (nomineesList) nomineesList.innerHTML = '';
-    if (resultsList) resultsList.innerHTML = '';
+    elementsToRemove.forEach(selector => {
+        const elements = document.querySelectorAll(selector);
+        elements.forEach(el => {
+            if (el.parentNode) el.parentNode.removeChild(el);
+        });
+    });
 }
 
 function updatePhaseBanner() {
@@ -962,117 +987,795 @@ async function revealWinners(categoryId) {
 }
 
 // ===== FUNCIÓN PARA LA REVELACIÓN ESPECTACULAR =====
+let currentRevelationStep = 0;
+let categoryForRevelation = null;
+let top3Nominees = [];
+
+// ===== FUNCIÓN MODIFICADA CON TELÓN DOBLE =====
 async function startRevelation(category) {
-    console.log("✨ Iniciando revelación...");
+    console.log("✨ Iniciando revelación escalonada...");
+    
+    categoryForRevelation = category;
+    
+    // Obtener top 3 y ORDENARLOS CORRECTAMENTE (3º, 2º, 1º)
+    const nominees = category.nominees || [];
+    
+    // Primero ordenar de mayor a menor votos
+    const sortedByVotes = [...nominees]
+        .filter(n => n && n.name)
+        .sort((a, b) => (b.votes || 0) - (a.votes || 0));
+    
+    // Preparar lista completa de votos para mostrar después
+    const allNomineesWithVotes = [...nominees]
+        .filter(n => n && n.name)
+        .sort((a, b) => (b.votes || 0) - (a.votes || 0))
+        .map((nominee, index) => ({
+            ...nominee,
+            position: index + 1,
+            medal: index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🎯'
+        }));
+    
+    // Guardar para usar después
+    window.allVotesData = allNomineesWithVotes;
+    
+    // Para revelación: 3º, 2º, 1º
+    top3Nominees = [
+        sortedByVotes[2], // Tercer lugar
+        sortedByVotes[1], // Segundo lugar  
+        sortedByVotes[0]  // Primer lugar
+    ].filter(n => n); // Filtrar en caso de que no haya 3
+    
+    console.log("🎯 Orden de revelación:", 
+        top3Nominees.map((n, i) => `${['3º', '2º', '1º'][i]} - ${n.name} (${n.votes} votos)`));
     
     const resultsList = document.getElementById('resultsList');
     if (!resultsList) return;
     
-    // 1. CREAR CONFETI
-    createConfetti();
-    
-    // 2. MOSTRAR CONTENIDO DE REVELACIÓN
+    // 1. CREAR ESCENARIO CON TELÓN DOBLE
     resultsList.innerHTML = `
-        <div style="position: relative; z-index: 2;">
-            <!-- CONFETI SE AÑADE POR JAVASCRIPT -->
+        <div class="stage">
+            <!-- Luces del escenario -->
+            <div class="stage-lights">
+                ${Array.from({length: 15}).map((_, i) => 
+                    `<div class="stage-light" style="animation-delay: ${i * 0.2}s"></div>`
+                ).join('')}
+            </div>
             
-            <div class="reveal-screen" style="min-height: 400px;">
-                <h1 class="reveal-title" style="font-size: 2.5rem; margin-bottom: 40px;">
-                    ¡Y LOS GANADORES SON...!
-                </h1>
-                
-                <div id="winnersContainer" style="width: 100%;">
-                    <!-- Los ganadores se añadirán aquí con animación -->
+            <!-- TELÓN DOBLE -->
+            <div class="curtain-container" id="stageCurtain">
+                <div class="curtain-left">
+                    <div style="text-align: center; padding: 20px;">
+                        <div style="font-size: 3rem; color: var(--gold); margin-bottom: 20px;">🎭</div>
+                        <div style="color: white; font-size: 1.5rem; font-weight: bold;">IZQUIERDA</div>
+                    </div>
+                </div>
+                <div class="curtain-right">
+                    <div style="text-align: center; padding: 20px;">
+                        <div style="font-size: 3rem; color: var(--gold); margin-bottom: 20px;">🎭</div>
+                        <div style="color: white; font-size: 1.5rem; font-weight: bold;">DERECHA</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Contenido principal DEL ESCENARIO (detrás del telón) -->
+            <div style="position: relative; z-index: 1; width: 100%; min-height: 500px; padding: 40px 20px;">
+                <!-- Contador dramático -->
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <div class="reveal-counter" id="dramaticCounter">3</div>
+                    <h1 class="dramatic-text">¡EL ESPECTÁCULO VA A COMENZAR!</h1>
+                    <p class="reveal-message" id="curtainMessage">
+                        El telón se abrirá en...
+                    </p>
                 </div>
                 
-                <button class="btn-reveal" id="showDetailsButton" onclick="showDetails(${category.id})" 
-                        style="margin-top: 50px; display: none;">
-                    <i class="fas fa-chart-bar"></i> VER DETALLES Y FRASES
-                </button>
+                <!-- Área principal para los ganadores -->
+                <div id="mainContentArea" style="display: none;">
+                    <!-- Mensaje actual -->
+                    <div class="reveal-message" id="currentMessage">
+                        ¿Estás listo para descubrir el TERCER lugar?
+                    </div>
+                    
+                    <!-- Contenedor del ganador actual -->
+                    <div id="currentWinnerContainer" style="
+                        min-height: 300px; 
+                        display: flex; 
+                        align-items: center; 
+                        justify-content: center;
+                        margin: 30px 0;
+                    ">
+                        <!-- Aquí aparecerá cada ganador en orden: 3º, 2º, 1º -->
+                    </div>
+                    
+                    <!-- Botón para siguiente revelación -->
+                    <button class="btn-next-reveal" id="nextRevealButton" onclick="revealNextWinner()">
+                        <i class="fas fa-play-circle"></i> REVELAR TERCER LUGAR
+                    </button>
+                    
+                    <!-- Indicador de progreso -->
+                    <div style="margin-top: 40px; display: flex; justify-content: center; gap: 15px;">
+                        ${top3Nominees.map((_, index) => `
+                            <div class="progress-step" style="
+                                width: 30px;
+                                height: 30px;
+                                border-radius: 50%;
+                                background: rgba(255,255,255,0.1);
+                                border: 3px solid var(--gold);
+                                transition: all 0.5s ease;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                color: var(--silver);
+                                font-weight: bold;
+                                font-size: 0.9rem;
+                            ">${['3º', '2º', '1º'][index]}</div>
+                        `).join('')}
+                    </div>
+                </div>
+                
+                <!-- Contenedor para TODOS los votos (inicialmente oculto) -->
+                <div id="allVotesContainer" class="all-votes-container" style="display: none; margin-top: 50px;">
+                    <!-- Aquí se cargarán todos los votos después -->
+                </div>
             </div>
         </div>
     `;
     
-    const winnersContainer = document.getElementById('winnersContainer');
+    // Iniciar cuenta regresiva dramática
+    await startDramaticCountdown();
+}
+
+// ===== CUENTA REGRESIVA DRAMÁTICA CON TELÓN DOBLE =====
+async function startDramaticCountdown() {
+    const counter = document.getElementById('dramaticCounter');
+    const curtainContainer = document.getElementById('stageCurtain');
+    const curtainMessage = document.getElementById('curtainMessage');
+    const mainContentArea = document.getElementById('mainContentArea');
     
-    // Obtener top 3 ordenados por votos
-    const nominees = category.nominees || [];
-    const sortedNominees = [...nominees]
-        .filter(n => n && n.name)
-        .sort((a, b) => (b.votes || 0) - (a.votes || 0));
+    if (!counter || !curtainContainer) return;
     
-    const top3 = sortedNominees.slice(0, 3);
-    const hasVotes = sortedNominees.some(n => (n.votes || 0) > 0);
+    // Cuenta regresiva 3, 2, 1...
+    for (let i = 3; i > 0; i--) {
+        counter.textContent = i;
+        curtainMessage.textContent = `El telón se abrirá en ${i}...`;
+        
+        // Agregar efecto de golpe de tambor visual
+        counter.style.animation = 'drumRoll 0.3s ease-out';
+        
+        // Crear sonido de tambor visual
+        createDrumEffect();
+        
+        await delay(800);
+        
+        // Resetear animación
+        counter.style.animation = '';
+    }
     
-    if (!hasVotes) {
-        winnersContainer.innerHTML = `
-            <div style="padding: 40px; text-align: center; animation: fadeInUp 1s ease-out;">
-                <div style="font-size: 4rem; color: var(--silver); margin-bottom: 20px;">📊</div>
-                <h3 style="color: var(--silver); margin-bottom: 15px;">Sin votos aún</h3>
-                <p style="color: var(--silver); opacity: 0.8;">No hay votos registrados en esta categoría</p>
-            </div>
-        `;
+    // ¡CERO!
+    counter.textContent = '🎭';
+    counter.style.fontSize = '6rem';
+    curtainMessage.textContent = '¡ABRIENDO TELÓN!';
+    
+    // Efectos especiales
+    createMultipleFireworks();
+    createConfettiRain();
+    
+    // ABRIR TELÓN DOBLE
+    curtainContainer.classList.add('open');
+    
+    // Esperar a que se abra el telón
+    await delay(1800);
+    
+    // Ocultar telón después de abrirse
+    curtainContainer.style.display = 'none';
+    
+    // Mostrar contenido principal
+    if (mainContentArea) {
+        mainContentArea.style.display = 'block';
+        mainContentArea.style.animation = 'fadeInUp 1s ease-out forwards';
+    }
+    
+    // Ocultar contador
+    counter.style.display = 'none';
+    curtainMessage.style.display = 'none';
+    
+    // Preparar primer paso
+    currentRevelationStep = 0;
+    updateRevelationStep();
+}
+
+// ===== REVELAR SIGUIENTE GANADOR CON TELÓN PARA EL 1º LUGAR =====
+async function revealNextWinner() {
+    if (currentRevelationStep >= top3Nominees.length) {
+        showDetailsButtonAfterRevelation();
         return;
     }
     
-    // 3. REVELAR GANADORES CON ANIMACIÓN ESCALONADA
-    await delay(500); // Pequeña pausa dramática
+    const nextButton = document.getElementById('nextRevealButton');
+    const message = document.getElementById('currentMessage');
+    const winnerContainer = document.getElementById('currentWinnerContainer');
     
-    // Contenedor para los 3 ganadores
-    const winnersRow = document.createElement('div');
-    winnersRow.style.cssText = `
-        display: flex;
-        justify-content: center;
-        align-items: flex-end;
-        gap: 30px;
-        flex-wrap: wrap;
-        margin-bottom: 30px;
-        width: 100%;
-        max-width: 900px;
-        margin: 0 auto;
+    if (!nextButton || !message || !winnerContainer) return;
+    
+    // Deshabilitar botón temporalmente
+    nextButton.disabled = true;
+    nextButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> REVELANDO...';
+    
+    // Definir orden: 0=3º, 1=2º, 2=1º
+    const positions = ['TERCER', 'SEGUNDO', 'PRIMER'];
+    const positionNames = ['TERCER LUGAR', 'SEGUNDO LUGAR', '¡GANADOR ABSOLUTO!'];
+    const emojis = ['🥉', '🥈', '🥇'];
+    const colors = ['var(--bronze)', 'var(--silver)', 'var(--gold)'];
+    
+    const currentPosition = currentRevelationStep;
+    
+    // Mensaje dramático
+    message.innerHTML = `
+        <span style="color: ${colors[currentPosition]}; font-weight: bold; font-size: 1.8rem;">
+            ${positionNames[currentPosition]}
+        </span>
+        <div style="color: var(--silver); margin-top: 10px; font-size: 1.2rem;">
+            ¡El ${positions[currentPosition].toLowerCase()} puesto va para...!
+        </div>
     `;
     
-    // Animación para 2do lugar
-    if (top3[1]) {
-        await delay(300);
-        const secondDiv = createWinnerCard(top3[1], '🥈', 'SECUNDO LUGAR', 'silver');
-        secondDiv.style.animation = 'scaleUp 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, pulseGold 2s infinite 0.8s';
-        winnersRow.appendChild(secondDiv);
-    }
-    
-    // Animación para 1er lugar (más espectacular)
-    if (top3[0]) {
+    // Crear efectos visuales según el puesto
+    if (currentPosition === 0) {
+        // Tercer lugar - confeti suave
+        createGentleConfetti();
         await delay(500);
-        const firstDiv = createWinnerCard(top3[0], '🥇', '¡GANADOR/A!', 'gold');
-        firstDiv.style.cssText += `
-            transform: translateY(-20px);
-            animation: scaleUp 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, 
-                       pulseGold 2s infinite 1s;
-            box-shadow: 0 20px 50px rgba(255, 215, 0, 0.5);
-        `;
-        winnersRow.appendChild(firstDiv);
         
-        // Sonido imaginario (podrías añadir un sonido real)
-        console.log("🎺 ¡FANFARRIA! 🎺");
+        nextButton.innerHTML = `<i class="fas fa-forward"></i> REVELAR SEGUNDO LUGAR`;
+        
+    } else if (currentPosition === 1) {
+        // Segundo lugar - confeti abundante
+        createAbundantConfetti();
+        await delay(700);
+        
+        nextButton.innerHTML = `<i class="fas fa-crown"></i> ¡REVELAR GANADOR!`;
+        
+    } else if (currentPosition === 2) {
+        // Primer lugar - ESPECTÁCULO COMPLETO CON TELÓN
+        message.innerHTML = `
+            <div class="dramatic-text" style="font-size: 2.5rem;">
+                🏆 ¡EL MOMENTO MÁS ESPERADO! 🏆
+            </div>
+            <div style="color: var(--silver); margin-top: 15px; font-size: 1.3rem;">
+                El primer lugar, el ganador absoluto...
+            </div>
+        `;
+        
+        // Pausa dramática
+        await delay(1500);
+        
+        // APAGAR LUCES para crear suspense
+        document.querySelectorAll('.stage-light').forEach(light => {
+            light.style.opacity = '0.1';
+            light.style.animationPlayState = 'paused';
+        });
+        
+        // Mensaje de suspense
+        message.innerHTML = `
+            <div style="text-align: center; margin: 40px 0;">
+                <div style="font-size: 4rem; color: var(--gold); animation: pulseGold 1s infinite;">⏳</div>
+                <div style="color: var(--silver); font-size: 1.5rem; margin-top: 20px;">
+                    Preparando la gran revelación...
+                </div>
+            </div>
+        `;
+        
+        await delay(2000);
+        
+        // CREAR TELÓN PARA EL GANADOR
+        createWinnerCurtain();
+        
+        // Esperar a que se cree el telón
+        await delay(1000);
+        
+        // Mensaje final antes de abrir
+        message.innerHTML = `
+            <div class="dramatic-text" style="font-size: 3rem;">
+                ¡ABRIENDO TELÓN!
+            </div>
+        `;
+        
+        // Contador dramático
+        const countdownDiv = document.createElement('div');
+        countdownDiv.style.cssText = `
+            font-size: 5rem;
+            font-weight: bold;
+            color: var(--gold);
+            margin: 30px 0;
+            animation: drumRoll 0.5s infinite;
+        `;
+        countdownDiv.id = 'finalCountdown';
+        message.parentNode.insertBefore(countdownDiv, message.nextSibling);
+        
+        // Cuenta regresiva 3, 2, 1...
+        for (let i = 3; i > 0; i--) {
+            countdownDiv.textContent = i;
+            createDrumEffect();
+            await delay(800);
+        }
+        
+        countdownDiv.textContent = '🎭';
+        
+        // ABRIR TELÓN
+        openWinnerCurtain();
+        
+        // Efectos especiales MÁXIMOS
+        createEpicFireworks();
+        createSpotlight();
+        createConfettiRain();
+        
+        // Reactivar luces
+        setTimeout(() => {
+            document.querySelectorAll('.stage-light').forEach(light => {
+                light.style.opacity = '1';
+                light.style.animationPlayState = 'running';
+                light.style.animationDuration = '0.3s';
+            });
+        }, 500);
+        
+        await delay(2000);
+        
+        nextButton.innerHTML = `<i class="fas fa-trophy"></i> VER DETALLES COMPLETOS`;
     }
     
-    // Animación para 3er lugar
-    if (top3[2]) {
-        await delay(300);
-        const thirdDiv = createWinnerCard(top3[2], '🥉', 'TERCER LUGAR', 'bronze');
-        thirdDiv.style.animation = 'scaleUp 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, pulseGold 2s infinite 1.2s';
-        winnersRow.appendChild(thirdDiv);
+    // Revelar el ganador
+    const nominee = top3Nominees[currentPosition];
+    
+    if (!nominee) return;
+    
+    winnerContainer.innerHTML = `
+        <div class="winner-card" id="winnerCard${currentPosition}" 
+             style="transform: scale(0); opacity: 0;">
+            <div class="trophy-icon-large" style="color: ${colors[currentPosition]};">
+                ${emojis[currentPosition]}
+            </div>
+            
+            <div class="winner-name" style="
+                font-size: ${currentPosition === 2 ? '3.5rem' : '2.5rem'};
+                color: ${colors[currentPosition]};
+                font-weight: bold;
+                margin: 20px 0;
+                text-shadow: 0 0 30px ${colors[currentPosition]}80;
+            ">
+                ${nominee.name.toUpperCase()}
+            </div>
+            
+            <div style="
+                font-size: ${currentPosition === 2 ? '3rem' : '2.2rem'};
+                color: ${colors[currentPosition]};
+                font-weight: bold;
+                margin: 15px 0;
+                background: rgba(255,255,255,0.1);
+                padding: 10px 30px;
+                border-radius: 50px;
+                border: 2px solid ${colors[currentPosition]};
+            ">
+                ${nominee.votes || 0} VOTOS
+            </div>
+            
+            <div style="
+                color: ${colors[currentPosition]};
+                font-weight: bold;
+                font-size: 1.3rem;
+                text-transform: uppercase;
+                letter-spacing: 3px;
+                margin-top: 15px;
+                padding: 10px 25px;
+                background: linear-gradient(45deg, 
+                    ${colors[currentPosition]}20, 
+                    ${colors[currentPosition]}10);
+                border-radius: 10px;
+                border: 1px solid ${colors[currentPosition]}40;
+            ">
+                ${positionNames[currentPosition]}
+            </div>
+            
+            ${currentPosition === 2 ? `
+                <div style="
+                    margin-top: 40px;
+                    padding: 20px 40px;
+                    background: linear-gradient(45deg, 
+                        rgba(255, 215, 0, 0.3), 
+                        rgba(212, 175, 55, 0.2));
+                    border: 3px solid var(--gold);
+                    border-radius: 20px;
+                    font-size: 1.8rem;
+                    color: var(--gold);
+                    font-weight: bold;
+                    animation: pulseGold 2s infinite;
+                ">
+                    🎉 ¡FELICIDADES AL GANADOR! 🎉
+                </div>
+            ` : ''}
+        </div>
+    `;
+    
+    // Animación de revelación
+    await delay(300);
+    
+    const winnerCard = document.getElementById(`winnerCard${currentPosition}`);
+    const trophyIcon = winnerCard.querySelector('.trophy-icon-large');
+    const winnerName = winnerCard.querySelector('.winner-name');
+    
+    if (winnerCard) {
+        winnerCard.classList.add('revealed');
+        
+        setTimeout(() => {
+            if (trophyIcon) {
+                trophyIcon.classList.add('revealed');
+                if (currentPosition === 2) {
+                    trophyIcon.style.animation = 'trophyDrop 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, pulseGold 2s infinite 1.5s';
+                }
+            }
+        }, 400);
+        
+        setTimeout(() => {
+            if (winnerName) {
+                winnerName.classList.add('revealed');
+                if (currentPosition === 2) {
+                    winnerName.style.animation = 'nameReveal 1.5s 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, textGlow 2s infinite 2s';
+                }
+            }
+        }, 800);
     }
     
-    winnersContainer.appendChild(winnersRow);
+    // Actualizar progreso
+    updateProgressSteps();
     
-    // Mostrar botón de detalles después de las animaciones
-    await delay(1500);
-    const detailsButton = document.getElementById('showDetailsButton');
-    if (detailsButton) {
-        detailsButton.style.display = 'flex';
-        detailsButton.style.animation = 'fadeInUp 0.8s ease-out forwards';
+    // Preparar siguiente paso
+    currentRevelationStep++;
+    
+    await delay(2000);
+    
+    if (currentRevelationStep < top3Nominees.length) {
+        nextButton.disabled = false;
+        const nextPosition = positions[currentRevelationStep];
+        message.innerHTML = `
+            <div style="text-align: center;">
+                <div style="color: ${colors[currentRevelationStep]}; font-size: 1.5rem; font-weight: bold;">
+                    ${currentRevelationStep === 1 ? '¡INCREÍBLE!' : '¡GENIAL!'}
+                </div>
+                <div style="color: var(--silver); margin-top: 15px;">
+                    ¿Listo para descubrir el <span style="color: ${colors[currentRevelationStep]}; font-weight: bold;">
+                    ${nextPosition} LUGAR</span>?
+                </div>
+            </div>
+        `;
+    } else {
+        nextButton.disabled = false;
+        nextButton.onclick = () => showDetails(categoryForRevelation.id);
+        message.innerHTML = `
+            <div style="text-align: center;">
+                <div style="font-size: 3rem; margin: 20px 0; color: var(--gold);">🏆🎊🏆</div>
+                <div class="dramatic-text" style="font-size: 2rem;">
+                    ¡REVELACIÓN COMPLETADA!
+                </div>
+            </div>
+        `;
+        
+        // Eliminar contador si existe
+        const countdownDiv = document.getElementById('finalCountdown');
+        if (countdownDiv) countdownDiv.remove();
     }
+}
+
+// ===== ACTUALIZAR PASOS DE PROGRESO =====
+function updateProgressSteps() {
+    const progressSteps = document.querySelectorAll('.progress-step');
+    const positionNames = ['3º', '2º', '1º'];
+    const positionColors = ['var(--bronze)', 'var(--silver)', 'var(--gold)'];
+    
+    progressSteps.forEach((step, index) => {
+        // Limpiar contenido anterior
+        step.innerHTML = positionNames[index];
+        step.style.cssText = `
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 3px solid var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--silver);
+            font-weight: bold;
+            font-size: 0.9rem;
+            transition: all 0.5s ease;
+            position: relative;
+        `;
+        
+        if (index < currentRevelationStep) {
+            // Paso ya revelado
+            step.style.background = positionColors[index];
+            step.style.color = 'white';
+            step.style.borderColor = positionColors[index];
+            step.style.boxShadow = `0 0 15px ${positionColors[index]}`;
+            step.style.transform = 'scale(1.2)';
+            
+        } else if (index === currentRevelationStep) {
+            // Paso actual (próximo a revelar)
+            step.style.background = 'rgba(255,255,255,0.9)';
+            step.style.color = positionColors[index];
+            step.style.borderColor = positionColors[index];
+            step.style.animation = 'pulseGold 1s infinite';
+            
+        } else {
+            // Paso futuro
+            step.style.background = 'rgba(255,255,255,0.1)';
+            step.style.color = 'var(--silver)';
+            step.style.borderColor = 'var(--gold)';
+            step.style.boxShadow = 'none';
+            step.style.animation = 'none';
+            step.style.transform = 'scale(1)';
+        }
+    });
+}
+
+// ===== MOSTRAR BOTÓN DE DETALLES DESPUÉS DE REVELACIÓN =====
+function showDetailsButtonAfterRevelation() {
+    const nextButton = document.getElementById('nextRevealButton');
+    const message = document.getElementById('currentMessage');
+    
+    if (!nextButton || !message) return;
+    
+    // Ocultar botón original
+    nextButton.style.display = 'none';
+    
+    // ELIMINAR contenedores anteriores si existen
+    const existingButtonsContainer = document.querySelector('.buttons-container-final');
+    if (existingButtonsContainer) {
+        existingButtonsContainer.remove();
+    }
+    
+    const existingAllVotesContainer = document.getElementById('allVotesContainer');
+    if (existingAllVotesContainer) {
+        existingAllVotesContainer.style.display = 'none';
+    }
+    
+    // Crear NUEVO contenedor para botones
+    const buttonsContainer = document.createElement('div');
+    buttonsContainer.className = 'buttons-container-final';
+    buttonsContainer.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+        margin-top: 30px;
+        width: 100%;
+    `;
+    
+    // 1. Botón para ver detalles estadísticos
+    const detailsButton = document.createElement('button');
+    detailsButton.className = 'btn-next-reveal';
+    detailsButton.innerHTML = '<i class="fas fa-chart-bar"></i> VER ESTADÍSTICAS DETALLADAS';
+    detailsButton.onclick = () => {
+        // Ocultar otros contenedores
+        const allVotesContainer = document.getElementById('allVotesContainer');
+        if (allVotesContainer) allVotesContainer.style.display = 'none';
+        
+        // Mostrar detalles
+        showDetails(categoryForRevelation.id);
+    };
+    
+    // 2. Botón para ver todos los votos
+    const allVotesButton = document.createElement('button');
+    allVotesButton.className = 'btn-show-all-votes';
+    allVotesButton.innerHTML = '<i class="fas fa-list-ol"></i> VER CLASIFICACIÓN COMPLETA';
+    allVotesButton.onclick = () => {
+        // Ocultar detalles si están visibles
+        const detailsContainer = document.getElementById('detailsContainer');
+        if (detailsContainer) detailsContainer.style.display = 'none';
+        
+        // Mostrar votos
+        showAllVotes();
+        allVotesButton.style.display = 'none';
+        
+        // Mostrar botón para volver
+        if (backToWinnersButton) backToWinnersButton.style.display = 'inline-flex';
+    };
+    
+    // 3. Botón para volver a ver ganadores
+    const backToWinnersButton = document.createElement('button');
+    backToWinnersButton.className = 'btn-show-all-votes';
+    backToWinnersButton.innerHTML = '<i class="fas fa-trophy"></i> VOLVER A GANADORES';
+    backToWinnersButton.onclick = () => {
+        // Ocultar contenedores de datos
+        const allVotesContainer = document.getElementById('allVotesContainer');
+        const detailsContainer = document.getElementById('detailsContainer');
+        
+        if (allVotesContainer) allVotesContainer.style.display = 'none';
+        if (detailsContainer) detailsContainer.style.display = 'none';
+        
+        // Mostrar botones principales
+        allVotesButton.style.display = 'inline-flex';
+        backToWinnersButton.style.display = 'none';
+    };
+    backToWinnersButton.style.display = 'none';
+    
+    // Añadir botones al contenedor
+    buttonsContainer.appendChild(detailsButton);
+    buttonsContainer.appendChild(allVotesButton);
+    buttonsContainer.appendChild(backToWinnersButton);
+    
+    // Añadir al DOM
+    nextButton.parentNode.appendChild(buttonsContainer);
+    
+    // Actualizar mensaje
+    message.innerHTML = `
+        <div style="text-align: center;">
+            <div style="font-size: 3rem; margin: 20px 0; color: var(--gold);">🏆🎊🏆</div>
+            <div class="dramatic-text" style="font-size: 2rem;">
+                ¡REVELACIÓN COMPLETADA!
+            </div>
+            <p style="color: var(--silver); margin-top: 20px; font-size: 1.2rem;">
+                Todos los ganadores han sido revelados
+            </p>
+        </div>
+    `;
+}
+
+// ===== FUNCIONES DE EFECTOS VISUALES =====
+function createDrumEffect() {
+    const stage = document.querySelector('.stage');
+    if (!stage) return;
+    
+    const drum = document.createElement('div');
+    drum.style.cssText = `
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 100px;
+        height: 100px;
+        background: radial-gradient(circle, 
+            rgba(255, 215, 0, 0.3) 0%,
+            transparent 70%);
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        animation: scaleUp 0.5s ease-out forwards;
+        pointer-events: none;
+        z-index: 5;
+    `;
+    
+    stage.appendChild(drum);
+    
+    setTimeout(() => {
+        if (drum.parentNode) drum.parentNode.removeChild(drum);
+    }, 500);
+}
+
+function createGentleConfetti() {
+    createConfettiEffect(50, 1.5, ['#CD7F32', '#FF8E53']);
+}
+
+function createAbundantConfetti() {
+    createConfettiEffect(100, 2, ['#C0C0C0', '#FFD700', '#FF8E53']);
+}
+
+function createEpicFireworks() {
+    // Crear múltiples fuegos artificiales
+    for (let i = 0; i < 10; i++) {
+        setTimeout(() => {
+            createFireworkEffect();
+        }, i * 200);
+    }
+    
+    // Confeti masivo
+    createConfettiEffect(200, 3, ['#FFD700', '#C0C0C0', '#FF6B6B', '#4ECDC4', '#FF8E53']);
+}
+
+function createConfettiRain() {
+    createConfettiEffect(80, 2.5, ['#FFD700', '#C0C0C0', '#CD7F32']);
+}
+
+function createConfettiEffect(count, duration, colors) {
+    const stage = document.querySelector('.stage');
+    if (!stage) return;
+    
+    for (let i = 0; i < count; i++) {
+        setTimeout(() => {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            confetti.style.left = Math.random() * 100 + '%';
+            confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+            confetti.style.width = Math.random() * 10 + 5 + 'px';
+            confetti.style.height = Math.random() * 10 + 5 + 'px';
+            confetti.style.animationDuration = Math.random() * 1 + duration + 's';
+            
+            stage.appendChild(confetti);
+            
+            setTimeout(() => {
+                if (confetti.parentNode) confetti.parentNode.removeChild(confetti);
+            }, (duration + 1) * 1000);
+        }, i * 20);
+    }
+}
+
+function createFireworkEffect() {
+    const stage = document.querySelector('.stage');
+    if (!stage) return;
+    
+    const firework = document.createElement('div');
+    firework.className = 'firework';
+    
+    const x = Math.random() * 80 + 10;
+    const y = Math.random() * 60 + 20;
+    
+    firework.style.cssText = `
+        --x: ${Math.random() * 100 - 50}px;
+        --y: ${Math.random() * 100 - 50}px;
+        left: ${x}%;
+        top: ${y}%;
+        background: ${['#FFD700', '#FF6B6B', '#4ECDC4', '#FF8E53'][Math.floor(Math.random() * 4)]};
+        animation: firework 0.8s ease-out forwards;
+    `;
+    
+    stage.appendChild(firework);
+    
+    setTimeout(() => {
+        if (firework.parentNode) firework.parentNode.removeChild(firework);
+    }, 800);
+}
+
+function createMultipleFireworks() {
+    for (let i = 0; i < 5; i++) {
+        setTimeout(() => {
+            createFireworkEffect();
+        }, i * 300);
+    }
+}
+
+function createSpotlight() {
+    const winnerContainer = document.getElementById('currentWinnerContainer');
+    if (!winnerContainer) return;
+    
+    const spotlight = document.createElement('div');
+    spotlight.className = 'spotlight active';
+    
+    const rect = winnerContainer.getBoundingClientRect();
+    const stageRect = document.querySelector('.stage').getBoundingClientRect();
+    
+    spotlight.style.left = (rect.left + rect.width/2 - stageRect.left - 150) + 'px';
+    spotlight.style.top = (rect.top + rect.height/2 - stageRect.top - 150) + 'px';
+    
+    document.querySelector('.stage').appendChild(spotlight);
+    
+    setTimeout(() => {
+        if (spotlight.parentNode) spotlight.parentNode.removeChild(spotlight);
+    }, 3000);
+}
+
+// ===== FUNCIÓN AUXILIAR ACTUALIZADA =====
+function updateRevelationStep() {
+    const nextButton = document.getElementById('nextRevealButton');
+    const message = document.getElementById('currentMessage');
+    
+    if (nextButton && message) {
+        const stepNames = ['TERCER', 'SEGUNDO', 'PRIMER'];
+        const colors = ['var(--bronze)', 'var(--silver)', 'var(--gold)'];
+        
+        if (currentRevelationStep < stepNames.length) {
+            nextButton.disabled = false;
+            nextButton.innerHTML = `
+                <i class="fas fa-play-circle"></i> 
+                REVELAR ${stepNames[currentRevelationStep]} LUGAR
+            `;
+            
+            message.innerHTML = `
+                <div style="text-align: center;">
+                    <div style="color: ${colors[currentRevelationStep]}; font-weight: bold; font-size: 1.5rem;">
+                        ${stepNames[currentRevelationStep]} LUGAR
+                    </div>
+                    <div style="color: var(--silver); margin-top: 10px;">
+                        ¿Listo para descubrir el ${stepNames[currentRevelationStep].toLowerCase()} puesto?
+                    </div>
+                </div>
+            `;
+        }
+    }
+    
+    updateProgressSteps();
 }
 
 // ===== FUNCIÓN AUXILIAR PARA CREAR TARJETAS DE GANADORES =====
@@ -1138,9 +1841,9 @@ function createWinnerCard(nominee, emoji, title, type) {
     return div;
 }
 
-// ===== FUNCIÓN PARA MOSTRAR DETALLES =====
+// ===== FUNCIÓN PARA MOSTRAR DETALLES CON PODIO COMPLETO =====
 function showDetails(categoryId) {
-    console.log("📊 Mostrando detalles...");
+    console.log("📊 Mostrando detalles con podio completo...");
     
     const category = appData.categories.find(c => c && c.id === categoryId);
     if (!category) return;
@@ -1150,12 +1853,18 @@ function showDetails(categoryId) {
     
     if (!resultsList) return;
     
-    // Ocultar botón de detalles
+    // Ocultar botón de detalles si existe
     if (detailsButton) {
         detailsButton.style.display = 'none';
     }
     
-    // Obtener todos los nominados ordenados
+    // ELIMINAR contenedor de detalles existente si hay
+    const existingDetails = document.getElementById('detailsContainer');
+    if (existingDetails) {
+        existingDetails.remove();
+    }
+    
+    // Obtener TODOS los nominados ordenados
     const nominees = category.nominees || [];
     const sortedNominees = [...nominees]
         .filter(n => n && n.name)
@@ -1167,70 +1876,362 @@ function showDetails(categoryId) {
     
     // Crear contenedor de detalles
     const detailsContainer = document.createElement('div');
+    detailsContainer.id = 'detailsContainer';
     detailsContainer.className = 'details-container active';
     detailsContainer.style.animation = 'fadeInUp 0.8s ease-out forwards';
+    detailsContainer.style.marginTop = '40px';
+    detailsContainer.style.width = '100%';
     
-    // Estadísticas
-    detailsContainer.innerHTML = `
+    // ===== PODIO COMPLETO =====
+    let podiumHTML = `
         <h3 style="color: var(--gold); text-align: center; margin-bottom: 30px; font-size: 1.8rem;">
-            <i class="fas fa-chart-pie"></i> ESTADÍSTICAS DETALLADAS
+            <i class="fas fa-medal"></i> PODIO COMPLETO
         </h3>
         
-        <div class="stats-grid">
-            <div class="stat-card animate-fadeInUp" style="animation-delay: 0.1s;">
-                <div class="label">VOTOS TOTALES</div>
-                <div class="value">${totalVotes}</div>
-                <small style="color: var(--silver);">en esta categoría</small>
+        <!-- PODIO DE 3 PRIMEROS -->
+        <div style="display: flex; justify-content: center; align-items: flex-end; gap: 30px; margin-bottom: 50px; flex-wrap: wrap;">
+    `;
+    
+    // Segundo lugar (izquierda)
+    if (sortedNominees[1]) {
+        podiumHTML += `
+            <div style="
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                padding: 25px;
+                background: linear-gradient(145deg, rgba(192, 192, 192, 0.15), rgba(150, 150, 150, 0.1));
+                border: 3px solid var(--silver);
+                border-radius: 20px;
+                min-width: 200px;
+                position: relative;
+                animation: fadeInUp 0.6s ease-out 0.2s both;
+            ">
+                <div style="font-size: 3.5rem; margin-bottom: 15px; animation: float 3s ease-in-out infinite;">🥈</div>
+                <div style="
+                    background: linear-gradient(45deg, var(--silver), #d8d8d8); 
+                    -webkit-background-clip: text; 
+                    background-clip: text; 
+                    color: transparent; 
+                    font-weight: bold; 
+                    font-size: 1.5rem; 
+                    margin: 10px 0;
+                    text-align: center;
+                ">
+                    ${sortedNominees[1].name}
+                </div>
+                <div style="color: var(--silver); font-size: 2rem; font-weight: bold; margin: 15px 0;">
+                    ${sortedNominees[1].votes || 0}
+                </div>
+                <div style="color: var(--silver); font-weight: bold; margin-top: 5px; font-size: 0.9rem;">
+                    SEGUNDO LUGAR
+                </div>
             </div>
-            
-            <div class="stat-card animate-fadeInUp" style="animation-delay: 0.2s;">
-                <div class="label">PARTICIPANTES</div>
-                <div class="value">${totalParticipants}</div>
-                <small style="color: var(--silver);">personas nominadas</small>
+        `;
+    }
+    
+    // Primer lugar (centro)
+    if (sortedNominees[0]) {
+        podiumHTML += `
+            <div style="
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                padding: 30px;
+                background: linear-gradient(145deg, rgba(255, 215, 0, 0.2), rgba(212, 175, 55, 0.15));
+                border: 4px solid var(--gold);
+                border-radius: 25px;
+                min-width: 250px;
+                transform: translateY(-20px);
+                position: relative;
+                animation: fadeInUp 0.8s ease-out both;
+                box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3);
+            ">
+                <div style="font-size: 4.5rem; margin-bottom: 20px; animation: goldGlow 2s infinite alternate;">🥇</div>
+                <div style="
+                    background: linear-gradient(45deg, var(--gold), #FFEE80); 
+                    -webkit-background-clip: text; 
+                    background-clip: text; 
+                    color: transparent; 
+                    font-weight: bold; 
+                    font-size: 1.8rem; 
+                    margin: 15px 0;
+                    text-align: center;
+                ">
+                    ${sortedNominees[0].name}
+                </div>
+                <div style="color: var(--gold); font-size: 2.5rem; font-weight: bold; margin: 20px 0;">
+                    ${sortedNominees[0].votes || 0}
+                </div>
+                <div style="color: var(--gold); font-weight: bold; margin-top: 10px; font-size: 1rem; text-transform: uppercase;">
+                    ¡GANADOR/A!
+                </div>
             </div>
-            
-            <div class="stat-card animate-fadeInUp" style="animation-delay: 0.3s;">
-                <div class="label">RECIBIERON VOTOS</div>
-                <div class="value">${receivedVotes}</div>
-                <small style="color: var(--silver);">de ${totalParticipants}</small>
+        `;
+    }
+    
+    // Tercer lugar (derecha)
+    if (sortedNominees[2]) {
+        podiumHTML += `
+            <div style="
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                padding: 25px;
+                background: linear-gradient(145deg, rgba(205, 127, 50, 0.15), rgba(180, 110, 40, 0.1));
+                border: 3px solid var(--bronze);
+                border-radius: 20px;
+                min-width: 200px;
+                position: relative;
+                animation: fadeInUp 0.6s ease-out 0.4s both;
+            ">
+                <div style="font-size: 3rem; margin-bottom: 15px; animation: rotateBronze 3s ease-in-out infinite;">🥉</div>
+                <div style="
+                    background: linear-gradient(45deg, var(--bronze), #e6a65c); 
+                    -webkit-background-clip: text; 
+                    background-clip: text; 
+                    color: transparent; 
+                    font-weight: bold; 
+                    font-size: 1.5rem; 
+                    margin: 10px 0;
+                    text-align: center;
+                ">
+                    ${sortedNominees[2].name}
+                </div>
+                <div style="color: var(--bronze); font-size: 2rem; font-weight: bold; margin: 15px 0;">
+                    ${sortedNominees[2].votes || 0}
+                </div>
+                <div style="color: var(--bronze); font-weight: bold; margin-top: 5px; font-size: 0.9rem;">
+                    TERCER LUGAR
+                </div>
             </div>
-            
-            <div class="stat-card animate-fadeInUp" style="animation-delay: 0.4s;">
-                <div class="label">PROMEDIO</div>
-                <div class="value">${totalParticipants > 0 ? (totalVotes / totalParticipants).toFixed(1) : 0}</div>
-                <small style="color: var(--silver);">votos por persona</small>
-            </div>
-        </div>
+        `;
+    }
+    
+    podiumHTML += `</div>`;
+    
+    // ===== LISTA COMPLETA DE PARTICIPANTES (4º en adelante) =====
+    if (sortedNominees.length > 3) {
+        podiumHTML += `
+            <div style="margin-top: 40px; padding: 25px; background: rgba(255, 255, 255, 0.05); border-radius: 15px;">
+                <h4 style="color: var(--silver); margin-bottom: 20px; text-align: center;">
+                    <i class="fas fa-users"></i> RESTO DE PARTICIPANTES
+                </h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">
+        `;
         
-        <div id="frasesSection" style="margin-top: 40px;">
-            <!-- Las frases se añadirán aquí si es la categoría 17 -->
+        // Mostrar desde el 4º en adelante
+        sortedNominees.slice(3).forEach((nominee, index) => {
+            const position = index + 4; // Empezamos desde el puesto 4
+            const percentage = totalVotes > 0 ? ((nominee.votes || 0) / totalVotes * 100).toFixed(1) : 0;
+            
+            podiumHTML += `
+                <div style="
+                    background: rgba(255, 255, 255, 0.03);
+                    padding: 20px;
+                    border-radius: 12px;
+                    border: 1px solid rgba(255, 215, 0, 0.1);
+                    text-align: center;
+                    transition: all 0.3s ease;
+                    animation: fadeInUp 0.5s ease-out ${index * 0.1}s both;
+                ">
+                    <div style="
+                        font-size: 1.2rem;
+                        color: #667eea;
+                        font-weight: bold;
+                        margin-bottom: 10px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 8px;
+                    ">
+                        <span style="
+                            background: #667eea;
+                            color: white;
+                            width: 30px;
+                            height: 30px;
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-size: 0.9rem;
+                        ">${position}º</span>
+                        ${nominee.name}
+                    </div>
+                    <div style="color: var(--silver); font-size: 1.8rem; font-weight: bold; margin: 10px 0;">
+                        ${nominee.votes || 0}
+                    </div>
+                    <div style="color: #aaa; font-size: 0.9rem;">
+                        ${percentage}% de los votos
+                    </div>
+                    <div class="vote-bar" style="margin-top: 10px; height: 8px;">
+                        <div class="vote-fill position-other" 
+                             style="width: ${percentage}%; height: 100%; border-radius: 4px; background: linear-gradient(90deg, #667eea, #764ba2);">
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        podiumHTML += `
+                </div>
+            </div>
+        `;
+    }
+    
+    // ===== ESTADÍSTICAS RESUMEN =====
+    const statsHTML = `
+        <div style="margin-top: 40px; padding: 25px; background: rgba(255, 255, 255, 0.05); border-radius: 15px;">
+            <h3 style="color: var(--gold); text-align: center; margin-bottom: 25px; font-size: 1.8rem;">
+                <i class="fas fa-chart-pie"></i> ESTADÍSTICAS DE LA CATEGORÍA
+            </h3>
+            
+            <div class="stats-grid">
+                <div class="stat-card animate-fadeInUp" style="animation-delay: 0.1s;">
+                    <div class="label">VOTOS TOTALES</div>
+                    <div class="value">${totalVotes}</div>
+                    <small style="color: var(--silver);">en esta categoría</small>
+                </div>
+                
+                <div class="stat-card animate-fadeInUp" style="animation-delay: 0.2s;">
+                    <div class="label">PARTICIPANTES</div>
+                    <div class="value">${totalParticipants}</div>
+                    <small style="color: var(--silver);">personas nominadas</small>
+                </div>
+                
+                <div class="stat-card animate-fadeInUp" style="animation-delay: 0.3s;">
+                    <div class="label">RECIBIERON VOTOS</div>
+                    <div class="value">${receivedVotes}</div>
+                    <small style="color: var(--silver);">de ${totalParticipants}</small>
+                </div>
+                
+                <div class="stat-card animate-fadeInUp" style="animation-delay: 0.4s;">
+                    <div class="label">PROMEDIO</div>
+                    <div class="value">${totalParticipants > 0 ? (totalVotes / totalParticipants).toFixed(1) : 0}</div>
+                    <small style="color: var(--silver);">votos por persona</small>
+                </div>
+            </div>
+            
+            <!-- Distribución de votos -->
+            <div style="margin-top: 30px; padding: 20px; background: rgba(255, 255, 255, 0.03); border-radius: 10px;">
+                <h4 style="color: var(--silver); margin-bottom: 15px; text-align: center;">
+                    <i class="fas fa-chart-bar"></i> DISTRIBUCIÓN DE VOTOS
+                </h4>
+                <div style="display: flex; align-items: center; gap: 10px; margin: 10px 0;">
+                    <div style="color: var(--gold); font-weight: bold; min-width: 100px;">🥇 Ganador:</div>
+                    <div style="flex: 1;">
+                        <div class="vote-bar" style="height: 10px;">
+                            <div class="vote-fill position-1" 
+                                 style="width: ${sortedNominees[0] ? ((sortedNominees[0].votes || 0) / totalVotes * 100).toFixed(1) : 0}%;">
+                            </div>
+                        </div>
+                    </div>
+                    <div style="color: var(--silver); min-width: 80px; text-align: right;">
+                        ${sortedNominees[0] ? ((sortedNominees[0].votes || 0) / totalVotes * 100).toFixed(1) : 0}%
+                    </div>
+                </div>
+                
+                ${sortedNominees[1] ? `
+                <div style="display: flex; align-items: center; gap: 10px; margin: 10px 0;">
+                    <div style="color: var(--silver); font-weight: bold; min-width: 100px;">🥈 2º Lugar:</div>
+                    <div style="flex: 1;">
+                        <div class="vote-bar" style="height: 10px;">
+                            <div class="vote-fill position-2" 
+                                 style="width: ${(sortedNominees[1].votes || 0) / totalVotes * 100}%;">
+                            </div>
+                        </div>
+                    </div>
+                    <div style="color: var(--silver); min-width: 80px; text-align: right;">
+                        ${((sortedNominees[1].votes || 0) / totalVotes * 100).toFixed(1)}%
+                    </div>
+                </div>
+                ` : ''}
+                
+                ${sortedNominees[2] ? `
+                <div style="display: flex; align-items: center; gap: 10px; margin: 10px 0;">
+                    <div style="color: var(--bronze); font-weight: bold; min-width: 100px;">🥉 3º Lugar:</div>
+                    <div style="flex: 1;">
+                        <div class="vote-bar" style="height: 10px;">
+                            <div class="vote-fill position-3" 
+                                 style="width: ${(sortedNominees[2].votes || 0) / totalVotes * 100}%;">
+                            </div>
+                        </div>
+                    </div>
+                    <div style="color: var(--silver); min-width: 80px; text-align: right;">
+                        ${((sortedNominees[2].votes || 0) / totalVotes * 100).toFixed(1)}%
+                    </div>
+                </div>
+                ` : ''}
+                
+                <div style="display: flex; align-items: center; gap: 10px; margin: 10px 0;">
+                    <div style="color: #667eea; font-weight: bold; min-width: 100px;">🎯 Resto:</div>
+                    <div style="flex: 1;">
+                        <div class="vote-bar" style="height: 10px;">
+                            <div class="vote-fill position-other" 
+                                 style="width: ${sortedNominees.length > 3 ? 
+                                 (sortedNominees.slice(3).reduce((sum, n) => sum + (n.votes || 0), 0) / totalVotes * 100).toFixed(1) : 0}%;">
+                            </div>
+                        </div>
+                    </div>
+                    <div style="color: var(--silver); min-width: 80px; text-align: right;">
+                        ${sortedNominees.length > 3 ? 
+                          (sortedNominees.slice(3).reduce((sum, n) => sum + (n.votes || 0), 0) / totalVotes * 100).toFixed(1) : 0}%
+                    </div>
+                </div>
+            </div>
         </div>
     `;
+    
+    // ===== FRASES (solo para categoría 17) =====
+    const frasesSectionHTML = `
+        <div id="frasesSection" style="margin-top: 40px; display: none;"></div>
+    `;
+    
+    // Unir todo
+    detailsContainer.innerHTML = podiumHTML + statsHTML + frasesSectionHTML;
     
     // Añadir al DOM
     resultsList.appendChild(detailsContainer);
     
+    // Animar barras de progreso
+    setTimeout(() => {
+        document.querySelectorAll('.vote-fill').forEach(bar => {
+            const currentWidth = bar.style.width;
+            bar.style.width = '0%';
+            setTimeout(() => {
+                bar.style.width = currentWidth;
+            }, 50);
+        });
+    }, 500);
+    
     // Solo para categoría 17 (Frase del Año), mostrar frases
     if (category.id === 17) {
         setTimeout(() => {
-            showFrasesDetails(category, detailsContainer);
-        }, 500);
+            const frasesSection = document.getElementById('frasesSection');
+            if (frasesSection) {
+                frasesSection.style.display = 'block';
+                showFrasesDetails(category, detailsContainer);
+            }
+        }, 800);
     }
     
-    // Añadir botón para volver a los ganadores
+    // Añadir botón para volver
     setTimeout(() => {
-        const backButton = document.createElement('button');
-        backButton.className = 'btn-reveal';
-        backButton.innerHTML = '<i class="fas fa-arrow-left"></i> VOLVER A GANADORES';
-        backButton.onclick = () => {
-            detailsContainer.remove();
-            if (detailsButton) detailsButton.style.display = 'flex';
-        };
-        backButton.style.marginTop = '30px';
-        backButton.style.marginLeft = 'auto';
-        backButton.style.marginRight = 'auto';
-        backButton.style.display = 'block';
-        detailsContainer.appendChild(backButton);
+        if (!document.getElementById('backToWinnersButton')) {
+            const backButton = document.createElement('button');
+            backButton.id = 'backToWinnersButton';
+            backButton.className = 'btn-reveal';
+            backButton.innerHTML = '<i class="fas fa-arrow-left"></i> VOLVER A GANADORES';
+            backButton.onclick = () => {
+                detailsContainer.remove();
+                if (detailsButton) detailsButton.style.display = 'flex';
+            };
+            backButton.style.marginTop = '30px';
+            backButton.style.marginLeft = 'auto';
+            backButton.style.marginRight = 'auto';
+            backButton.style.display = 'block';
+            detailsContainer.appendChild(backButton);
+        }
     }, 1000);
 }
 
@@ -1256,28 +2257,42 @@ function showFrasesDetails(category, container) {
     
     if (todasLasFrases.length === 0) return;
     
-    // Ordenar por fecha (más reciente primero) o por votos
+    // Ordenar por fecha (más reciente primero)
     todasLasFrases.sort((a, b) => {
         if (b.timestamp && a.timestamp) {
             return new Date(b.timestamp) - new Date(a.timestamp);
         }
-        return b.votos - a.votos;
+        return 0;
     });
     
     const frasesSection = document.getElementById('frasesSection');
     if (!frasesSection) return;
     
-    frasesSection.innerHTML = `
-        <h4 style="color: var(--gold); text-align: center; margin-bottom: 25px; font-size: 1.5rem;">
-            <i class="fas fa-quote-left"></i> FRASES ICÓNICAS <i class="fas fa-quote-right"></i>
-        </h4>
-        <div id="frasesList" style="max-height: 400px; overflow-y: auto; padding: 10px;">
-            <!-- Frases se añadirán aquí -->
-        </div>
+    // LIMPIAR contenido anterior
+    frasesSection.innerHTML = '';
+    
+    // Añadir título
+    const titulo = document.createElement('h4');
+    titulo.style.cssText = `
+        color: var(--gold);
+        text-align: center;
+        margin-bottom: 25px;
+        font-size: 1.5rem;
     `;
+    titulo.innerHTML = '<i class="fas fa-quote-left"></i> FRASES ICÓNICAS <i class="fas fa-quote-right"></i>';
+    frasesSection.appendChild(titulo);
     
-    const frasesList = document.getElementById('frasesList');
+    // Crear contenedor para frases
+    const frasesList = document.createElement('div');
+    frasesList.id = 'frasesList';
+    frasesList.style.cssText = `
+        max-height: 400px;
+        overflow-y: auto;
+        padding: 10px;
+    `;
+    frasesSection.appendChild(frasesList);
     
+    // Añadir frases con animación
     todasLasFrases.forEach((fraseData, index) => {
         setTimeout(() => {
             const fraseItem = document.createElement('div');
@@ -1347,6 +2362,546 @@ function createConfetti() {
             confettiContainer.parentNode.removeChild(confettiContainer);
         }
     }, 4000);
+}
+
+
+// ===== FUNCIÓN COMPLETA PARA MOSTRAR TODOS LOS VOTOS =====
+function showAllVotes() {
+    console.log("📊 Mostrando todos los votos...");
+    
+    // Ocultar detalles si están visibles
+    const detailsContainer = document.getElementById('detailsContainer');
+    if (detailsContainer) {
+        detailsContainer.style.display = 'none';
+    }
+    
+    const allVotesContainer = document.getElementById('allVotesContainer');
+    if (!allVotesContainer) return;
+    
+    // LIMPIAR contenido anterior
+    allVotesContainer.innerHTML = '';
+    
+    // Obtener TODOS los nominados de la categoría actual
+    if (!categoryForRevelation || !categoryForRevelation.nominees) {
+        allVotesContainer.innerHTML = `
+            <div style="text-align: center; color: var(--silver); padding: 40px;">
+                <div style="font-size: 3rem;">📊</div>
+                <p>No hay datos de votos disponibles</p>
+            </div>
+        `;
+        allVotesContainer.style.display = 'block';
+        return;
+    }
+    
+    const nominees = categoryForRevelation.nominees || [];
+    
+    // Ordenar TODOS los nominados por votos
+    const allNomineesWithVotes = [...nominees]
+        .filter(n => n && n.name)
+        .sort((a, b) => (b.votes || 0) - (a.votes || 0))
+        .map((nominee, index) => ({
+            name: nominee.name,
+            votes: nominee.votes || 0,
+            position: index + 1,
+            medal: index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🎯',
+            photo: nominee.photo || null,
+            positionClass: index === 0 ? 'position-1' : 
+                          index === 1 ? 'position-2' : 
+                          index === 2 ? 'position-3' : 'position-other'
+        }));
+    
+    const totalVotes = allNomineesWithVotes.reduce((sum, n) => sum + (n.votes || 0), 0);
+    const maxVotes = Math.max(...allNomineesWithVotes.map(n => n.votes || 0), 1);
+    
+    console.log("📋 Mostrando", allNomineesWithVotes.length, "participantes");
+    console.log("🏆 Máximo de votos:", maxVotes);
+    
+    // ===== MINI PODIO VISUAL =====
+    let votesHTML = `
+        <h3 style="color: var(--gold); text-align: center; margin-bottom: 25px; font-size: 1.8rem;">
+            <i class="fas fa-trophy"></i> PODIO COMPLETO - ${categoryForRevelation.name}
+        </h3>
+        
+        <!-- Mini Podio Visual -->
+        <div style="margin-bottom: 40px; padding: 25px; background: rgba(255, 255, 255, 0.03); border-radius: 15px;">
+            <h4 style="color: var(--silver); margin-bottom: 20px; text-align: center;">
+                <i class="fas fa-medal"></i> LOS TRES PRIMEROS
+            </h4>
+            <div style="display: flex; justify-content: center; align-items: flex-end; gap: 20px; margin: 20px 0; flex-wrap: wrap;">
+    `;
+    
+    // Añadir los 3 primeros al podio visual
+    allNomineesWithVotes.slice(0, 3).forEach((nominee, index) => {
+        const colors = ['var(--gold)', 'var(--silver)', 'var(--bronze)'];
+        const emojis = ['🥇', '🥈', '🥉'];
+        const heights = ['160px', '130px', '110px'];
+        const positions = ['1º', '2º', '3º'];
+        
+        votesHTML += `
+            <div style="
+                width: 110px;
+                height: ${heights[index]};
+                background: linear-gradient(180deg, 
+                    ${colors[index]} 0%, 
+                    ${colors[index]}80 100%);
+                border-radius: 10px 10px 0 0;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                position: relative;
+                animation: fadeInUp 0.6s ease-out ${index * 0.2}s both;
+                box-shadow: 0 5px 20px ${colors[index]}40;
+            ">
+                <div style="font-size: 2.5rem; margin-bottom: 10px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+                    ${emojis[index]}
+                </div>
+                <div style="
+                    color: white;
+                    font-weight: bold;
+                    font-size: 0.9rem;
+                    text-align: center;
+                    padding: 5px;
+                    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+                ">
+                    ${nominee.name}
+                </div>
+                <div style="
+                    position: absolute;
+                    bottom: -30px;
+                    color: ${colors[index]};
+                    font-weight: bold;
+                    font-size: 1.5rem;
+                    text-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                ">
+                    ${nominee.votes}
+                </div>
+                <div style="
+                    position: absolute;
+                    bottom: -50px;
+                    color: ${colors[index]};
+                    font-weight: bold;
+                    font-size: 0.9rem;
+                    text-transform: uppercase;
+                ">
+                    ${positions[index]} LUGAR
+                </div>
+            </div>
+        `;
+    });
+    
+    votesHTML += `
+            </div>
+            
+            <!-- Información detallada del podio -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 60px;">
+    `;
+    
+    // Información detallada de los 3 primeros
+    allNomineesWithVotes.slice(0, 3).forEach((nominee, index) => {
+        const colors = ['var(--gold)', 'var(--silver)', 'var(--bronze)'];
+        const positions = ['PRIMER', 'SEGUNDO', 'TERCER'];
+        const percentage = totalVotes > 0 ? ((nominee.votes / totalVotes) * 100).toFixed(1) : 0;
+        
+        votesHTML += `
+            <div style="
+                text-align: center;
+                background: rgba(255, 255, 255, 0.05);
+                padding: 20px;
+                border-radius: 10px;
+                border-left: 4px solid ${colors[index]};
+                animation: fadeInUp 0.6s ease-out ${0.6 + (index * 0.1)}s both;
+            ">
+                <div style="color: ${colors[index]}; font-weight: bold; font-size: 1.3rem; margin-bottom: 10px;">
+                    ${positions[index]} LUGAR
+                </div>
+                <div style="color: white; font-weight: bold; font-size: 1.4rem; margin: 10px 0;">${nominee.name}</div>
+                <div style="color: var(--silver); font-size: 1.1rem;">${nominee.votes} votos</div>
+                <div style="color: ${colors[index]}; font-weight: bold; margin-top: 10px;">${percentage}%</div>
+                <div class="vote-bar" style="margin-top: 10px; height: 8px;">
+                    <div class="vote-fill ${nominee.positionClass}" 
+                         style="width: 0%; height: 100%; border-radius: 4px;">
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    votesHTML += `
+            </div>
+        </div>
+        
+        <!-- Tabla completa de clasificación -->
+        <div style="margin-top: 30px;">
+            <h4 style="color: var(--silver); margin-bottom: 25px; text-align: center; font-size: 1.5rem;">
+                <i class="fas fa-list-ol"></i> CLASIFICACIÓN COMPLETA
+            </h4>
+            
+            <div style="margin-bottom: 20px; text-align: center; color: var(--silver); padding: 10px; background: rgba(255,255,255,0.03); border-radius: 10px;">
+                <p>Mostrando todos los <strong>${allNomineesWithVotes.length}</strong> participantes</p>
+            </div>
+            
+            <table class="votes-table">
+                <thead>
+                    <tr>
+                        <th style="width: 60px; text-align: center;">POS.</th>
+                        <th>NOMINADO</th>
+                        <th style="width: 100px; text-align: center;">VOTOS</th>
+                        <th style="width: 150px; text-align: center;">PORCENTAJE</th>
+                        <th style="width: 200px;">DISTRIBUCIÓN</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    // Tabla con TODOS los participantes
+    allNomineesWithVotes.forEach((nominee, index) => {
+        const votes = nominee.votes || 0;
+        const percentage = totalVotes > 0 ? ((votes / totalVotes) * 100).toFixed(1) : 0;
+        const barWidth = maxVotes > 0 ? (votes / maxVotes) * 100 : 0;
+        
+        const medalIcon = index === 0 ? '🥇' : 
+                         index === 1 ? '🥈' : 
+                         index === 2 ? '🥉' : `${index + 1}º`;
+        
+        votesHTML += `
+            <tr class="${nominee.positionClass}">
+                <td style="font-weight: bold; text-align: center; vertical-align: middle;">
+                    <span class="medal-icon" style="font-size: ${index < 3 ? '1.5rem' : '1.2rem'};">${medalIcon}</span>
+                </td>
+                <td style="vertical-align: middle;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        ${nominee.photo ? 
+                            `<img src="${nominee.photo}" style="width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--gold); object-fit: cover;">` : 
+                            `<div style="width: 45px; height: 45px; border-radius: 50%; background: linear-gradient(45deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-user" style="color: white; font-size: 1.2rem;"></i>
+                            </div>`
+                        }
+                        <span style="font-weight: ${index < 3 ? 'bold' : 'normal'}; font-size: ${index < 3 ? '1.1rem' : '1rem'}">
+                            ${nominee.name}
+                        </span>
+                    </div>
+                </td>
+                <td style="text-align: center; font-weight: bold; vertical-align: middle; font-size: ${index < 3 ? '1.3rem' : '1.1rem'}">
+                    ${votes}
+                </td>
+                <td style="text-align: center; vertical-align: middle;">
+                    <span style="color: ${index < 3 ? nominee.positionClass === 'position-1' ? 'var(--gold)' : 
+                                                      nominee.positionClass === 'position-2' ? 'var(--silver)' : 
+                                                      'var(--bronze)' : 'var(--silver)'}; 
+                                 font-weight: ${index < 3 ? 'bold' : 'normal'}">
+                        ${percentage}%
+                    </span>
+                </td>
+                <td style="vertical-align: middle;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="flex: 1; min-width: 100px;">
+                            <div class="vote-bar" style="height: 12px; margin: 5px 0;">
+                                <div class="vote-fill ${nominee.positionClass}" 
+                                     style="width: 0%; height: 100%; border-radius: 6px;">
+                                </div>
+                            </div>
+                        </div>
+                        <span style="min-width: 40px; text-align: right; font-size: 0.9em; color: var(--silver);">
+                            ${votes} ${votes === 1 ? 'voto' : 'votos'}
+                        </span>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+    
+    votesHTML += `
+                </tbody>
+            </table>
+            
+            <!-- Resumen estadístico -->
+            <div style="margin-top: 40px; padding: 25px; background: rgba(255, 255, 255, 0.05); border-radius: 15px;">
+                <h4 style="color: var(--gold); margin-bottom: 20px; text-align: center;">
+                    <i class="fas fa-chart-line"></i> RESUMEN ESTADÍSTICO
+                </h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                    <div style="text-align: center; padding: 20px; background: rgba(255, 215, 0, 0.1); border-radius: 10px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                        <div style="color: var(--gold); font-size: 2.5rem; font-weight: bold;">${totalVotes}</div>
+                        <div style="color: var(--silver); font-size: 0.9rem; margin-top: 5px;">VOTOS TOTALES</div>
+                    </div>
+                    <div style="text-align: center; padding: 20px; background: rgba(192, 192, 192, 0.1); border-radius: 10px; border: 1px solid rgba(192, 192, 192, 0.2);">
+                        <div style="color: var(--silver); font-size: 2.5rem; font-weight: bold;">${allNomineesWithVotes.length}</div>
+                        <div style="color: var(--silver); font-size: 0.9rem; margin-top: 5px;">PARTICIPANTES</div>
+                    </div>
+                    <div style="text-align: center; padding: 20px; background: rgba(76, 175, 80, 0.1); border-radius: 10px; border: 1px solid rgba(76, 175, 80, 0.2);">
+                        <div style="color: #4CAF50; font-size: 2.5rem; font-weight: bold;">${allNomineesWithVotes.filter(n => n.votes > 0).length}</div>
+                        <div style="color: var(--silver); font-size: 0.9rem; margin-top: 5px;">RECIBIERON VOTOS</div>
+                    </div>
+                    <div style="text-align: center; padding: 20px; background: rgba(255, 142, 83, 0.1); border-radius: 10px; border: 1px solid rgba(255, 142, 83, 0.2);">
+                        <div style="color: #FF8E53; font-size: 2.5rem; font-weight: bold;">${(totalVotes / allNomineesWithVotes.length).toFixed(1)}</div>
+                        <div style="color: var(--silver); font-size: 0.9rem; margin-top: 5px;">PROMEDIO VOTOS</div>
+                    </div>
+                </div>
+                
+                <!-- Distribución detallada -->
+                <div style="margin-top: 30px; padding: 20px; background: rgba(255, 255, 255, 0.03); border-radius: 10px;">
+                    <h5 style="color: var(--silver); margin-bottom: 15px; text-align: center;">
+                        <i class="fas fa-percentage"></i> DISTRIBUCIÓN POR PUESTO
+                    </h5>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+    `;
+    
+    // Distribución por puestos (grupos)
+    const groups = [
+        { name: '🥇 Ganador', range: [0], color: 'var(--gold)' },
+        { name: '🥈 2º Lugar', range: [1], color: 'var(--silver)' },
+        { name: '🥉 3º Lugar', range: [2], color: 'var(--bronze)' },
+        { name: '🏅 Puestos 4-6', range: [3, 4, 5], color: '#667eea' },
+        { name: '🎖️ Puestos 7-9', range: [6, 7, 8], color: '#4CAF50' },
+        { name: '🎯 Puestos 10+', range: [9, 10, 11, 12], color: '#FF8E53' }
+    ];
+    
+    groups.forEach((group, index) => {
+        const groupVotes = group.range.reduce((sum, pos) => {
+            return sum + (allNomineesWithVotes[pos]?.votes || 0);
+        }, 0);
+        
+        const groupPercentage = totalVotes > 0 ? ((groupVotes / totalVotes) * 100).toFixed(1) : 0;
+        
+        votesHTML += `
+            <div style="text-align: center; padding: 15px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; border-left: 3px solid ${group.color};">
+                <div style="color: ${group.color}; font-weight: bold; font-size: 1.1rem; margin-bottom: 5px;">
+                    ${group.name}
+                </div>
+                <div style="color: white; font-size: 1.3rem; font-weight: bold;">${groupVotes}</div>
+                <div style="color: var(--silver); font-size: 0.9rem;">${groupPercentage}%</div>
+            </div>
+        `;
+    });
+    
+    votesHTML += `
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Botón para descargar datos -->
+            <div style="text-align: center; margin-top: 30px;">
+                <button onclick="exportCategoryData()" class="btn-show-all-votes" style="background: linear-gradient(90deg, rgba(76, 201, 240, 0.8), rgba(29, 209, 161, 0.8)) !important;">
+                    <i class="fas fa-download"></i> DESCARGAR DATOS COMPLETOS
+                </button>
+            </div>
+        </div>
+    `;
+    
+    allVotesContainer.innerHTML = votesHTML;
+    allVotesContainer.style.display = 'block';
+    
+    // Animar las barras de progreso con retraso escalonado
+    setTimeout(() => {
+        document.querySelectorAll('.vote-fill').forEach((bar, index) => {
+            setTimeout(() => {
+                const row = bar.closest('tr');
+                if (row) {
+                    const votesText = row.querySelector('td:nth-child(3)').textContent.trim();
+                    const votes = parseInt(votesText) || 0;
+                    const width = maxVotes > 0 ? (votes / maxVotes) * 100 : 0;
+                    
+                    bar.style.width = '0%';
+                    setTimeout(() => {
+                        bar.style.width = width + '%';
+                        bar.style.transition = 'width 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                    }, 100);
+                }
+            }, index * 30); // Efecto escalonado
+        });
+        
+        // También animar las barras del podio
+        document.querySelectorAll('#allVotesContainer .vote-fill').forEach((bar, index) => {
+            setTimeout(() => {
+                const container = bar.closest('div[style*="text-align: center"]');
+                if (container) {
+                    const votesText = container.querySelector('div:nth-child(3)').textContent;
+                    const votes = parseInt(votesText) || 0;
+                    const width = maxVotes > 0 ? (votes / maxVotes) * 100 : 0;
+                    
+                    bar.style.width = '0%';
+                    setTimeout(() => {
+                        bar.style.width = width + '%';
+                    }, 50);
+                }
+            }, index * 100);
+        });
+    }, 500);
+}
+
+// ===== FUNCIÓN PARA EXPORTAR DATOS (OPCIONAL) =====
+function exportCategoryData() {
+    if (!categoryForRevelation) return;
+    
+    const dataToExport = {
+        categoria: categoryForRevelation.name,
+        descripcion: categoryForRevelation.description || '',
+        fecha: new Date().toISOString(),
+        participantes: []
+    };
+    
+    const nominees = categoryForRevelation.nominees || [];
+    const sortedNominees = [...nominees]
+        .filter(n => n && n.name)
+        .sort((a, b) => (b.votes || 0) - (a.votes || 0));
+    
+    sortedNominees.forEach((nominee, index) => {
+        dataToExport.participantes.push({
+            posicion: index + 1,
+            nombre: nominee.name,
+            votos: nominee.votes || 0,
+            porcentaje: ((nominee.votes || 0) / sortedNominees.reduce((sum, n) => sum + (n.votes || 0), 0) * 100).toFixed(1)
+        });
+    });
+    
+    const dataStr = JSON.stringify(dataToExport, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', `pteros_${categoryForRevelation.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.json`);
+    linkElement.click();
+    
+    alert(`✅ Datos de "${categoryForRevelation.name}" exportados`);
+}
+
+// ===== FUNCIONES PARA EL TELÓN DEL GANADOR =====
+function createWinnerCurtain() {
+    const winnerContainer = document.getElementById('currentWinnerContainer');
+    if (!winnerContainer) return;
+    
+    // Crear telón que cubra al ganador
+    const curtain = document.createElement('div');
+    curtain.id = 'winnerCurtain';
+    curtain.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, 
+            rgba(139, 0, 0, 0.95) 0%,
+            rgba(178, 34, 34, 0.95) 100%);
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 0 50px rgba(139, 0, 0, 0.8);
+    `;
+    
+    // Añadir pomos de telón
+    const leftKnob = document.createElement('div');
+    leftKnob.style.cssText = `
+        position: absolute;
+        left: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 40px;
+        height: 40px;
+        background: radial-gradient(circle, 
+            rgba(255, 215, 0, 0.9) 0%,
+            rgba(212, 175, 55, 0.7) 70%);
+        border-radius: 50%;
+        animation: curtainKnobGlow 1.5s infinite alternate;
+    `;
+    
+    const rightKnob = document.createElement('div');
+    rightKnob.style.cssText = `
+        position: absolute;
+        right: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 40px;
+        height: 40px;
+        background: radial-gradient(circle, 
+            rgba(255, 215, 0, 0.9) 0%,
+            rgba(212, 175, 55, 0.7) 70%);
+        border-radius: 50%;
+        animation: curtainKnobGlow 1.5s infinite alternate 0.5s;
+    `;
+    
+    // Mensaje en el telón
+    const curtainMessage = document.createElement('div');
+    curtainMessage.style.cssText = `
+        text-align: center;
+        color: white;
+        font-size: 2rem;
+        font-weight: bold;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        z-index: 21;
+    `;
+    curtainMessage.innerHTML = `
+        <div style="font-size: 4rem; margin-bottom: 20px;">🎭</div>
+        <div>¡EL GANADOR ESTÁ DETRÁS!</div>
+        <div style="font-size: 1.2rem; margin-top: 10px; opacity: 0.8;">
+        Prepárate para la gran revelación
+        </div>
+    `;
+    
+    curtain.appendChild(leftKnob);
+    curtain.appendChild(rightKnob);
+    curtain.appendChild(curtainMessage);
+    
+    // Añadir al contenedor del ganador
+    winnerContainer.style.position = 'relative';
+    winnerContainer.appendChild(curtain);
+}
+
+function openWinnerCurtain() {
+    const curtain = document.getElementById('winnerCurtain');
+    if (!curtain) return;
+    
+    // Crear dos mitades del telón
+    const leftHalf = document.createElement('div');
+    leftHalf.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 50%;
+        height: 100%;
+        background: linear-gradient(90deg, 
+            rgba(139, 0, 0, 0.95) 0%,
+            rgba(178, 34, 34, 0.95) 100%);
+        transform-origin: left center;
+        transition: transform 1.5s cubic-bezier(0.86, 0, 0.07, 1);
+        z-index: 22;
+    `;
+    
+    const rightHalf = document.createElement('div');
+    rightHalf.style.cssText = `
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 50%;
+        height: 100%;
+        background: linear-gradient(90deg, 
+            rgba(178, 34, 34, 0.95) 0%,
+            rgba(139, 0, 0, 0.95) 100%);
+        transform-origin: right center;
+        transition: transform 1.5s cubic-bezier(0.86, 0, 0.07, 1);
+        z-index: 22;
+    `;
+    
+    // Reemplazar el telón completo por las dos mitades
+    curtain.innerHTML = '';
+    curtain.appendChild(leftHalf);
+    curtain.appendChild(rightHalf);
+    
+    // Animar apertura
+    setTimeout(() => {
+        leftHalf.style.transform = 'translateX(-100%) rotateY(-20deg)';
+        rightHalf.style.transform = 'translateX(100%) rotateY(20deg)';
+    }, 100);
+    
+    // Eliminar el telón después de la animación
+    setTimeout(() => {
+        if (curtain.parentNode) {
+            curtain.parentNode.removeChild(curtain);
+        }
+    }, 1600);
 }
 
 // ===== INICIALIZACIÓN =====
