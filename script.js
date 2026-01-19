@@ -442,9 +442,8 @@ function getNomineePhotoHTML(nominee) {
     return '👤';
 }
 
-// ===== ABRIR MODAL DE VOTACIÓN =====
 function openVoteModal(categoryId) {
-    // Si estamos en fase resultados, mostrar resultados en vez de votación
+    // Si estamos en fase resultados, mostrar resultados
     if (appData.phase === 'results') {
         showCategoryResults(categoryId);
         return;
@@ -461,13 +460,22 @@ function openVoteModal(categoryId) {
     const modal = document.getElementById('voteModal');
     const modalCategory = document.getElementById('modalCategory');
     const nomineesList = document.getElementById('nomineesList');
+    const votingContainer = document.getElementById('votingContainer');
+    const resultsContainer = document.getElementById('resultsContainer');
     
     if (!category) {
         alert('Error: Categoría no encontrada');
         return;
     }
     
-    // Mostrar sección de añadir nominado (solo en fases de votación)
+    // Configurar modo VOTACIÓN
+    modal.classList.remove('results-mode');
+    votingContainer.classList.add('active');
+    resultsContainer.classList.remove('active');
+    resultsContainer.style.display = 'none';
+    votingContainer.style.display = 'block';
+    
+    // Mostrar sección de añadir nominado
     const addSection = document.querySelector('.add-nominee-section');
     if (addSection) {
         addSection.style.display = 'block';
@@ -480,7 +488,6 @@ function openVoteModal(categoryId) {
     const userVote = userVotes[categoryId];
     
     const nominees = category.nominees || [];
-    // Ordenar alfabéticamente para NO mostrar quién va ganando
     const sortedNominees = [...nominees]
         .filter(n => n)
         .sort((a, b) => a.name.localeCompare(b.name));
@@ -495,7 +502,6 @@ function openVoteModal(categoryId) {
         nomineeItem.className = `nominee-item ${isVoted ? 'voted' : ''}`;
         nomineeItem.onclick = () => voteForNominee(nominee.name);
         
-        // Contenido SIN mostrar votos individuales
         nomineeItem.innerHTML = `
             ${photoUrl ? 
                 `<img src="${photoUrl}" class="nominee-photo" alt="${nominee.name}" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';">` : 
@@ -524,7 +530,6 @@ function openVoteModal(categoryId) {
             let frasesText = '<strong>💬 Frases añadidas:</strong><br>';
             let contador = 0;
             
-            // Mostrar máximo 2 frases
             Object.values(nominee.frases).forEach(fraseData => {
                 if (contador < 2) {
                     frasesText += `"${fraseData.frase.substring(0, 40)}${fraseData.frase.length > 40 ? '...' : ''}"<br>`;
@@ -769,10 +774,40 @@ function addNomineeToCategory(nominee, category) {
 // ===== UTILIDADES =====
 function closeModal() {
     const modal = document.getElementById('voteModal');
+    const votingContainer = document.getElementById('votingContainer');
+    const resultsContainer = document.getElementById('resultsContainer');
     const addSection = document.querySelector('.add-nominee-section');
     
-    if (modal) modal.style.display = 'none';
-    if (addSection) addSection.style.display = 'block'; // Restaurar visibilidad
+    if (modal) {
+        modal.classList.remove('results-mode');
+        modal.style.display = 'none';
+    }
+    
+    // Resetear contenedores
+    if (votingContainer) {
+        votingContainer.style.display = 'block';
+        votingContainer.classList.add('active');
+    }
+    
+    if (resultsContainer) {
+        resultsContainer.style.display = 'none';
+        resultsContainer.classList.remove('active');
+    }
+    
+    if (addSection) {
+        addSection.style.display = 'block';
+    }
+    
+    // Limpiar confetti si existe
+    const confetti = document.querySelector('.confetti-container');
+    if (confetti) confetti.remove();
+    
+    // Limpiar ambos contenedores
+    const nomineesList = document.getElementById('nomineesList');
+    const resultsList = document.getElementById('resultsList');
+    
+    if (nomineesList) nomineesList.innerHTML = '';
+    if (resultsList) resultsList.innerHTML = '';
 }
 
 function updatePhaseBanner() {
@@ -844,33 +879,121 @@ function verResultadosUsuarios() {
 }
 
 
-// ===== VERSIÓN SUPER SIMPLE - SOLO GANADORES CENTRADOS =====
 // ===== VERSIÓN CENTRADA - RESULTADOS POR CATEGORÍA =====
 function showCategoryResults(categoryId) {
-    console.log("🎯 Mostrando resultados centrados para categoría:", categoryId);
+    console.log("🎯 Mostrando resultados para categoría:", categoryId);
     
     const category = appData.categories.find(c => c && c.id === categoryId);
     if (!category) return;
     
     const modal = document.getElementById('voteModal');
     const modalCategory = document.getElementById('modalCategory');
-    const nomineesList = document.getElementById('nomineesList');
+    const resultsList = document.getElementById('resultsList');
+    const votingContainer = document.getElementById('votingContainer');
+    const resultsContainer = document.getElementById('resultsContainer');
     
-    if (!modal || !modalCategory || !nomineesList) return;
+    if (!modal || !modalCategory || !resultsList) return;
     
-    // LIMPIAR TODO
-    nomineesList.innerHTML = '';
+    // Configurar modo RESULTADOS
+    modal.classList.add('results-mode');
+    votingContainer.classList.remove('active');
+    resultsContainer.classList.add('active');
+    votingContainer.style.display = 'none';
+    resultsContainer.style.display = 'flex';
     
-    // Título centrado con categoría
-    modalCategory.innerHTML = `
-        <div style="text-align: center; padding: 20px;">
-            <h2 style="color: var(--gold); margin-bottom: 10px; font-size: 2rem;">${category.name}</h2>
-            ${category.description ? 
-                `<p style="color: var(--silver); font-size: 1.1rem; max-width: 600px; margin: 0 auto;">${category.description}</p>` 
-                : ''
-            }
+    // PANTALLA DE REVELACIÓN INICIAL
+    resultsList.innerHTML = `
+        <div class="reveal-screen">
+            <div class="reveal-trophy">🏆</div>
+            <h1 class="reveal-title">¡REVELACIÓN DE GANADORES!</h1>
+            <p class="reveal-subtitle">
+                ${category.name}<br>
+                <small>${category.description || ''}</small>
+            </p>
+            
+            <div class="reveal-progress">
+                <div class="reveal-progress-bar" id="revealProgress"></div>
+            </div>
+            
+            <button class="btn-reveal" id="revealButton" onclick="revealWinners(${categoryId})">
+                <i class="fas fa-play-circle"></i> REVELAR GANADORES
+            </button>
+            
+            <div id="detailsContainer" class="details-container">
+                <!-- Aquí irán los detalles después de la revelación -->
+            </div>
         </div>
     `;
+    
+    // Mostrar modal
+    modal.style.display = 'block';
+    
+    console.log("🎯 Pantalla de revelación preparada");
+}
+
+// ===== NUEVA FUNCIÓN: REVELAR GANADORES =====
+async function revealWinners(categoryId) {
+    console.log("🎉 Revelando ganadores...");
+    
+    const category = appData.categories.find(c => c && c.id === categoryId);
+    if (!category) return;
+    
+    const revealButton = document.getElementById('revealButton');
+    const revealProgress = document.getElementById('revealProgress');
+    const resultsList = document.getElementById('resultsList');
+    
+    if (!revealButton || !resultsList) return;
+    
+    // Deshabilitar botón y mostrar progreso
+    revealButton.disabled = true;
+    revealButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> PREPARANDO...';
+    
+    // Animación de progreso
+    let progress = 0;
+    const progressInterval = setInterval(() => {
+        progress += 10;
+        revealProgress.style.width = progress + '%';
+        
+        if (progress >= 100) {
+            clearInterval(progressInterval);
+            startRevelation(category);
+        }
+    }, 150);
+}
+
+// ===== FUNCIÓN PARA LA REVELACIÓN ESPECTACULAR =====
+async function startRevelation(category) {
+    console.log("✨ Iniciando revelación...");
+    
+    const resultsList = document.getElementById('resultsList');
+    if (!resultsList) return;
+    
+    // 1. CREAR CONFETI
+    createConfetti();
+    
+    // 2. MOSTRAR CONTENIDO DE REVELACIÓN
+    resultsList.innerHTML = `
+        <div style="position: relative; z-index: 2;">
+            <!-- CONFETI SE AÑADE POR JAVASCRIPT -->
+            
+            <div class="reveal-screen" style="min-height: 400px;">
+                <h1 class="reveal-title" style="font-size: 2.5rem; margin-bottom: 40px;">
+                    ¡Y LOS GANADORES SON...!
+                </h1>
+                
+                <div id="winnersContainer" style="width: 100%;">
+                    <!-- Los ganadores se añadirán aquí con animación -->
+                </div>
+                
+                <button class="btn-reveal" id="showDetailsButton" onclick="showDetails(${category.id})" 
+                        style="margin-top: 50px; display: none;">
+                    <i class="fas fa-chart-bar"></i> VER DETALLES Y FRASES
+                </button>
+            </div>
+        </div>
+    `;
+    
+    const winnersContainer = document.getElementById('winnersContainer');
     
     // Obtener top 3 ordenados por votos
     const nominees = category.nominees || [];
@@ -881,47 +1004,21 @@ function showCategoryResults(categoryId) {
     const top3 = sortedNominees.slice(0, 3);
     const hasVotes = sortedNominees.some(n => (n.votes || 0) > 0);
     
-    // Crear contenedor principal - CENTRADO
-    const mainContainer = document.createElement('div');
-    mainContainer.style.cssText = `
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        min-height: 60vh;
-        padding: 20px;
-        text-align: center;
-        width: 100%;
-    `;
-    
     if (!hasVotes) {
-        // Si no hay votos
-        mainContainer.innerHTML = `
-            <div style="padding: 40px; text-align: center;">
+        winnersContainer.innerHTML = `
+            <div style="padding: 40px; text-align: center; animation: fadeInUp 1s ease-out;">
                 <div style="font-size: 4rem; color: var(--silver); margin-bottom: 20px;">📊</div>
                 <h3 style="color: var(--silver); margin-bottom: 15px;">Sin votos aún</h3>
                 <p style="color: var(--silver); opacity: 0.8;">No hay votos registrados en esta categoría</p>
             </div>
         `;
-        nomineesList.appendChild(mainContainer);
-        modal.style.display = 'block';
         return;
     }
     
-    // Título de ganadores
-    const winnersTitle = document.createElement('h3');
-    winnersTitle.textContent = '🏆 GANADORES 🏆';
-    winnersTitle.style.cssText = `
-        color: var(--gold);
-        font-size: 1.8rem;
-        margin-bottom: 40px;
-        text-align: center;
-        letter-spacing: 1px;
-        text-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
-    `;
-    mainContainer.appendChild(winnersTitle);
+    // 3. REVELAR GANADORES CON ANIMACIÓN ESCALONADA
+    await delay(500); // Pequeña pausa dramática
     
-    // Contenedor para los 3 ganadores en LÍNEA HORIZONTAL
+    // Contenedor para los 3 ganadores
     const winnersRow = document.createElement('div');
     winnersRow.style.cssText = `
         display: flex;
@@ -929,217 +1026,327 @@ function showCategoryResults(categoryId) {
         align-items: flex-end;
         gap: 30px;
         flex-wrap: wrap;
-        margin-bottom: 50px;
+        margin-bottom: 30px;
         width: 100%;
         max-width: 900px;
+        margin: 0 auto;
     `;
     
-    // 2do lugar (izquierda)
+    // Animación para 2do lugar
     if (top3[1]) {
-        const secondDiv = document.createElement('div');
-        secondDiv.style.cssText = `
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-end;
-            padding: 25px;
-            background: linear-gradient(145deg, rgba(192, 192, 192, 0.15), rgba(150, 150, 150, 0.1));
-            border: 3px solid var(--silver);
-            border-radius: 20px;
-            min-width: 200px;
-            min-height: 280px;
-            position: relative;
-            animation: slideUpFade 0.6s ease-out;
-            animation-delay: 0.1s;
-            animation-fill-mode: both;
-        `;
-        secondDiv.innerHTML = `
-            <div style="font-size: 3.5rem; margin-bottom: 15px; animation: float 3s ease-in-out infinite;">🥈</div>
-            <div style="background: linear-gradient(45deg, var(--silver), #d8d8d8); 
-                       -webkit-background-clip: text; 
-                       background-clip: text; 
-                       color: transparent; 
-                       font-weight: bold; 
-                       font-size: 1.5rem; 
-                       margin: 10px 0;">
-                ${top3[1].name}
-            </div>
-            <div style="color: var(--silver); font-size: 2rem; font-weight: bold; margin: 15px 0;">${top3[1].votes || 0}</div>
-            <div style="color: var(--silver); font-weight: bold; margin-top: 5px; font-size: 0.9rem;">SEGUNDO LUGAR</div>
-        `;
+        await delay(300);
+        const secondDiv = createWinnerCard(top3[1], '🥈', 'SECUNDO LUGAR', 'silver');
+        secondDiv.style.animation = 'scaleUp 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, pulseGold 2s infinite 0.8s';
         winnersRow.appendChild(secondDiv);
     }
     
-    // 1er lugar (centro - más grande)
+    // Animación para 1er lugar (más espectacular)
     if (top3[0]) {
-        const firstDiv = document.createElement('div');
-        firstDiv.style.cssText = `
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-end;
-            padding: 30px;
-            background: linear-gradient(145deg, rgba(255, 215, 0, 0.2), rgba(212, 175, 55, 0.15));
-            border: 4px solid var(--gold);
-            border-radius: 25px;
-            min-width: 250px;
-            min-height: 320px;
-            position: relative;
+        await delay(500);
+        const firstDiv = createWinnerCard(top3[0], '🥇', '¡GANADOR/A!', 'gold');
+        firstDiv.style.cssText += `
             transform: translateY(-20px);
-            animation: slideUpFade 0.8s ease-out;
-            animation-fill-mode: both;
-            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3);
-        `;
-        firstDiv.innerHTML = `
-            <div style="font-size: 4.5rem; margin-bottom: 20px; animation: goldGlow 2s infinite alternate;">🥇</div>
-            <div style="background: linear-gradient(45deg, var(--gold), #FFEE80); 
-                       -webkit-background-clip: text; 
-                       background-clip: text; 
-                       color: transparent; 
-                       font-weight: bold; 
-                       font-size: 1.8rem; 
-                       margin: 15px 0;">
-                ${top3[0].name}
-            </div>
-            <div style="color: var(--gold); font-size: 2.5rem; font-weight: bold; margin: 20px 0;">${top3[0].votes || 0}</div>
-            <div style="color: var(--gold); font-weight: bold; margin-top: 10px; font-size: 1rem; text-transform: uppercase;">¡GANADOR/A!</div>
+            animation: scaleUp 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, 
+                       pulseGold 2s infinite 1s;
+            box-shadow: 0 20px 50px rgba(255, 215, 0, 0.5);
         `;
         winnersRow.appendChild(firstDiv);
+        
+        // Sonido imaginario (podrías añadir un sonido real)
+        console.log("🎺 ¡FANFARRIA! 🎺");
     }
     
-    // 3er lugar (derecha)
+    // Animación para 3er lugar
     if (top3[2]) {
-        const thirdDiv = document.createElement('div');
-        thirdDiv.style.cssText = `
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-end;
-            padding: 25px;
-            background: linear-gradient(145deg, rgba(205, 127, 50, 0.15), rgba(180, 110, 40, 0.1));
-            border: 3px solid var(--bronze);
-            border-radius: 20px;
-            min-width: 200px;
-            min-height: 280px;
-            position: relative;
-            animation: slideUpFade 0.6s ease-out;
-            animation-delay: 0.2s;
-            animation-fill-mode: both;
-        `;
-        thirdDiv.innerHTML = `
-            <div style="font-size: 3rem; margin-bottom: 15px; animation: rotateBronze 3s ease-in-out infinite;">🥉</div>
-            <div style="background: linear-gradient(45deg, var(--bronze), #e6a65c); 
-                       -webkit-background-clip: text; 
-                       background-clip: text; 
-                       color: transparent; 
-                       font-weight: bold; 
-                       font-size: 1.5rem; 
-                       margin: 10px 0;">
-                ${top3[2].name}
-            </div>
-            <div style="color: var(--bronze); font-size: 2rem; font-weight: bold; margin: 15px 0;">${top3[2].votes || 0}</div>
-            <div style="color: var(--bronze); font-weight: bold; margin-top: 5px; font-size: 0.9rem;">TERCER LUGAR</div>
-        `;
+        await delay(300);
+        const thirdDiv = createWinnerCard(top3[2], '🥉', 'TERCER LUGAR', 'bronze');
+        thirdDiv.style.animation = 'scaleUp 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, pulseGold 2s infinite 1.2s';
         winnersRow.appendChild(thirdDiv);
     }
     
-    mainContainer.appendChild(winnersRow);
+    winnersContainer.appendChild(winnersRow);
     
-    // Mostrar participantes restantes si hay más de 3
-    if (sortedNominees.length > 3) {
-        const otherParticipants = document.createElement('div');
-        otherParticipants.style.cssText = `
-            margin-top: 30px;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
-            width: 100%;
-            max-width: 600px;
-        `;
-        
-        otherParticipants.innerHTML = `
-            <h4 style="color: var(--silver); margin-bottom: 15px; text-align: center;">
-                <i class="fas fa-users"></i> Otros participantes
-            </h4>
-            <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
-                ${sortedNominees.slice(3).map((nominee, index) => `
-                    <div style="
-                        background: rgba(255, 255, 255, 0.05);
-                        padding: 10px 20px;
-                        border-radius: 20px;
-                        border: 1px solid rgba(255, 255, 255, 0.1);
-                        color: var(--silver);
-                        font-size: 0.9rem;
-                    ">
-                        ${nominee.name} <span style="color: #aaa;">(${nominee.votes || 0})</span>
-                    </div>
-                `).join('')}
-            </div>
-        `;
-        mainContainer.appendChild(otherParticipants);
+    // Mostrar botón de detalles después de las animaciones
+    await delay(1500);
+    const detailsButton = document.getElementById('showDetailsButton');
+    if (detailsButton) {
+        detailsButton.style.display = 'flex';
+        detailsButton.style.animation = 'fadeInUp 0.8s ease-out forwards';
     }
+}
+
+// ===== FUNCIÓN AUXILIAR PARA CREAR TARJETAS DE GANADORES =====
+function createWinnerCard(nominee, emoji, title, type) {
+    const colors = {
+        gold: ['var(--gold)', '#FFEE80'],
+        silver: ['var(--silver)', '#d8d8d8'],
+        bronze: ['var(--bronze)', '#e6a65c']
+    };
     
-    // Estadísticas resumen
-    const totalVotes = sortedNominees.reduce((sum, n) => sum + (n.votes || 0), 0);
-    const statsDiv = document.createElement('div');
-    statsDiv.style.cssText = `
+    const color = colors[type] || colors.gold;
+    
+    const div = document.createElement('div');
+    div.style.cssText = `
         display: flex;
-        justify-content: center;
-        gap: 30px;
-        margin-top: 40px;
-        flex-wrap: wrap;
-        width: 100%;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-end;
+        padding: 25px;
+        background: linear-gradient(145deg, 
+            rgba(${type === 'gold' ? '255,215,0' : type === 'silver' ? '192,192,192' : '205,127,50'}, 0.2), 
+            rgba(${type === 'gold' ? '212,175,55' : type === 'silver' ? '150,150,150' : '180,110,40'}, 0.1));
+        border: ${type === 'gold' ? '4px' : '3px'} solid ${color[0]};
+        border-radius: 20px;
+        min-width: ${type === 'gold' ? '250px' : '200px'};
+        min-height: ${type === 'gold' ? '320px' : '280px'};
+        position: relative;
+        opacity: 0;
+        transform: scale(0);
     `;
     
-    statsDiv.innerHTML = `
-        <div style="
-            background: rgba(255, 215, 0, 0.1);
-            border: 1px solid rgba(255, 215, 0, 0.3);
-            border-radius: 15px;
-            padding: 20px 30px;
-            text-align: center;
-            min-width: 150px;
-        ">
-            <div style="color: var(--gold); font-size: 2.5rem; font-weight: bold;">${totalVotes}</div>
-            <div style="color: var(--silver); font-size: 0.9rem;">VOTOS TOTALES</div>
+    div.innerHTML = `
+        <div style="font-size: ${type === 'gold' ? '4.5rem' : '3.5rem'}; 
+                   margin-bottom: 15px; 
+                   animation: float 3s ease-in-out infinite;">
+            ${emoji}
         </div>
-        <div style="
-            background: rgba(0, 243, 255, 0.1);
-            border: 1px solid rgba(0, 243, 255, 0.3);
-            border-radius: 15px;
-            padding: 20px 30px;
-            text-align: center;
-            min-width: 150px;
-        ">
-            <div style="color: var(--neon-blue); font-size: 2.5rem; font-weight: bold;">${sortedNominees.length}</div>
-            <div style="color: var(--silver); font-size: 0.9rem;">PARTICIPANTES</div>
+        <div style="background: linear-gradient(45deg, ${color[0]}, ${color[1]}); 
+                   -webkit-background-clip: text; 
+                   background-clip: text; 
+                   color: transparent; 
+                   font-weight: bold; 
+                   font-size: ${type === 'gold' ? '1.8rem' : '1.5rem'}; 
+                   margin: 10px 0; 
+                   text-align: center;">
+            ${nominee.name}
         </div>
-        <div style="
-            background: rgba(76, 175, 80, 0.1);
-            border: 1px solid rgba(76, 175, 80, 0.3);
-            border-radius: 15px;
-            padding: 20px 30px;
-            text-align: center;
-            min-width: 150px;
-        ">
-            <div style="color: #4CAF50; font-size: 2.5rem; font-weight: bold;">${sortedNominees.filter(n => (n.votes || 0) > 0).length}</div>
-            <div style="color: var(--silver); font-size: 0.9rem;">RECIBIERON VOTOS</div>
+        <div style="color: ${color[0]}; 
+                   font-size: ${type === 'gold' ? '2.5rem' : '2rem'}; 
+                   font-weight: bold; 
+                   margin: 15px 0;">
+            ${nominee.votes || 0}
+        </div>
+        <div style="color: ${color[0]}; 
+                   font-weight: bold; 
+                   margin-top: 5px; 
+                   font-size: ${type === 'gold' ? '1rem' : '0.9rem'}; 
+                   text-transform: uppercase;">
+            ${title}
         </div>
     `;
     
-    mainContainer.appendChild(statsDiv);
-    nomineesList.appendChild(mainContainer);
+    return div;
+}
+
+// ===== FUNCIÓN PARA MOSTRAR DETALLES =====
+function showDetails(categoryId) {
+    console.log("📊 Mostrando detalles...");
     
-    // Ocultar sección de añadir nominado
-    const addSection = document.querySelector('.add-nominee-section');
-    if (addSection) {
-        addSection.style.display = 'none';
+    const category = appData.categories.find(c => c && c.id === categoryId);
+    if (!category) return;
+    
+    const resultsList = document.getElementById('resultsList');
+    const detailsButton = document.getElementById('showDetailsButton');
+    
+    if (!resultsList) return;
+    
+    // Ocultar botón de detalles
+    if (detailsButton) {
+        detailsButton.style.display = 'none';
     }
     
-    // Mostrar modal
-    modal.style.display = 'block';
+    // Obtener todos los nominados ordenados
+    const nominees = category.nominees || [];
+    const sortedNominees = [...nominees]
+        .filter(n => n && n.name)
+        .sort((a, b) => (b.votes || 0) - (a.votes || 0));
     
-    console.log("🎯 Resultados centrados mostrados");
+    const totalVotes = sortedNominees.reduce((sum, n) => sum + (n.votes || 0), 0);
+    const totalParticipants = sortedNominees.length;
+    const receivedVotes = sortedNominees.filter(n => (n.votes || 0) > 0).length;
+    
+    // Crear contenedor de detalles
+    const detailsContainer = document.createElement('div');
+    detailsContainer.className = 'details-container active';
+    detailsContainer.style.animation = 'fadeInUp 0.8s ease-out forwards';
+    
+    // Estadísticas
+    detailsContainer.innerHTML = `
+        <h3 style="color: var(--gold); text-align: center; margin-bottom: 30px; font-size: 1.8rem;">
+            <i class="fas fa-chart-pie"></i> ESTADÍSTICAS DETALLADAS
+        </h3>
+        
+        <div class="stats-grid">
+            <div class="stat-card animate-fadeInUp" style="animation-delay: 0.1s;">
+                <div class="label">VOTOS TOTALES</div>
+                <div class="value">${totalVotes}</div>
+                <small style="color: var(--silver);">en esta categoría</small>
+            </div>
+            
+            <div class="stat-card animate-fadeInUp" style="animation-delay: 0.2s;">
+                <div class="label">PARTICIPANTES</div>
+                <div class="value">${totalParticipants}</div>
+                <small style="color: var(--silver);">personas nominadas</small>
+            </div>
+            
+            <div class="stat-card animate-fadeInUp" style="animation-delay: 0.3s;">
+                <div class="label">RECIBIERON VOTOS</div>
+                <div class="value">${receivedVotes}</div>
+                <small style="color: var(--silver);">de ${totalParticipants}</small>
+            </div>
+            
+            <div class="stat-card animate-fadeInUp" style="animation-delay: 0.4s;">
+                <div class="label">PROMEDIO</div>
+                <div class="value">${totalParticipants > 0 ? (totalVotes / totalParticipants).toFixed(1) : 0}</div>
+                <small style="color: var(--silver);">votos por persona</small>
+            </div>
+        </div>
+        
+        <div id="frasesSection" style="margin-top: 40px;">
+            <!-- Las frases se añadirán aquí si es la categoría 17 -->
+        </div>
+    `;
+    
+    // Añadir al DOM
+    resultsList.appendChild(detailsContainer);
+    
+    // Solo para categoría 17 (Frase del Año), mostrar frases
+    if (category.id === 17) {
+        setTimeout(() => {
+            showFrasesDetails(category, detailsContainer);
+        }, 500);
+    }
+    
+    // Añadir botón para volver a los ganadores
+    setTimeout(() => {
+        const backButton = document.createElement('button');
+        backButton.className = 'btn-reveal';
+        backButton.innerHTML = '<i class="fas fa-arrow-left"></i> VOLVER A GANADORES';
+        backButton.onclick = () => {
+            detailsContainer.remove();
+            if (detailsButton) detailsButton.style.display = 'flex';
+        };
+        backButton.style.marginTop = '30px';
+        backButton.style.marginLeft = 'auto';
+        backButton.style.marginRight = 'auto';
+        backButton.style.display = 'block';
+        detailsContainer.appendChild(backButton);
+    }, 1000);
+}
+
+// ===== FUNCIÓN PARA MOSTRAR FRASES DETALLADAS =====
+function showFrasesDetails(category, container) {
+    const nominees = category.nominees || [];
+    const todasLasFrases = [];
+    
+    // Recoger todas las frases
+    nominees.forEach(nominee => {
+        if (nominee.frases && Object.keys(nominee.frases).length > 0) {
+            Object.values(nominee.frases).forEach(fraseData => {
+                todasLasFrases.push({
+                    persona: nominee.name,
+                    frase: fraseData.frase,
+                    votante: fraseData.voter,
+                    timestamp: fraseData.timestamp,
+                    votos: nominee.votes || 0
+                });
+            });
+        }
+    });
+    
+    if (todasLasFrases.length === 0) return;
+    
+    // Ordenar por fecha (más reciente primero) o por votos
+    todasLasFrases.sort((a, b) => {
+        if (b.timestamp && a.timestamp) {
+            return new Date(b.timestamp) - new Date(a.timestamp);
+        }
+        return b.votos - a.votos;
+    });
+    
+    const frasesSection = document.getElementById('frasesSection');
+    if (!frasesSection) return;
+    
+    frasesSection.innerHTML = `
+        <h4 style="color: var(--gold); text-align: center; margin-bottom: 25px; font-size: 1.5rem;">
+            <i class="fas fa-quote-left"></i> FRASES ICÓNICAS <i class="fas fa-quote-right"></i>
+        </h4>
+        <div id="frasesList" style="max-height: 400px; overflow-y: auto; padding: 10px;">
+            <!-- Frases se añadirán aquí -->
+        </div>
+    `;
+    
+    const frasesList = document.getElementById('frasesList');
+    
+    todasLasFrases.forEach((fraseData, index) => {
+        setTimeout(() => {
+            const fraseItem = document.createElement('div');
+            fraseItem.className = 'frase-item';
+            fraseItem.style.animationDelay = `${index * 0.1}s`;
+            
+            const fecha = fraseData.timestamp ? 
+                new Date(fraseData.timestamp).toLocaleDateString('es-ES', {
+                    day: '2-digit',
+                    month: 'short',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }) : 'Fecha desconocida';
+            
+            fraseItem.innerHTML = `
+                <div class="frase-text">
+                    ${fraseData.frase}
+                </div>
+                <div class="frase-meta">
+                    <span><strong>${fraseData.persona}</strong> (${fraseData.votos} votos)</span>
+                    <span>Añadida por ${fraseData.votante} - ${fecha}</span>
+                </div>
+            `;
+            
+            frasesList.appendChild(fraseItem);
+        }, index * 100);
+    });
+}
+
+// ===== FUNCIONES AUXILIARES =====
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function createConfetti() {
+    const confettiContainer = document.createElement('div');
+    confettiContainer.className = 'confetti-container';
+    document.getElementById('resultsList').appendChild(confettiContainer);
+    
+    const colors = ['#FFD700', '#C0C0C0', '#CD7F32', '#FF6B6B', '#4ECDC4', '#FF8E53'];
+    
+    for (let i = 0; i < 150; i++) {
+        setTimeout(() => {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            confetti.style.left = Math.random() * 100 + '%';
+            confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+            confetti.style.width = Math.random() * 15 + 5 + 'px';
+            confetti.style.height = Math.random() * 15 + 5 + 'px';
+            confetti.style.animationDuration = Math.random() * 3 + 2 + 's';
+            confetti.style.animationDelay = Math.random() * 1 + 's';
+            
+            confettiContainer.appendChild(confetti);
+            
+            // Eliminar después de la animación
+            setTimeout(() => {
+                if (confetti.parentNode) {
+                    confetti.parentNode.removeChild(confetti);
+                }
+            }, 5000);
+        }, i * 10);
+    }
+    
+    // Eliminar contenedor después de un tiempo
+    setTimeout(() => {
+        if (confettiContainer.parentNode) {
+            confettiContainer.parentNode.removeChild(confettiContainer);
+        }
+    }, 4000);
 }
 
 // ===== INICIALIZACIÓN =====

@@ -81,14 +81,26 @@
         </footer>
     </div>
 
-    <!-- Modal de votación -->
+    <!-- En la sección del modal, cambia esto: -->
     <div id="voteModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal()">&times;</span>
             <h2 id="modalCategory"></h2>
-            <div class="nominees-container" id="nomineesList">
-                <!-- Nominados se cargan aquí -->
+            
+            <!-- Contenedor para VOTACIÓN (grid) -->
+            <div id="votingContainer" class="nominees-container">
+                <div class="nominees-grid" id="nomineesList">
+                    <!-- Nominados se cargan aquí durante votación -->
+                </div>
             </div>
+            
+            <!-- Contenedor para RESULTADOS (centrado) -->
+            <div id="resultsContainer" class="results-container" style="display: none;">
+                <div id="resultsList">
+                    <!-- Resultados se cargan aquí -->
+                </div>
+            </div>
+            
             <div class="add-nominee-section">
                 <div class="upload-section">
                     <label class="upload-label">Añadir nuevo nominado con foto:</label>
