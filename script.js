@@ -844,9 +844,10 @@ function verResultadosUsuarios() {
 }
 
 
-// ===== VERSIÓN SUPER SIMPLE - SOLO GANADORES CENTRADOS =====
-// ===== VERSIÓN CENTRADA - RESULTADOS POR CATEGORÍA =====
-// ===== SISTEMA DRAMÁTICO DE REVELACIÓN =====
+// ===== SISTEMA DRAMÁTICO CON CLICK Y POSICIONES VERTICALES =====
+let currentRevealStep = 0;
+let top3 = [];
+
 async function showCategoryResults(categoryId) {
     console.log("🎭 Iniciando revelación dramática para categoría:", categoryId);
     
@@ -859,19 +860,8 @@ async function showCategoryResults(categoryId) {
     
     if (!modal || !modalCategory || !nomineesList) return;
     
-    // LIMPIAR TODO
-    nomineesList.innerHTML = '';
-    
-    // Configurar modal para revelación
-    modalCategory.innerHTML = `
-        <div style="text-align: center; padding: 20px;">
-            <h2 style="color: var(--gold); margin-bottom: 10px; font-size: 2rem;">${category.name}</h2>
-            ${category.description ? 
-                `<p style="color: var(--silver); font-size: 1.1rem; max-width: 600px; margin: 0 auto;">${category.description}</p>` 
-                : ''
-            }
-        </div>
-    `;
+    // Resetear variables
+    currentRevealStep = 0;
     
     // Obtener top 3
     const nominees = category.nominees || [];
@@ -879,7 +869,7 @@ async function showCategoryResults(categoryId) {
         .filter(n => n && n.name)
         .sort((a, b) => (b.votes || 0) - (a.votes || 0));
     
-    const top3 = sortedNominees.slice(0, 3);
+    top3 = sortedNominees.slice(0, 3);
     const hasVotes = sortedNominees.some(n => (n.votes || 0) > 0);
     
     // Si no hay votos, mostrar mensaje
@@ -895,49 +885,961 @@ async function showCategoryResults(categoryId) {
         return;
     }
     
-    // ===== PANTALLA 1: CUENTA REGRESIVA =====
-    const countdownScreen = document.createElement('div');
-    countdownScreen.id = 'countdownScreen';
-    countdownScreen.style.cssText = `
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        min-height: 60vh;
-        padding: 40px;
-        text-align: center;
-        width: 100%;
-    `;
-    
-    countdownScreen.innerHTML = `
-        <div class="countdown-container">
-            <h3 style="color: var(--gold); font-size: 2rem; margin-bottom: 40px; letter-spacing: 3px;">
-                🏆 PREPARÁNDOSE PARA REVELAR 🏆
-            </h3>
-            <div class="countdown-numbers">
-                <div class="countdown-number" id="count3">3</div>
-                <div class="countdown-number" id="count2">2</div>
-                <div class="countdown-number" id="count1">1</div>
-            </div>
-            <p class="countdown-text" style="color: var(--silver); margin-top: 40px; font-size: 1.2rem;">
-                ¡Los resultados están a punto de ser revelados!
-            </p>
-        </div>
-    `;
-    
-    nomineesList.appendChild(countdownScreen);
+    // ===== PANTALLA 1: CUENTA REGRESIVA (3-2-1) =====
+    showCountdownScreen(category);
     
     // Mostrar modal
     modal.style.display = 'block';
+}
+
+// ===== PANTALLA DE CUENTA REGRESIVA =====
+function showCountdownScreen(category) {
+    const nomineesList = document.getElementById('nomineesList');
+    const modalCategory = document.getElementById('modalCategory');
     
-    // Ejecutar cuenta regresiva
-    await countdownAnimation();
+    modalCategory.innerHTML = `
+        <div style="text-align: center; padding: 20px;">
+            <h2 style="color: var(--gold); margin-bottom: 10px; font-size: 2rem;">${category.name}</h2>
+            ${category.description ? 
+                `<p style="color: var(--silver); font-size: 1.1rem; max-width: 600px; margin: 0 auto;">${category.description}</p>` 
+                : ''
+            }
+        </div>
+    `;
     
-    // ===== PANTALLA 2: REVELACIÓN SECUENCIAL =====
-    await revealWinnersSequentially(top3, category);
+    nomineesList.innerHTML = `
+        <div id="countdownScreen" style="
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 70vh;
+            padding: 40px;
+            text-align: center;
+            width: 100%;
+        ">
+            <div class="countdown-container" style="max-width: 600px; margin: 0 auto;">
+                <h3 style="color: var(--gold); font-size: 2rem; margin-bottom: 40px; letter-spacing: 3px;">
+                    🎬 PREPARÁNDOSE PARA LA REVELACIÓN 🎬
+                </h3>
+                
+                <!-- Contador principal -->
+                <div id="countdownDisplay" style="
+                    font-size: 8rem;
+                    color: var(--gold);
+                    font-weight: bold;
+                    height: 200px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin: 40px 0;
+                    text-shadow: 0 0 30px currentColor;
+                    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                ">
+                    3
+                </div>
+                
+                <div style="color: var(--silver); font-size: 1.3rem; margin-top: 30px;">
+                    La revelación comenzará en...
+                </div>
+                
+                <!-- Indicador de clic -->
+                <div id="clickToContinue" style="
+                    margin-top: 60px;
+                    opacity: 0;
+                    animation: fadeIn 1s ease-out 3.5s forwards;
+                ">
+                    <div style="color: var(--silver); margin-bottom: 20px; font-size: 1.1rem;">
+                        <i class="fas fa-mouse-pointer" style="color: var(--gold);"></i>
+                        Haz clic en cualquier parte para continuar
+                    </div>
+                    <div style="
+                        width: 60px;
+                        height: 60px;
+                        border: 3px solid var(--gold);
+                        border-radius: 50%;
+                        margin: 0 auto;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        animation: pulseClick 1.5s infinite;
+                    ">
+                        <i class="fas fa-hand-pointer" style="color: var(--gold); font-size: 1.5rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
     
-    // ===== PANTALLA 3: BOTÓN PARA VER PODIO COMPLETO =====
-    showPodiumButton(category, sortedNominees);
+    // Iniciar cuenta regresiva automática
+    startCountdown();
+}
+
+// ===== CUENTA REGRESIVA AUTOMÁTICA 3-2-1 =====
+function startCountdown() {
+    const countdownDisplay = document.getElementById('countdownDisplay');
+    let count = 3;
+    
+    const countdownInterval = setInterval(() => {
+        // Efectos visuales y sonido
+        countdownDisplay.style.transform = 'scale(1.3)';
+        countdownDisplay.style.color = count === 3 ? '#FF6B6B' : count === 2 ? '#FFA726' : '#4CAF50';
+        countdownDisplay.style.textShadow = `0 0 50px ${count === 3 ? '#FF6B6B' : count === 2 ? '#FFA726' : '#4CAF50'}`;
+        
+        // Sonido de tick
+        playTickSound(count);
+        
+        setTimeout(() => {
+            countdownDisplay.style.transform = 'scale(1)';
+            countdownDisplay.style.color = 'var(--gold)';
+            countdownDisplay.style.textShadow = '0 0 30px var(--gold)';
+            
+            count--;
+            if (count >= 0) {
+                countdownDisplay.textContent = count || '¡YA!';
+            }
+            
+            if (count < 0) {
+                clearInterval(countdownInterval);
+                
+                // Habilitar clic para continuar
+                setTimeout(() => {
+                    document.getElementById('countdownScreen').onclick = () => {
+                        startVerticalReveal();
+                    };
+                }, 500);
+            }
+        }, 400);
+    }, 1000);
+}
+
+// ===== INICIAR REVELACIÓN VERTICAL (al hacer clic) =====
+function startVerticalReveal() {
+    const nomineesList = document.getElementById('nomineesList');
+    
+    // Limpiar pantalla
+    nomineesList.innerHTML = '';
+    
+    // Crear contenedor de revelación vertical
+    const revealContainer = document.createElement('div');
+    revealContainer.id = 'verticalRevealContainer';
+    revealContainer.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-end;
+        min-height: 80vh;
+        padding: 40px 20px 100px 20px;
+        text-align: center;
+        width: 100%;
+        position: relative;
+        overflow: hidden;
+    `;
+    
+    // Línea vertical central
+    const verticalLine = document.createElement('div');
+    verticalLine.style.cssText = `
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 4px;
+        background: linear-gradient(to bottom, transparent, var(--gold), transparent);
+        z-index: -1;
+    `;
+    revealContainer.appendChild(verticalLine);
+    
+    // Instrucciones
+    const instructions = document.createElement('div');
+    instructions.style.cssText = `
+        position: absolute;
+        top: 20px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        color: var(--silver);
+        font-size: 1.1rem;
+        z-index: 10;
+    `;
+    instructions.innerHTML = `
+        <div style="margin-bottom: 10px;">
+            <i class="fas fa-mouse-pointer" style="color: var(--gold);"></i>
+            Haz clic para revelar cada posición
+        </div>
+        <div style="
+            width: 40px;
+            height: 40px;
+            border: 2px solid var(--gold);
+            border-radius: 50%;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulseClick 1.5s infinite;
+        ">
+            <i class="fas fa-hand-pointer" style="color: var(--gold); font-size: 1rem;"></i>
+        </div>
+    `;
+    revealContainer.appendChild(instructions);
+    
+    // Contenedor para las posiciones (se llenará dinámicamente)
+    const positionsContainer = document.createElement('div');
+    positionsContainer.id = 'positionsContainer';
+    positionsContainer.style.cssText = `
+        display: flex;
+        flex-direction: column-reverse; /* Orden inverso: 3, 2, 1 (de abajo arriba) */
+        align-items: center;
+        justify-content: flex-end;
+        width: 100%;
+        max-width: 500px;
+        min-height: 500px;
+        position: relative;
+        margin-top: 60px;
+    `;
+    revealContainer.appendChild(positionsContainer);
+    
+    nomineesList.appendChild(revealContainer);
+    
+    // Configurar clic para avanzar
+    revealContainer.onclick = () => {
+        revealNextPosition();
+    };
+    
+    // Inicializar estado
+    currentRevealStep = 0;
+}
+
+// ===== REVELAR SIGUIENTE POSICIÓN (al hacer clic) =====
+function revealNextPosition() {
+    if (currentRevealStep >= top3.length) {
+        // Si ya revelamos todos, mostrar botón para podio
+        showPodiumButtonAfterReveal();
+        return;
+    }
+    
+    const positionsContainer = document.getElementById('positionsContainer');
+    const currentPosition = currentRevealStep;
+    const nominee = top3[currentPosition];
+    
+    // Determinar posición (3, 2, 1)
+    const positionNumber = 3 - currentRevealStep; // 3, 2, 1
+    const positionNames = ['TERCER LUGAR', 'SEGUNDO LUGAR', '¡PRIMER LUGAR!'];
+    const medalTypes = ['bronze', 'silver', 'gold'];
+    const medalEmojis = ['🥉', '🥈', '🥇'];
+    
+    // Crear elemento de posición
+    const positionElement = document.createElement('div');
+    positionElement.className = 'position-element';
+    positionElement.style.cssText = `
+        background: ${getMedalColor(medalTypes[currentPosition], 0.15)};
+        border: 3px solid ${getMedalColor(medalTypes[currentPosition], 1)};
+        border-radius: 20px;
+        padding: 25px 30px;
+        margin: 20px 0;
+        width: 90%;
+        max-width: 400px;
+        transform: translateY(50px);
+        opacity: 0;
+        transition: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        position: relative;
+        z-index: ${10 - currentPosition};
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    `;
+    
+    // Contenido de la posición
+    positionElement.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
+            <!-- Medalla -->
+            <div style="
+                width: 70px;
+                height: 70px;
+                border-radius: 50%;
+                background: ${getMedalColor(medalTypes[currentPosition], 0.2)};
+                border: 3px solid ${getMedalColor(medalTypes[currentPosition], 1)};
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 2.2rem;
+                flex-shrink: 0;
+            ">
+                ${medalEmojis[currentPosition]}
+            </div>
+            
+            <!-- Información -->
+            <div style="text-align: left; flex: 1;">
+                <div style="
+                    color: ${getMedalColor(medalTypes[currentPosition], 1)};
+                    font-weight: bold;
+                    font-size: 1.2rem;
+                    margin-bottom: 5px;
+                ">
+                    ${positionNames[currentPosition]}
+                </div>
+                <div style="
+                    color: white;
+                    font-size: 1.8rem;
+                    font-weight: bold;
+                    margin: 5px 0;
+                ">
+                    ${nominee.name}
+                </div>
+                <div style="
+                    color: ${getMedalColor(medalTypes[currentPosition], 1)};
+                    font-size: 1.8rem;
+                    font-weight: bold;
+                    margin: 10px 0;
+                ">
+                    ${nominee.votes || 0} VOTOS
+                </div>
+            </div>
+        </div>
+        
+        <!-- Efecto especial para el ganador -->
+        ${currentPosition === 2 ? `
+            <div style="
+                margin-top: 15px;
+                padding: 12px;
+                background: rgba(255, 215, 0, 0.15);
+                border-radius: 15px;
+                border: 1px solid var(--gold);
+                animation: pulse 2s infinite;
+            ">
+                <div style="
+                    color: var(--gold);
+                    font-size: 1.1rem;
+                    font-weight: bold;
+                    text-transform: uppercase;
+                    letter-spacing: 1px;
+                ">
+                    🎊 ¡¡GANADOR/A ABSOLUTO/A!! 🎊
+                </div>
+            </div>
+        ` : ''}
+    `;
+    
+    // Añadir al contenedor (al principio para que se apilen de abajo arriba)
+    positionsContainer.insertBefore(positionElement, positionsContainer.firstChild);
+    
+    // Animar entrada
+    setTimeout(() => {
+        positionElement.style.transform = 'translateY(0)';
+        positionElement.style.opacity = '1';
+        
+        // Efectos especiales
+        playRevealSound(currentPosition);
+        
+        // Efecto de confeti para el ganador
+        if (currentPosition === 2) {
+            setTimeout(() => {
+                createConfetti();
+                playVictorySound();
+            }, 300);
+        }
+        
+        // Actualizar paso actual
+        currentRevealStep++;
+        
+        // Actualizar instrucciones
+        updateRevealInstructions();
+    }, 100);
+}
+
+// ===== ACTUALIZAR INSTRUCCIONES DURANTE LA REVELACIÓN =====
+function updateRevealInstructions() {
+    const instructions = document.querySelector('#verticalRevealContainer > div[style*="position: absolute; top: 20px"]');
+    
+    if (instructions && currentRevealStep < top3.length) {
+        const remaining = top3.length - currentRevealStep;
+        instructions.innerHTML = `
+            <div style="margin-bottom: 10px;">
+                <i class="fas fa-mouse-pointer" style="color: var(--gold);"></i>
+                Haz clic para revelar ${remaining} posición${remaining > 1 ? 'es' : ''} más
+            </div>
+            <div style="
+                width: 40px;
+                height: 40px;
+                border: 2px solid var(--gold);
+                border-radius: 50%;
+                margin: 0 auto;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                animation: pulseClick 1.5s infinite;
+            ">
+                <i class="fas fa-hand-pointer" style="color: var(--gold); font-size: 1rem;"></i>
+            </div>
+        `;
+    }
+}
+
+// ===== MOSTRAR BOTÓN PARA PODIO DESPUÉS DE LA REVELACIÓN =====
+function showPodiumButtonAfterReveal() {
+    const revealContainer = document.getElementById('verticalRevealContainer');
+    
+    // Remover evento de clic anterior
+    revealContainer.onclick = null;
+    
+    // Crear contenedor para el botón
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.cssText = `
+        position: absolute;
+        bottom: 40px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        animation: slideUpFade 0.8s ease-out;
+    `;
+    
+    buttonContainer.innerHTML = `
+        <h4 style="color: var(--gold); margin-bottom: 20px; font-size: 1.4rem;">
+            ¡Revelación completada! 🎉
+        </h4>
+        <button id="viewFullPodiumBtn" style="
+            background: linear-gradient(45deg, var(--gold), var(--gold-dark));
+            color: black;
+            border: none;
+            padding: 20px 50px;
+            font-size: 1.3rem;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            letter-spacing: 1px;
+            animation: pulse 1.5s infinite;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3);
+        ">
+            <i class="fas fa-trophy"></i> VER PODIO COMPLETO
+        </button>
+        <p style="color: var(--silver); margin-top: 15px; font-size: 0.9rem;">
+            Descubre todos los detalles y estadísticas
+        </p>
+    `;
+    
+    revealContainer.appendChild(buttonContainer);
+    
+    // Configurar botón
+    document.getElementById('viewFullPodiumBtn').onclick = () => {
+        showFullPodiumAfterReveal();
+    };
+}
+
+// ===== MOSTRAR PODIO FINAL (1º arriba, 2º y 3º abajo) =====
+function showFullPodiumAfterReveal() {
+    const modal = document.getElementById('voteModal');
+    const modalCategory = document.getElementById('modalCategory');
+    const nomineesList = document.getElementById('nomineesList');
+    const category = appData.categories.find(c => c && top3[0] && c.nominees?.some(n => n.name === top3[0].name));
+    
+    if (!category) return;
+    
+    const nominees = category.nominees || [];
+    const sortedNominees = [...nominees]
+        .filter(n => n && n.name)
+        .sort((a, b) => (b.votes || 0) - (a.votes || 0));
+    
+    // Limpiar pantalla
+    nomineesList.innerHTML = '';
+    
+    // Contenedor principal del podio
+    const podiumContainer = document.createElement('div');
+    podiumContainer.style.cssText = `
+        padding: 30px;
+        max-width: 1200px;
+        margin: 0 auto;
+    `;
+    
+    // Encabezado
+    podiumContainer.innerHTML = `
+        <div style="text-align: center; margin-bottom: 40px;">
+            <h2 style="color: var(--gold); font-size: 2.2rem; margin-bottom: 10px;">
+                🏆 PODIO OFICIAL
+            </h2>
+            <h3 style="color: var(--silver); font-size: 1.5rem; margin-bottom: 20px;">
+                ${category.name}
+            </h3>
+            ${category.description ? 
+                `<p style="color: var(--silver); font-size: 1.1rem; max-width: 800px; margin: 0 auto 30px auto;">
+                    ${category.description}
+                </p>` 
+                : ''
+            }
+        </div>
+    `;
+    
+    // ===== SECCIÓN 1: PODIO VERTICAL (1º arriba, 2º y 3º abajo) =====
+    const podiumSection = document.createElement('div');
+    podiumSection.style.cssText = `
+        background: linear-gradient(145deg, rgba(30, 30, 50, 0.8), rgba(15, 15, 25, 0.9));
+        border-radius: 25px;
+        padding: 40px;
+        margin-bottom: 40px;
+        border: 2px solid var(--gold);
+        box-shadow: 0 10px 40px rgba(255, 215, 0, 0.2);
+        position: relative;
+        min-height: 500px;
+    `;
+    
+    // Líneas decorativas
+    podiumSection.innerHTML = `
+        <div style="
+            position: absolute;
+            top: 100px;
+            bottom: 200px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            background: linear-gradient(to bottom, var(--gold), transparent);
+            z-index: 1;
+        "></div>
+    `;
+    
+    // Contenedor para el podio
+    const podiumVisual = document.createElement('div');
+    podiumVisual.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        height: 500px;
+        position: relative;
+        z-index: 2;
+    `;
+    
+    // 1er LUGAR (ARRIBA - EN EL CENTRO)
+    if (sortedNominees[0]) {
+        const firstPlace = document.createElement('div');
+        firstPlace.style.cssText = `
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            animation: float 3s ease-in-out infinite;
+            margin-top: 30px;
+        `;
+        
+        firstPlace.innerHTML = `
+            <div style="
+                background: linear-gradient(145deg, rgba(255, 215, 0, 0.25), rgba(212, 175, 55, 0.2));
+                border: 4px solid var(--gold);
+                border-radius: 25px;
+                padding: 35px 25px;
+                position: relative;
+                box-shadow: 0 15px 40px rgba(255, 215, 0, 0.3);
+            ">
+                <div style="font-size: 5rem; margin-bottom: 20px; animation: goldGlow 2s infinite alternate;">🥇</div>
+                <h4 style="
+                    background: linear-gradient(45deg, var(--gold), #FFEE80);
+                    -webkit-background-clip: text;
+                    background-clip: text;
+                    color: transparent;
+                    font-size: 2rem;
+                    margin: 20px 0;
+                    font-weight: bold;
+                ">
+                    ${sortedNominees[0].name}
+                </h4>
+                <div style="color: var(--gold); font-size: 3rem; font-weight: bold; margin: 20px 0;">
+                    ${sortedNominees[0].votes || 0}
+                </div>
+                <div style="color: var(--gold); font-size: 1.1rem; font-weight: bold;">
+                    VOTOS
+                </div>
+                <div style="
+                    margin-top: 20px;
+                    padding: 12px;
+                    background: rgba(255, 215, 0, 0.15);
+                    border-radius: 15px;
+                    border: 1px solid rgba(255, 215, 0, 0.3);
+                ">
+                    <div style="color: var(--gold); font-weight: bold; font-size: 1rem;">
+                        ¡¡GANADOR/A ABSOLUTO/A!!
+                    </div>
+                </div>
+            </div>
+        `;
+        podiumVisual.appendChild(firstPlace);
+    }
+    
+    // CONTENEDOR PARA 2º Y 3º (ABAJO - EN LÍNEA)
+    const secondThirdContainer = document.createElement('div');
+    secondThirdContainer.style.cssText = `
+        display: flex;
+        justify-content: center;
+        gap: 60px;
+        width: 100%;
+        margin-top: auto;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+    `;
+    
+    // 2do LUGAR (IZQUIERDA)
+    if (sortedNominees[1]) {
+        const secondPlace = document.createElement('div');
+        secondPlace.style.cssText = `
+            flex: 1;
+            max-width: 300px;
+            text-align: center;
+            animation: slideInFromLeft 0.8s ease-out 0.2s both;
+        `;
+        
+        secondPlace.innerHTML = `
+            <div style="
+                background: linear-gradient(145deg, rgba(192, 192, 192, 0.2), rgba(150, 150, 150, 0.1));
+                border: 3px solid var(--silver);
+                border-radius: 20px;
+                padding: 30px 20px;
+                position: relative;
+            ">
+                <div style="font-size: 4rem; margin-bottom: 20px;">🥈</div>
+                <h4 style="color: var(--silver); font-size: 1.6rem; margin: 15px 0; font-weight: bold;">
+                    ${sortedNominees[1].name}
+                </h4>
+                <div style="color: var(--silver); font-size: 2.5rem; font-weight: bold; margin: 15px 0;">
+                    ${sortedNominees[1].votes || 0}
+                </div>
+                <div style="color: var(--silver); font-size: 1rem;">
+                    VOTOS
+                </div>
+                <div style="
+                    margin-top: 15px;
+                    padding: 8px;
+                    background: rgba(192, 192, 192, 0.1);
+                    border-radius: 10px;
+                    border: 1px solid rgba(192, 192, 192, 0.3);
+                ">
+                    <div style="color: var(--silver); font-weight: bold;">
+                        SEGUNDO LUGAR
+                    </div>
+                </div>
+            </div>
+        `;
+        secondThirdContainer.appendChild(secondPlace);
+    }
+    
+    // 3er LUGAR (DERECHA)
+    if (sortedNominees[2]) {
+        const thirdPlace = document.createElement('div');
+        thirdPlace.style.cssText = `
+            flex: 1;
+            max-width: 300px;
+            text-align: center;
+            animation: slideInFromRight 0.8s ease-out 0.4s both;
+        `;
+        
+        thirdPlace.innerHTML = `
+            <div style="
+                background: linear-gradient(145deg, rgba(205, 127, 50, 0.2), rgba(180, 110, 40, 0.1));
+                border: 3px solid var(--bronze);
+                border-radius: 20px;
+                padding: 30px 20px;
+                position: relative;
+            ">
+                <div style="font-size: 3.5rem; margin-bottom: 20px;">🥉</div>
+                <h4 style="color: var(--bronze); font-size: 1.6rem; margin: 15px 0; font-weight: bold;">
+                    ${sortedNominees[2].name}
+                </h4>
+                <div style="color: var(--bronze); font-size: 2.5rem; font-weight: bold; margin: 15px 0;">
+                    ${sortedNominees[2].votes || 0}
+                </div>
+                <div style="color: var(--bronze); font-size: 1rem;">
+                    VOTOS
+                </div>
+                <div style="
+                    margin-top: 15px;
+                    padding: 8px;
+                    background: rgba(205, 127, 50, 0.1);
+                    border-radius: 10px;
+                    border: 1px solid rgba(205, 127, 50, 0.3);
+                ">
+                    <div style="color: var(--bronze); font-weight: bold;">
+                        TERCER LUGAR
+                    </div>
+                </div>
+            </div>
+        `;
+        secondThirdContainer.appendChild(thirdPlace);
+    }
+    
+    podiumVisual.appendChild(secondThirdContainer);
+    podiumSection.appendChild(podiumVisual);
+    podiumContainer.appendChild(podiumSection);
+    
+    // ===== SECCIÓN 2: TABLA DE TODOS LOS PARTICIPANTES =====
+    const tableSection = document.createElement('div');
+    tableSection.style.cssText = `
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 20px;
+        padding: 30px;
+        margin-bottom: 40px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    `;
+    
+    let tableHTML = `
+        <h3 style="color: var(--gold); text-align: center; margin-bottom: 30px; font-size: 1.8rem;">
+            📊 CLASIFICACIÓN COMPLETA
+        </h3>
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; min-width: 600px;">
+                <thead>
+                    <tr style="background: rgba(255, 215, 0, 0.1);">
+                        <th style="padding: 15px; text-align: left; color: var(--gold); border-bottom: 2px solid var(--gold);">POSICIÓN</th>
+                        <th style="padding: 15px; text-align: left; color: var(--gold); border-bottom: 2px solid var(--gold);">PARTICIPANTE</th>
+                        <th style="padding: 15px; text-align: left; color: var(--gold); border-bottom: 2px solid var(--gold);">VOTOS</th>
+                        <th style="padding: 15px; text-align: left; color: var(--gold); border-bottom: 2px solid var(--gold);">PORCENTAJE</th>
+                        <th style="padding: 15px; text-align: left; color: var(--gold); border-bottom: 2px solid var(--gold);">MEDALLA</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    const totalVotes = sortedNominees.reduce((sum, n) => sum + (n.votes || 0), 0);
+    
+    sortedNominees.forEach((nominee, index) => {
+        const percentage = totalVotes > 0 ? ((nominee.votes || 0) / totalVotes * 100).toFixed(1) : "0.0";
+        let medal = "";
+        
+        if (index === 0) medal = "🥇";
+        else if (index === 1) medal = "🥈";
+        else if (index === 2) medal = "🥉";
+        
+        const rowColor = index < 3 ? 
+            index === 0 ? "rgba(255, 215, 0, 0.1)" : 
+            index === 1 ? "rgba(192, 192, 192, 0.1)" : 
+            "rgba(205, 127, 50, 0.1)" : "transparent";
+        
+        tableHTML += `
+            <tr style="background: ${rowColor}; ${index < 3 ? 'font-weight: bold;' : ''}">
+                <td style="padding: 15px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); 
+                          color: ${index < 3 ? getMedalColor(index === 0 ? 'gold' : index === 1 ? 'silver' : 'bronze', 1) : 'var(--silver)'}; 
+                          font-size: ${index < 3 ? '1.2rem' : '1rem'}">
+                    ${index + 1}
+                </td>
+                <td style="padding: 15px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); color: white; font-size: ${index < 3 ? '1.1rem' : '1rem'}">
+                    ${nominee.name}
+                </td>
+                <td style="padding: 15px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); 
+                          font-weight: bold; 
+                          color: ${index < 3 ? getMedalColor(index === 0 ? 'gold' : index === 1 ? 'silver' : 'bronze', 1) : 'white'};
+                          font-size: ${index < 3 ? '1.3rem' : '1rem'}">
+                    ${nominee.votes || 0}
+                </td>
+                <td style="padding: 15px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="flex: 1; height: 8px; background: rgba(255, 255, 255, 0.1); border-radius: 4px; overflow: hidden;">
+                            <div style="
+                                height: 100%; 
+                                width: ${percentage}%; 
+                                background: ${index === 0 ? 'var(--gold)' : index === 1 ? 'var(--silver)' : index === 2 ? 'var(--bronze)' : '#667eea'};
+                                border-radius: 4px;
+                                transition: width 1s ease-in-out;
+                            "></div>
+                        </div>
+                        <span style="color: var(--silver); min-width: 40px; font-size: ${index < 3 ? '1rem' : '0.9rem'}">${percentage}%</span>
+                    </div>
+                </td>
+                <td style="padding: 15px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); text-align: center; font-size: 1.2rem;">${medal}</td>
+            </tr>
+        `;
+    });
+    
+    tableHTML += `
+                </tbody>
+            </table>
+        </div>
+        <div style="margin-top: 20px; color: var(--silver); text-align: center; padding: 15px; background: rgba(255, 255, 255, 0.05); border-radius: 10px;">
+            <p style="margin: 5px 0;">Total de votos: <strong style="color: var(--gold); font-size: 1.2rem;">${totalVotes}</strong></p>
+            <p style="margin: 5px 0;">Participantes: <strong>${sortedNominees.length}</strong></p>
+            <p style="margin: 5px 0;">Participantes con votos: <strong>${sortedNominees.filter(n => (n.votes || 0) > 0).length}</strong></p>
+        </div>
+    `;
+    
+    tableSection.innerHTML = tableHTML;
+    podiumContainer.appendChild(tableSection);
+    
+    // ===== SECCIÓN 3: FRASES ICÓNICAS (solo categoría 17) =====
+    if (category.id === 17) {
+        const phrases = getAllPhrasesForCategory(sortedNominees);
+        if (phrases.length > 0) {
+            const phrasesSection = document.createElement('div');
+            phrasesSection.style.cssText = `
+                background: linear-gradient(145deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+                border-radius: 20px;
+                padding: 30px;
+                margin-bottom: 30px;
+                border: 1px solid rgba(102, 126, 234, 0.3);
+            `;
+            
+            phrasesSection.innerHTML = `
+                <h3 style="color: #667eea; text-align: center; margin-bottom: 30px; font-size: 1.8rem;">
+                    💬 FRASES ICÓNICAS REGISTRADAS
+                </h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+                    ${phrases.map((phrase, index) => `
+                        <div class="phrase-card" style="
+                            background: rgba(255, 255, 255, 0.05);
+                            border-radius: 15px;
+                            padding: 20px;
+                            border-left: 4px solid #667eea;
+                            animation: slideUpFade 0.5s ease-out ${index * 0.1}s both;
+                            transition: transform 0.3s ease;
+                        ">
+                            <div style="color: white; font-style: italic; font-size: 1.1rem; margin-bottom: 15px; line-height: 1.4;">
+                                "${phrase.frase}"
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div style="color: #667eea; font-weight: bold; font-size: 0.9rem;">${phrase.persona}</div>
+                                    <div style="color: var(--silver); font-size: 0.8rem;">Añadida por: ${phrase.votante}</div>
+                                </div>
+                                <div style="color: var(--silver); font-size: 0.8rem; font-weight: bold;">${phrase.votos} votos</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                ${phrases.length > 6 ? `
+                    <div style="text-align: center; margin-top: 20px; color: var(--silver); font-style: italic;">
+                        <i class="fas fa-ellipsis-h"></i> ${phrases.length} frases icónicas registradas
+                    </div>
+                ` : ''}
+            `;
+            
+            podiumContainer.appendChild(phrasesSection);
+        }
+    }
+    
+    // Botones de navegación
+    const navigationSection = document.createElement('div');
+    navigationSection.style.cssText = `
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin-top: 40px;
+        flex-wrap: wrap;
+    `;
+    
+    navigationSection.innerHTML = `
+        <button onclick="closeModal()" style="
+            background: linear-gradient(45deg, rgba(255, 71, 87, 0.9), rgba(255, 0, 0, 0.9));
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        ">
+            <i class="fas fa-times"></i> CERRAR
+        </button>
+        
+        <button onclick="showCategoryResults(${category.id})" style="
+            background: linear-gradient(45deg, rgba(102, 126, 234, 0.9), rgba(118, 75, 162, 0.9));
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        ">
+            <i class="fas fa-redo"></i> VER REVELACIÓN NUEVAMENTE
+        </button>
+        
+        ${category.id === 17 ? `
+            <button onclick="scrollToPhrases()" style="
+                background: linear-gradient(45deg, rgba(76, 201, 240, 0.9), rgba(29, 209, 161, 0.9));
+                color: white;
+                border: none;
+                padding: 15px 40px;
+                font-size: 1.1rem;
+                border-radius: 25px;
+                cursor: pointer;
+                font-weight: bold;
+                transition: all 0.3s ease;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            ">
+                <i class="fas fa-quote-right"></i> VER FRASES
+            </button>
+        ` : ''}
+    `;
+    
+    podiumContainer.appendChild(navigationSection);
+    
+    // Añadir al DOM
+    nomineesList.appendChild(podiumContainer);
+}
+
+// ===== FUNCIONES AUXILIARES =====
+function playTickSound(number) {
+    if (window.AudioContext) {
+        try {
+            const audioContext = new AudioContext();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            // Frecuencia diferente para cada número
+            const frequencies = {3: 800, 2: 1000, 1: 1200, 0: 1500};
+            oscillator.frequency.value = frequencies[number] || 800;
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
+        } catch (e) {
+            console.log("Audio no disponible");
+        }
+    }
+}
+
+function playRevealSound(position) {
+    if (window.AudioContext) {
+        try {
+            const audioContext = new AudioContext();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            // Frecuencia ascendente para cada revelación
+            const frequencies = [600, 900, 1200];
+            oscillator.frequency.value = frequencies[position] || 800;
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.4, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 1);
+        } catch (e) {}
+    }
+}
+
+function scrollToPhrases() {
+    const phrasesSection = document.querySelector('[style*="background: linear-gradient(145deg, rgba(102, 126, 234, 0.1)"]');
+    if (phrasesSection) {
+        phrasesSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Efecto visual
+        phrasesSection.style.boxShadow = '0 0 30px rgba(102, 126, 234, 0.5)';
+        setTimeout(() => {
+            phrasesSection.style.boxShadow = 'none';
+        }, 2000);
+    }
 }
 
 // ===== FUNCIÓN: ANIMACIÓN DE CUENTA REGRESIVA =====

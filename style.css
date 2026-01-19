@@ -2242,3 +2242,162 @@ footer {
         transform: translateY(0);
     }
 }
+
+/* ===== ANIMACIONES PARA EL NUEVO SISTEMA ===== */
+
+/* Animación para el indicador de clic */
+@keyframes pulseClick {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7);
+    }
+    50% {
+        transform: scale(1.1);
+        box-shadow: 0 0 0 10px rgba(255, 215, 0, 0);
+    }
+}
+
+/* Animación de entrada desde izquierda */
+@keyframes slideInFromLeft {
+    from {
+        transform: translateX(-100px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Animación de entrada desde derecha */
+@keyframes slideInFromRight {
+    from {
+        transform: translateX(100px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Animación para las posiciones reveladas */
+.position-element {
+    transition: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Efecto hover para tarjetas de frases */
+.phrase-card:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+/* Efecto de brillo para el ganador */
+@keyframes winnerGlow {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 40px rgba(255, 215, 0, 0.8);
+    }
+}
+
+/* Animación de flotación para el primer lugar */
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+/* Animación para el contador */
+@keyframes countdownPop {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.3);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Estilos responsivos para móviles */
+@media (max-width: 768px) {
+    #verticalRevealContainer {
+        padding: 20px 10px 80px 10px;
+    }
+    
+    .position-element {
+        width: 95% !important;
+        padding: 20px 15px !important;
+    }
+    
+    .position-element div[style*="font-size: 1.8rem"] {
+        font-size: 1.5rem !important;
+    }
+    
+    .position-element div[style*="width: 70px"] {
+        width: 50px !important;
+        height: 50px !important;
+        font-size: 1.5rem !important;
+    }
+    
+    /* Podio en móviles */
+    .second-third-container {
+        flex-direction: column !important;
+        gap: 20px !important;
+    }
+    
+    .second-third-container > div {
+        max-width: 100% !important;
+    }
+}
+
+/* Efecto de línea de tiempo */
+.timeline-connector {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2px;
+    background: linear-gradient(to bottom, var(--gold), transparent);
+    z-index: -1;
+}
+
+/* Estilos para la tabla responsiva */
+@media (max-width: 768px) {
+    table {
+        font-size: 0.9rem;
+    }
+    
+    th, td {
+        padding: 10px 8px !important;
+    }
+    
+    /* Ocultar columna de porcentaje en móviles muy pequeños */
+    @media (max-width: 480px) {
+        th:nth-child(4), td:nth-child(4) {
+            display: none;
+        }
+    }
+}
+
+/* Efecto de gradiente animado para botones */
+.gradient-button {
+    background: linear-gradient(45deg, 
+        var(--gold), 
+        var(--silver), 
+        var(--bronze),
+        var(--gold));
+    background-size: 400% 400%;
+    animation: gradientShift 3s ease infinite;
+}
+
+@keyframes gradientShift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
