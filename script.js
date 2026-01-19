@@ -493,22 +493,44 @@ function openVoteModal(categoryId) {
         
         const nomineeItem = document.createElement('div');
         nomineeItem.className = `nominee-item ${isVoted ? 'voted' : ''}`;
+        
+        // Usar evento onclick CORRECTO
         nomineeItem.onclick = () => voteForNominee(nominee.name);
         
-        // Contenido SIN mostrar votos individuales
+        // HTML CORREGIDO - Estructura limpia
         nomineeItem.innerHTML = `
-            ${photoUrl ? 
-                `<img src="${photoUrl}" class="nominee-photo" alt="${nominee.name}" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';">` : 
-                ''
-            }
-            ${!photoUrl ? `
-                <div class="nominee-photo" style="background:linear-gradient(45deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;">
-                    <i class="fas fa-user" style="font-size:3rem;color:white;"></i>
+            <div style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+                ${photoUrl ? 
+                    `<img src="${photoUrl}" class="nominee-photo" alt="${nominee.name}" 
+                         onerror="this.onerror=null; this.style.display='none'; 
+                         this.parentElement.querySelector('.nominee-avatar').style.display='flex';">` : 
+                    ''
+                }
+                ${!photoUrl ? `
+                    <div class="nominee-avatar" style="display: ${photoUrl ? 'none' : 'flex'};">
+                        <i class="fas fa-user"></i>
+                    </div>
+                ` : ''}
+                
+                <h4 class="nominee-name">${nominee.name}</h4>
+                
+                ${hasVoted ? 
+                    '<div class="voted-check">⭐ Tú votaste aquí</div>' : 
+                    ''
+                }
+                ${isVoted ? 
+                    '<div class="voted-check">✅ Tu voto actual</div>' : 
+                    ''
+                }
+                
+                <div class="nominee-actions">
+                    <button class="vote-btn ${isVoted ? 'voted' : ''}" 
+                            onclick="voteForNominee('${nominee.name}')">
+                        <i class="fas ${isVoted ? 'fa-check' : 'fa-vote-yea'}"></i>
+                        ${isVoted ? 'Votado' : 'Votar'}
+                    </button>
                 </div>
-            ` : ''}
-            <h4 class="nominee-name">${nominee.name}</h4>
-            ${hasVoted ? '<div class="voted-check">⭐ Tú votaste aquí</div>' : ''}
-            ${isVoted ? '<div class="voted-check">✅ Tu voto actual</div>' : ''}
+            </div>
         `;
         
         // Añadir frases existentes (solo para Frase del Año)
@@ -516,10 +538,6 @@ function openVoteModal(categoryId) {
             const frasesDiv = document.createElement('div');
             frasesDiv.className = 'existing-frases';
             frasesDiv.style.marginTop = '10px';
-            frasesDiv.style.padding = '8px';
-            frasesDiv.style.background = 'rgba(255, 215, 0, 0.1)';
-            frasesDiv.style.borderRadius = '5px';
-            frasesDiv.style.fontSize = '12px';
             
             let frasesText = '<strong>💬 Frases añadidas:</strong><br>';
             let contador = 0;
@@ -537,15 +555,17 @@ function openVoteModal(categoryId) {
             }
             
             frasesDiv.innerHTML = frasesText;
-            nomineeItem.appendChild(frasesDiv);
+            nomineeItem.querySelector('div').appendChild(frasesDiv);
         }
         
         nomineesList.appendChild(nomineeItem);
     });
     
     // Limpiar preview de foto
-    document.getElementById('photoPreview').innerHTML = '';
-    document.getElementById('newNomineeName').value = '';
+    const photoPreview = document.getElementById('photoPreview');
+    if (photoPreview) photoPreview.innerHTML = '';
+    const newNomineeName = document.getElementById('newNomineeName');
+    if (newNomineeName) newNomineeName.value = '';
     photoPreviewFile = null;
     
     // Mostrar modal
