@@ -1113,27 +1113,29 @@ function startVerticalReveal() {
 // ===== REVELAR SIGUIENTE POSICIÓN (al hacer clic) =====
 function revealNextPosition() {
     if (currentRevealStep >= top3.length) {
-        // Si ya revelamos todos, mostrar botón para podio
         showPodiumButtonAfterReveal();
         return;
     }
     
     const positionsContainer = document.getElementById('positionsContainer');
-    const currentPosition = currentRevealStep;
-    const nominee = top3[currentPosition];
+    const nominee = top3[currentRevealStep]; // Usar currentRevealStep directamente
     
-    // Determinar posición (3, 2, 1)
+    // CORRECCIÓN: Las posiciones son 3, 2, 1 en orden inverso
+    // currentRevealStep: 0 = 3º, 1 = 2º, 2 = 1º
     const positionNumber = 3 - currentRevealStep; // 3, 2, 1
     const positionNames = ['TERCER LUGAR', 'SEGUNDO LUGAR', '¡PRIMER LUGAR!'];
     const medalTypes = ['bronze', 'silver', 'gold'];
     const medalEmojis = ['🥉', '🥈', '🥇'];
     
+    // Usar currentRevealStep como índice
+    const positionIndex = currentRevealStep;
+    
     // Crear elemento de posición
     const positionElement = document.createElement('div');
     positionElement.className = 'position-element';
     positionElement.style.cssText = `
-        background: ${getMedalColor(medalTypes[currentPosition], 0.15)};
-        border: 3px solid ${getMedalColor(medalTypes[currentPosition], 1)};
+        background: ${getMedalColor(medalTypes[positionIndex], 0.15)};
+        border: 3px solid ${getMedalColor(medalTypes[positionIndex], 1)};
         border-radius: 20px;
         padding: 25px 30px;
         margin: 20px 0;
@@ -1143,11 +1145,12 @@ function revealNextPosition() {
         opacity: 0;
         transition: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
         position: relative;
-        z-index: ${10 - currentPosition};
+        z-index: ${10 - positionIndex};
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        animation-delay: ${positionIndex * 0.2}s;
     `;
     
-    // Contenido de la posición
+    // Contenido CORREGIDO
     positionElement.innerHTML = `
         <div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
             <!-- Medalla -->
@@ -1155,26 +1158,26 @@ function revealNextPosition() {
                 width: 70px;
                 height: 70px;
                 border-radius: 50%;
-                background: ${getMedalColor(medalTypes[currentPosition], 0.2)};
-                border: 3px solid ${getMedalColor(medalTypes[currentPosition], 1)};
+                background: ${getMedalColor(medalTypes[positionIndex], 0.2)};
+                border: 3px solid ${getMedalColor(medalTypes[positionIndex], 1)};
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 font-size: 2.2rem;
                 flex-shrink: 0;
             ">
-                ${medalEmojis[currentPosition]}
+                ${medalEmojis[positionIndex]}
             </div>
             
             <!-- Información -->
             <div style="text-align: left; flex: 1;">
                 <div style="
-                    color: ${getMedalColor(medalTypes[currentPosition], 1)};
+                    color: ${getMedalColor(medalTypes[positionIndex], 1)};
                     font-weight: bold;
                     font-size: 1.2rem;
                     margin-bottom: 5px;
                 ">
-                    ${positionNames[currentPosition]}
+                    ${positionNames[positionIndex]}
                 </div>
                 <div style="
                     color: white;
@@ -1185,7 +1188,7 @@ function revealNextPosition() {
                     ${nominee.name}
                 </div>
                 <div style="
-                    color: ${getMedalColor(medalTypes[currentPosition], 1)};
+                    color: ${getMedalColor(medalTypes[positionIndex], 1)};
                     font-size: 1.8rem;
                     font-weight: bold;
                     margin: 10px 0;
@@ -1195,8 +1198,8 @@ function revealNextPosition() {
             </div>
         </div>
         
-        <!-- Efecto especial para el ganador -->
-        ${currentPosition === 2 ? `
+        <!-- Efecto especial SOLO para el ganador (posición 2 = 1er lugar) -->
+        ${positionIndex === 2 ? `
             <div style="
                 margin-top: 15px;
                 padding: 12px;
@@ -1227,10 +1230,10 @@ function revealNextPosition() {
         positionElement.style.opacity = '1';
         
         // Efectos especiales
-        playRevealSound(currentPosition);
+        playRevealSound(positionIndex);
         
-        // Efecto de confeti para el ganador
-        if (currentPosition === 2) {
+        // Efecto de confeti SOLO para el ganador (posición 2)
+        if (positionIndex === 2) {
             setTimeout(() => {
                 createConfetti();
                 playVictorySound();
