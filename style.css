@@ -3124,3 +3124,78 @@ footer {
     min-width: 80px;
     text-align: right;
 }
+
+/* ===== ANIMACIONES PARA MODAL DE FRASES ===== */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+    from { 
+        opacity: 0;
+        transform: scale(0.9) translateY(20px);
+    }
+    to { 
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* ===== ESTILOS PARA FRASES EN RESULTADOS ===== */
+.duo-item {
+    background: linear-gradient(135deg, 
+        rgba(102, 126, 234, 0.1), 
+        rgba(118, 75, 162, 0.05));
+    border-left: 5px solid #667eea;
+    padding: 20px;
+    margin: 15px 0;
+    border-radius: 10px;
+    animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.frase-item {
+    background: linear-gradient(135deg, 
+        rgba(255, 215, 0, 0.1), 
+        rgba(212, 175, 55, 0.05));
+    border-left: 5px solid var(--gold);
+    padding: 20px;
+    margin: 15px 0;
+    border-radius: 10px;
+    animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.duo-text, .frase-text {
+    font-style: italic;
+    color: white;
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+    position: relative;
+    padding-left: 25px;
+}
+
+.duo-text::before {
+    content: '👯‍♂️';
+    position: absolute;
+    left: 0;
+    top: -5px;
+    font-size: 1.5rem;
+}
+
+.frase-text::before {
+    content: '"';
+    position: absolute;
+    left: 0;
+    top: -5px;
+    font-size: 2rem;
+    color: var(--gold);
+    font-family: Georgia, serif;
+}
+
+.duo-meta, .frase-meta {
+    display: flex;
+    justify-content: space-between;
+    color: var(--silver);
+    font-size: 0.9rem;
+    font-style: italic;
+}

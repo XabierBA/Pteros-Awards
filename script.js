@@ -582,43 +582,321 @@ function voteForNominee(nomineeName) {
         return;
     }
     
-    // ===== SISTEMA DE FRASES (SOLO CATEGORÍA 17) =====
+    // ===== SISTEMA DE FRASES (CATEGORÍAS 6 y 17) =====
     let fraseUsuario = '';
     
-    // VERIFICACIÓN EXPLÍCITA
-    console.log("🔍 CATEGORÍA ID:", category.id, "¿Es 17?", category.id === 17);
+    // VERIFICACIÓN para categorías que requieren frase (6: Dúo, 17: Frase del Año)
+    console.log("🔍 CATEGORÍA ID:", category.id, "¿Requiere frase?", category.id === 6 || category.id === 17);
     
-    if (category.id === 17) {
+    if (category.id === 6 || category.id === 17) {
         console.log("📝 MOSTRANDO PROMPT PARA FRASE...");
+        showFraseModal(category.id, nomineeName, category.name);
+        return; // Salimos aquí, continuará cuando el usuario envíe el modal
+    }
+    
+    // ===== PROCESAR VOTO SIN FRASE =====
+    processVote(category, nominee, nomineeName, '');
+}
+
+// ===== NUEVA FUNCIÓN: MODAL PARA FRASES (MEJORADO) =====
+function showFraseModal(categoryId, nomineeName, categoryName) {
+    // Crear modal para frases
+    const fraseModal = document.createElement('div');
+    fraseModal.id = 'fraseModal';
+    fraseModal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.95);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 2000;
+        backdrop-filter: blur(10px);
+        animation: fadeIn 0.3s ease;
+    `;
+    
+    const modalContent = document.createElement('div');
+    modalContent.style.cssText = `
+        background: linear-gradient(135deg, rgba(30, 30, 50, 0.98), rgba(15, 15, 25, 0.99));
+        padding: 40px;
+        border-radius: 25px;
+        max-width: 600px;
+        width: 90%;
+        border: 3px solid var(--gold);
+        box-shadow: 0 0 60px rgba(255, 215, 0, 0.4);
+        text-align: center;
+        animation: scaleUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    `;
+    
+    // Configurar mensaje según categoría
+    let title = '';
+    let promptMessage = '';
+    let placeholder = '';
+    let examples = '';
+    
+    if (categoryId === 6) {
+        // Categoría 6: Dúo Dinámico
+        title = '👯‍♂️ MEJOR DÚO';
+        promptMessage = `Estás votando a <strong style="color: var(--gold);">${nomineeName}</strong> para "Mejor Dúo".<br><br>Por favor, escribe el nombre del <strong>DUO COMPLETO</strong> (incluyendo a la persona que votas y a su pareja):`;
+        placeholder = `Ej: ${nomineeName} y [nombre del compañero/a]`;
+        examples = `
+            <div style="
+                background: rgba(255, 215, 0, 0.1);
+                padding: 15px;
+                border-radius: 10px;
+                margin: 20px 0;
+                border-left: 3px solid var(--gold);
+                text-align: left;
+            ">
+                <strong style="color: var(--gold);">📝 Ejemplos:</strong>
+                <ul style="margin: 10px 0 0 20px; color: var(--silver);">
+                    <li>"${nomineeName} y Brais"</li>
+                    <li>"${nomineeName} y Amalia"</li>
+                    <li>"${nomineeName} y Carlita"</li>
+                    <li>"El dúo de ${nomineeName} y Daniel"</li>
+                </ul>
+            </div>
+        `;
+    } else if (categoryId === 17) {
+        // Categoría 17: Frase del Año
+        title = '📝 FRASE DEL AÑO';
+        promptMessage = `Estás votando a <strong style="color: var(--gold);">${nomineeName}</strong> para "Frase del Año".<br><br>Por favor, escribe la <strong>FRASE ICÓNICA</strong> que dijo (o por la que es famoso/a):`;
+        placeholder = 'Ej: "Mejor me voy a mi casa"';
+        examples = `
+            <div style="
+                background: rgba(255, 215, 0, 0.1);
+                padding: 15px;
+                border-radius: 10px;
+                margin: 20px 0;
+                border-left: 3px solid var(--gold);
+                text-align: left;
+            ">
+                <strong style="color: var(--gold);">📝 Ejemplos:</strong>
+                <ul style="margin: 10px 0 0 20px; color: var(--silver);">
+                    <li>"Mejor me voy a mi casa"</li>
+                    <li>"Esto es una puta mierda"</li>
+                    <li>"No me toques los huevos"</li>
+                    <li>"Vamos a tomar algo y se arregla todo"</li>
+                </ul>
+            </div>
+        `;
+    }
+    
+    modalContent.innerHTML = `
+        <h2 style="color: var(--gold); margin-bottom: 20px; font-size: 2rem;">
+            ${title}
+        </h2>
         
-        fraseUsuario = prompt(
-            `📝 FRASE DEL AÑO\n\nEstás votando a ${nomineeName}.\n\nPor favor, escribe la frase icónica que dijo (o por la que es famoso/a):\n\nEjemplo: "Mejor me voy a mi casa"`,
-            ""
-        );
+        <div style="color: var(--silver); margin-bottom: 25px; line-height: 1.6; font-size: 1.1rem;">
+            ${promptMessage}
+        </div>
         
-        console.log("📝 RESPUESTA DEL PROMPT:", fraseUsuario);
+        ${examples}
         
-        // Si cancela el prompt
-        if (fraseUsuario === null) {
-            console.log("❌ Usuario canceló el prompt");
+        <textarea id="fraseInput" 
+                  placeholder="${placeholder}"
+                  style="
+                    width: 100%;
+                    height: 120px;
+                    padding: 20px;
+                    border: 2px solid var(--gold);
+                    border-radius: 15px;
+                    background: rgba(0, 0, 0, 0.4);
+                    color: white;
+                    font-size: 1.2rem;
+                    resize: vertical;
+                    margin: 25px 0;
+                    outline: none;
+                    font-family: inherit;
+                    transition: all 0.3s ease;
+                  "
+                  onfocus="this.style.borderColor='var(--neon-blue)'; this.style.boxShadow='0 0 20px rgba(0, 243, 255, 0.3)';"
+                  onblur="this.style.borderColor='var(--gold)'; this.style.boxShadow='none';"
+                  onkeydown="if(event.key === 'Enter' && !event.shiftKey) {event.preventDefault(); submitFrase('${categoryId}', '${nomineeName}');}"></textarea>
+        
+        <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+            <button onclick="submitFrase('${categoryId}', '${nomineeName}')" 
+                    id="submitFraseBtn"
+                    style="
+                        background: linear-gradient(45deg, var(--gold), var(--gold-dark));
+                        color: black;
+                        border: none;
+                        padding: 18px 50px;
+                        border-radius: 15px;
+                        font-size: 1.2rem;
+                        cursor: pointer;
+                        font-weight: bold;
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                        transition: all 0.3s ease;
+                        min-width: 200px;
+                    "
+                    onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 10px 30px rgba(255, 215, 0, 0.5)';"
+                    onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
+                <i class="fas fa-check-circle"></i> Enviar Voto
+            </button>
+            
+            <button onclick="cancelFrase()" 
+                    style="
+                        background: rgba(255, 255, 255, 0.1);
+                        color: var(--silver);
+                        border: 2px solid var(--silver);
+                        padding: 18px 50px;
+                        border-radius: 15px;
+                        font-size: 1.2rem;
+                        cursor: pointer;
+                        font-weight: bold;
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                        transition: all 0.3s ease;
+                        min-width: 200px;
+                    "
+                    onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 10px 30px rgba(192, 192, 192, 0.3)';"
+                    onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
+                <i class="fas fa-times-circle"></i> Cancelar
+            </button>
+        </div>
+        
+        <div style="margin-top: 25px; color: #aaa; font-size: 0.9rem; font-style: italic;">
+            Presiona Enter para enviar, Shift+Enter para nueva línea
+        </div>
+    `;
+    
+    fraseModal.appendChild(modalContent);
+    document.body.appendChild(fraseModal);
+    
+    // Enfocar el textarea automáticamente
+    setTimeout(() => {
+        const textarea = document.getElementById('fraseInput');
+        if (textarea) {
+            textarea.focus();
+            
+            // Si es dúo, sugerir nombres automáticamente
+            if (categoryId === 6) {
+                const suggestions = ["Brais", "Amalia", "Carlita", "Daniel", "Guille", "Iker", 
+                                   "Joel", "Jose", "Nico", "Ruchiti", "Sara", "Tiago", "Xabi"];
+                // Quitar el nombre actual de las sugerencias
+                const otherSuggestions = suggestions.filter(name => 
+                    name.toLowerCase() !== nomineeName.toLowerCase()
+                );
+                
+                if (otherSuggestions.length > 0) {
+                    // Añadir placeholder más específico
+                    textarea.placeholder = `${nomineeName} y ${otherSuggestions[0]}`;
+                    
+                    // Añadir datalist para autocompletar
+                    const datalist = document.createElement('datalist');
+                    datalist.id = 'duoSuggestions';
+                    
+                    otherSuggestions.forEach(suggestion => {
+                        const option = document.createElement('option');
+                        option.value = `${nomineeName} y ${suggestion}`;
+                        datalist.appendChild(option);
+                    });
+                    
+                    document.body.appendChild(datalist);
+                    textarea.setAttribute('list', 'duoSuggestions');
+                }
+            }
+        }
+    }, 100);
+}
+
+// ===== FUNCIÓN PARA ENVIAR FRASE =====
+function submitFrase(categoryId, nomineeName) {
+    const fraseInput = document.getElementById('fraseInput');
+    if (!fraseInput) return;
+    
+    let fraseUsuario = fraseInput.value.trim();
+    
+    // Validaciones específicas por categoría
+    if (categoryId == 6) {
+        // Validación para Dúo Dinámico
+        if (!fraseUsuario) {
+            alert('❌ Por favor, escribe el nombre del dúo completo.\n\nEjemplo: "' + nomineeName + ' y [nombre del compañero/a]"');
+            fraseInput.focus();
             return;
         }
         
-        // Limpiar
-        fraseUsuario = fraseUsuario.trim();
-        
-        // Validar
-        if (!fraseUsuario) {
-            const confirmar = confirm("⚠️ ¿Votar sin añadir frase?\n\n(Puedes votar sin frase, pero es más divertido con una)");
+        // Verificar que mencione al menos al votado
+        if (!fraseUsuario.toLowerCase().includes(nomineeName.toLowerCase())) {
+            const confirmar = confirm(`⚠️ El dúo que escribiste no menciona a ${nomineeName}.\n\n¿Estás seguro de que quieres votar por este dúo?`);
             if (!confirmar) {
-                console.log("❌ Usuario no confirmó voto sin frase");
+                fraseInput.focus();
                 return;
             }
         }
+        
+        // Verificar formato básico (debe tener "y" o "&" para indicar dúo)
+        if (!fraseUsuario.includes(' y ') && !fraseUsuario.includes('&') && !fraseUsuario.toLowerCase().includes('duo') && !fraseUsuario.toLowerCase().includes('dúo')) {
+            const confirmar = confirm(`⚠️ El formato no parece un dúo claro.\n\nRecomendado: "${nomineeName} y [otra persona]"\n\n¿Quieres corregirlo?`);
+            if (confirmar) {
+                fraseInput.focus();
+                return;
+            }
+        }
+        
+    } else if (categoryId == 17) {
+        // Validación para Frase del Año
+        if (!fraseUsuario) {
+            const confirmar = confirm("⚠️ ¿Votar sin añadir frase?\n\n(Puedes votar sin frase, pero es más divertido con una)");
+            if (!confirmar) {
+                fraseInput.focus();
+                return;
+            }
+        }
+        
+        // Verificar longitud mínima si hay frase
+        if (fraseUsuario && fraseUsuario.length < 3) {
+            alert('❌ La frase es demasiado corta. Escribe algo más elaborado.');
+            fraseInput.focus();
+            return;
+        }
     }
     
-    // ===== PROCESAR EL VOTO =====
+    // Cerrar modal
+    cancelFrase();
+    
+    // Obtener datos actualizados
+    const category = appData.categories.find(c => c && c.id == categoryId);
+    if (!category) {
+        alert('Error: Categoría no encontrada');
+        return;
+    }
+    
+    const nominees = category.nominees || [];
+    const nominee = nominees.find(n => n && n.name === nomineeName);
+    if (!nominee) {
+        alert('Error: Nominado no encontrado');
+        return;
+    }
+    
+    // Procesar el voto con la frase
+    processVote(category, nominee, nomineeName, fraseUsuario);
+}
+
+// ===== FUNCIÓN PARA CANCELAR FRASE =====
+function cancelFrase() {
+    const fraseModal = document.getElementById('fraseModal');
+    if (fraseModal) {
+        // Eliminar datalist si existe
+        const datalist = document.getElementById('duoSuggestions');
+        if (datalist) datalist.remove();
+        
+        fraseModal.remove();
+    }
+}
+
+// ===== FUNCIÓN PARA PROCESAR VOTO (MODIFICADA PARA FRASES) =====
+function processVote(category, nominee, nomineeName, fraseUsuario) {
     console.log("🔄 PROCESANDO VOTO...");
+    
+    const nominees = category.nominees || [];
     
     if (!appData.currentUser.votes) appData.currentUser.votes = {};
     if (!nominee.voters) nominee.voters = [];
@@ -657,12 +935,13 @@ function voteForNominee(nomineeName) {
         nominee.voters.push(appData.currentUser.id);
     }
     
-    // 4. GUARDAR FRASE (si existe)
+    // 4. GUARDAR FRASE (si existe y es válida)
     if (fraseUsuario && fraseUsuario.trim() !== '') {
         nominee.frases[appData.currentUser.id] = {
             frase: fraseUsuario,
             voter: appData.currentUser.name,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            tipo: category.id === 6 ? 'duo' : 'frase' // Identificar tipo de frase
         };
         console.log("💾 Frase guardada:", fraseUsuario.substring(0, 50));
     }
@@ -680,16 +959,28 @@ function voteForNominee(nomineeName) {
         }
     })();
     
-    // 6. MOSTRAR CONFIRMACIÓN
-    if (category.id === 17) {
+    // 6. MOSTRAR CONFIRMACIÓN ESPECÍFICA POR CATEGORÍA
+    let mensajeConfirmacion = '';
+    
+    if (category.id === 6) {
+        // Confirmación para Dúo Dinámico
         if (fraseUsuario && fraseUsuario.trim() !== '') {
-            alert(`✅ ¡Voto registrado!\n\nHas votado por ${nomineeName}\n\nFrase añadida:\n"${fraseUsuario}"`);
+            mensajeConfirmacion = `✅ ¡Voto registrado!\n\nHas votado a ${nomineeName} para "Mejor Dúo"\n\nDúo registrado:\n"${fraseUsuario}"`;
         } else {
-            alert(`✅ ¡Voto registrado!\nHas votado por ${nomineeName} (sin frase)`);
+            mensajeConfirmacion = `✅ ¡Voto registrado!\nHas votado a ${nomineeName} para "Mejor Dúo" (sin especificar dúo)`;
+        }
+    } else if (category.id === 17) {
+        // Confirmación para Frase del Año
+        if (fraseUsuario && fraseUsuario.trim() !== '') {
+            mensajeConfirmacion = `✅ ¡Voto registrado!\n\nHas votado a ${nomineeName} para "Frase del Año"\n\nFrase añadida:\n"${fraseUsuario}"`;
+        } else {
+            mensajeConfirmacion = `✅ ¡Voto registrado!\nHas votado a ${nomineeName} para "Frase del Año" (sin frase)`;
         }
     } else {
-        alert(`✅ ¡Voto registrado!\nHas votado por ${nomineeName} en "${category.name}"`);
+        mensajeConfirmacion = `✅ ¡Voto registrado!\nHas votado por ${nomineeName} en "${category.name}"`;
     }
+    
+    alert(mensajeConfirmacion);
     
     // 7. ACTUALIZAR INTERFAZ
     renderCategories();
@@ -2239,87 +2530,161 @@ function showDetails(categoryId) {
 function showFrasesDetails(category, container) {
     const nominees = category.nominees || [];
     const todasLasFrases = [];
+    const todosLosDuos = [];
     
-    // Recoger todas las frases
+    // Recoger todas las frases y dúos
     nominees.forEach(nominee => {
         if (nominee.frases && Object.keys(nominee.frases).length > 0) {
             Object.values(nominee.frases).forEach(fraseData => {
-                todasLasFrases.push({
-                    persona: nominee.name,
-                    frase: fraseData.frase,
-                    votante: fraseData.voter,
-                    timestamp: fraseData.timestamp,
-                    votos: nominee.votes || 0
-                });
+                if (fraseData.tipo === 'duo') {
+                    // Es un dúo
+                    todosLosDuos.push({
+                        persona: nominee.name,
+                        duo: fraseData.frase,
+                        votante: fraseData.voter,
+                        timestamp: fraseData.timestamp,
+                        votos: nominee.votes || 0
+                    });
+                } else {
+                    // Es una frase normal
+                    todasLasFrases.push({
+                        persona: nominee.name,
+                        frase: fraseData.frase,
+                        votante: fraseData.voter,
+                        timestamp: fraseData.timestamp,
+                        votos: nominee.votes || 0
+                    });
+                }
             });
         }
-    });
-    
-    if (todasLasFrases.length === 0) return;
-    
-    // Ordenar por fecha (más reciente primero)
-    todasLasFrases.sort((a, b) => {
-        if (b.timestamp && a.timestamp) {
-            return new Date(b.timestamp) - new Date(a.timestamp);
-        }
-        return 0;
     });
     
     const frasesSection = document.getElementById('frasesSection');
     if (!frasesSection) return;
     
-    // LIMPIAR contenido anterior
+    // Limpiar contenido anterior
     frasesSection.innerHTML = '';
     
-    // Añadir título
-    const titulo = document.createElement('h4');
-    titulo.style.cssText = `
-        color: var(--gold);
-        text-align: center;
-        margin-bottom: 25px;
-        font-size: 1.5rem;
-    `;
-    titulo.innerHTML = '<i class="fas fa-quote-left"></i> FRASES ICÓNICAS <i class="fas fa-quote-right"></i>';
-    frasesSection.appendChild(titulo);
+    // ===== SECCIÓN DE DÚOS (solo para categoría 6) =====
+    if (category.id === 6 && todosLosDuos.length > 0) {
+        const duosSection = document.createElement('div');
+        duosSection.style.marginBottom = '40px';
+        
+        duosSection.innerHTML = `
+            <h4 style="color: #667eea; text-align: center; margin-bottom: 25px; font-size: 1.5rem;">
+                <i class="fas fa-users"></i> DÚOS REGISTRADOS
+            </h4>
+            <div id="duosList" style="max-height: 300px; overflow-y: auto; padding: 10px;">
+                <!-- Dúos se añadirán aquí -->
+            </div>
+        `;
+        
+        frasesSection.appendChild(duosSection);
+        
+        const duosList = document.getElementById('duosList');
+        
+        // Ordenar dúos por fecha (más reciente primero)
+        todosLosDuos.sort((a, b) => {
+            if (b.timestamp && a.timestamp) {
+                return new Date(b.timestamp) - new Date(a.timestamp);
+            }
+            return 0;
+        });
+        
+        todosLosDuos.forEach((duoData, index) => {
+            setTimeout(() => {
+                const duoItem = document.createElement('div');
+                duoItem.className = 'duo-item';
+                duoItem.style.animationDelay = `${index * 0.1}s`;
+                
+                const fecha = duoData.timestamp ? 
+                    new Date(duoData.timestamp).toLocaleDateString('es-ES', {
+                        day: '2-digit',
+                        month: 'short',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }) : 'Fecha desconocida';
+                
+                duoItem.innerHTML = `
+                    <div class="duo-text">
+                        ${duoData.duo}
+                    </div>
+                    <div class="duo-meta">
+                        <span><strong>${duoData.persona}</strong> (${duoData.votos} votos)</span>
+                        <span>Propuesto por ${duoData.votante} - ${fecha}</span>
+                    </div>
+                `;
+                
+                duosList.appendChild(duoItem);
+            }, index * 100);
+        });
+    }
     
-    // Crear contenedor para frases
-    const frasesList = document.createElement('div');
-    frasesList.id = 'frasesList';
-    frasesList.style.cssText = `
-        max-height: 400px;
-        overflow-y: auto;
-        padding: 10px;
-    `;
-    frasesSection.appendChild(frasesList);
+    // ===== SECCIÓN DE FRASES (solo para categoría 17) =====
+    if (category.id === 17 && todasLasFrases.length > 0) {
+        const frasesListSection = document.createElement('div');
+        
+        frasesListSection.innerHTML = `
+            <h4 style="color: var(--gold); text-align: center; margin-bottom: 25px; font-size: 1.5rem;">
+                <i class="fas fa-quote-left"></i> FRASES ICÓNICAS <i class="fas fa-quote-right"></i>
+            </h4>
+            <div id="frasesList" style="max-height: 300px; overflow-y: auto; padding: 10px;">
+                <!-- Frases se añadirán aquí -->
+            </div>
+        `;
+        
+        frasesSection.appendChild(frasesListSection);
+        
+        const frasesList = document.getElementById('frasesList');
+        
+        // Ordenar frases por fecha (más reciente primero)
+        todasLasFrases.sort((a, b) => {
+            if (b.timestamp && a.timestamp) {
+                return new Date(b.timestamp) - new Date(a.timestamp);
+            }
+            return 0;
+        });
+        
+        todasLasFrases.forEach((fraseData, index) => {
+            setTimeout(() => {
+                const fraseItem = document.createElement('div');
+                fraseItem.className = 'frase-item';
+                fraseItem.style.animationDelay = `${index * 0.1}s`;
+                
+                const fecha = fraseData.timestamp ? 
+                    new Date(fraseData.timestamp).toLocaleDateString('es-ES', {
+                        day: '2-digit',
+                        month: 'short',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }) : 'Fecha desconocida';
+                
+                fraseItem.innerHTML = `
+                    <div class="frase-text">
+                        ${fraseData.frase}
+                    </div>
+                    <div class="frase-meta">
+                        <span><strong>${fraseData.persona}</strong> (${fraseData.votos} votos)</span>
+                        <span>Añadida por ${fraseData.votante} - ${fecha}</span>
+                    </div>
+                `;
+                
+                frasesList.appendChild(fraseItem);
+            }, index * 100);
+        });
+    }
     
-    // Añadir frases con animación
-    todasLasFrases.forEach((fraseData, index) => {
-        setTimeout(() => {
-            const fraseItem = document.createElement('div');
-            fraseItem.className = 'frase-item';
-            fraseItem.style.animationDelay = `${index * 0.1}s`;
-            
-            const fecha = fraseData.timestamp ? 
-                new Date(fraseData.timestamp).toLocaleDateString('es-ES', {
-                    day: '2-digit',
-                    month: 'short',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                }) : 'Fecha desconocida';
-            
-            fraseItem.innerHTML = `
-                <div class="frase-text">
-                    ${fraseData.frase}
+    // Si no hay contenido, mostrar mensaje
+    if (todosLosDuos.length === 0 && todasLasFrases.length === 0) {
+        frasesSection.innerHTML = `
+            <div style="text-align: center; color: var(--silver); padding: 40px;">
+                <div style="font-size: 3rem; margin-bottom: 20px;">
+                    ${category.id === 6 ? '👯‍♂️' : '📝'}
                 </div>
-                <div class="frase-meta">
-                    <span><strong>${fraseData.persona}</strong> (${fraseData.votos} votos)</span>
-                    <span>Añadida por ${fraseData.votante} - ${fecha}</span>
-                </div>
-            `;
-            
-            frasesList.appendChild(fraseItem);
-        }, index * 100);
-    });
+                <p>Aún no hay ${category.id === 6 ? 'dúos' : 'frases'} registrados</p>
+            </div>
+        `;
+    }
 }
 
 // ===== FUNCIONES AUXILIARES =====
