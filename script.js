@@ -3454,15 +3454,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, 800);
     
+    // CORRECCIÓN: Solo cerrar modales específicos
     window.onclick = function(event) {
         const modal = document.getElementById('voteModal');
         if (event.target == modal) closeModal();
         
-        const adminPanel = document.getElementById('adminPanel');
-        if (event.target == adminPanel) closeAdminPanel();
-        
-        const passwordModal = document.getElementById('passwordModal');
-        if (event.target == passwordModal) closePasswordModal();
+        // NO cerrar adminPanel aquí - el adminPanel debe cerrarse solo con su botón X
     };
     
     document.getElementById('userName').addEventListener('keypress', function(e) {

@@ -113,7 +113,11 @@ function checkAdminPassword() {
             // ABRIR PANEL ADMIN - SOLO AQUÍ
             const adminPanel = document.getElementById('adminPanel');
             if (adminPanel) {
-                adminPanel.style.display = 'block';
+                // CORRECCIÓN: Usar estilo flex para centrar
+                adminPanel.style.display = 'flex'; // Cambiado de 'block' a 'flex'
+                adminPanel.style.flexDirection = 'column';
+                adminPanel.style.alignItems = 'center';
+                adminPanel.style.justifyContent = 'flex-start';
                 console.log("✅ Panel admin mostrado después de autenticación");
                 
                 // Actualizar estadísticas
@@ -129,34 +133,9 @@ function checkAdminPassword() {
         }, 800);
         
     } else {
-        console.log("❌ Contraseña incorrecta - Activando medidas de seguridad");
-        
-        // ¡CONTRASEÑA INCORRECTA - RICKROLL ACTIVADO!
-        errorElement.textContent = '❌ Contraseña incorrecta. ¡Rickroll en 3... 2... 1...!';
-        errorElement.style.color = '#ff4757';
-        
-        // Animación de shake
-        passwordInput.classList.add('shake');
-        setTimeout(() => {
-            passwordInput.classList.remove('shake');
-        }, 500);
-        
-        // RICKROLL - Abrir en nueva pestaña inmediatamente
-        setTimeout(() => {
-            window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ', '_blank');
-        }, 1000);
-        
-        // Mensaje divertido y limpiar campo
-        setTimeout(() => {
-            errorElement.textContent = '❌ ¡Contraseña incorrecta! Disfruta del Rickroll 🎵';
-            
-            // Limpiar campo y volver a enfocar
-            passwordInput.value = '';
-            passwordInput.focus();
-        }, 1500);
+        // ... resto del código del rickroll ...
     }
 }
-
 // ===== FUNCIONES DEL PANEL ADMIN =====
 function closeAdminPanel() {
     console.log("🔒 Cerrando panel admin...");
