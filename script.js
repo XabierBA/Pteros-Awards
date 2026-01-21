@@ -951,11 +951,32 @@ function processVote(category, nominee, nomineeName, fraseUsuario) {
     // 5. GUARDAR EN BASE DE DATOS
     (async () => {
         try {
-            await saveData();
-            await saveUsers();
-            console.log("💾 Datos guardados correctamente");
+            console.log("💾 Guardando voto completo...");
+            
+            // Primero guardar en localStorage
+            localStorage.setItem('premiosData', JSON.stringify({
+                categories: appData.categories,
+                phase: appData.phase,
+                photoUrls: appData.photoUrls
+            }));
+            
+            localStorage.setItem('premiosUsers', JSON.stringify(appData.users || []));
+            
+            console.log("✅ Voto guardado en localStorage");
+            
+            // Luego intentar guardar en Firebase
+            if (typeof saveCompleteVote === 'function') {
+                try {
+                    await saveCompleteVote();
+                    console.log("✅ Voto guardado en Firebase");
+                } catch (firebaseError) {
+                    console.warn("⚠️ Error en Firebase, pero voto guardado localmente:", firebaseError.message);
+                }
+            }
+            
         } catch (error) {
-            console.error("❌ Error guardando:", error);
+            console.error("❌ Error crítico guardando:", error);
+            alert("⚠️ Hubo un problema guardando el voto. Por favor, intenta de nuevo.");
         }
     })();
     
@@ -3267,6 +3288,39 @@ function openWinnerCurtain() {
             curtain.parentNode.removeChild(curtain);
         }
     }, 1600);
+}
+
+// ===== FUNCIÓN PARA FORZAR SINCRONIZACIÓN =====
+async function forzarSincronizacion() {
+    console.log("🔄 Forzando sincronización con Firebase...");
+    
+    try {
+        // Cargar primero
+        if (typeof loadDataFromFirebase === 'function') {
+            await loadDataFromFirebase();
+        }
+        
+        // Guardar todo
+        if (typeof saveDataToFirebase === 'function') {
+            await saveDataToFirebase();
+        }
+        
+        if (typeof saveUsersToFirebase === 'function') {
+            await saveUsersToFirebase();
+        }
+        
+        // Actualizar UI
+        if (typeof updateVotersList === 'function') updateVotersList();
+        if (typeof renderCategories === 'function') renderCategories();
+        if (typeof updateStats === 'function') updateStats();
+        
+        alert("✅ Sincronización forzada completada");
+        console.log("✅ Sincronización completada");
+        
+    } catch (error) {
+        console.error("❌ Error en sincronización:", error);
+        alert("⚠️ Error en sincronización: " + error.message);
+    }
 }
 
 // ===== INICIALIZACIÓN =====

@@ -1,23 +1,22 @@
-// firebase-config.js - VERSIÓN MEJORADA
+// firebase-config.js - VERSIÓN CORREGIDA
+console.log("🔥 firebase-config.js cargado");
 
 let firebaseDB = null;
 let firebaseReady = false;
-let firebaseError = null;
 
-// ===== 1. FUNCIÓN MEJORADA PARA ESPERAR FIREBASE =====
+// ===== 1. ESPERAR FIREBASE =====
 function waitForFirebase() {
     return new Promise((resolve) => {
-        // Si ya está listo, devolver inmediatamente
         if (window.firebaseDatabase) {
             firebaseDB = window.firebaseDatabase;
             firebaseReady = true;
-            console.log("✅ Firebase Database disponible inmediatamente");
+            console.log("✅ Firebase Database disponible");
             resolve(true);
             return;
         }
         
         let attempts = 0;
-        const maxAttempts = 10; // 10 intentos = 5 segundos
+        const maxAttempts = 20; // 10 segundos máximo
         
         const checkFirebase = () => {
             attempts++;
@@ -25,28 +24,25 @@ function waitForFirebase() {
             if (window.firebaseDatabase) {
                 firebaseDB = window.firebaseDatabase;
                 firebaseReady = true;
-                console.log(`✅ Firebase Database listo después de ${attempts} intentos`);
+                console.log(`✅ Firebase Database listo (${attempts} intentos)`);
                 resolve(true);
                 return;
             }
             
             if (attempts >= maxAttempts) {
-                console.warn("⚠️ Firebase no se cargó después de 5 segundos");
-                firebaseError = "Timeout";
+                console.warn("⚠️ Firebase no se cargó después de 10 segundos");
                 resolve(false);
                 return;
             }
             
-            // Intentar de nuevo en 500ms
             setTimeout(checkFirebase, 500);
         };
         
-        // Empezar a chequear
         checkFirebase();
     });
 }
 
-// ===== 2. CARGAR DATOS DE FIREBASE (FORZADO) =====
+// ===== 2. CARGAR DATOS DE FIREBASE =====
 async function loadDataFromFirebase() {
     console.log("🔥 CARGANDO DATOS DE FIREBASE...");
     
@@ -59,34 +55,34 @@ async function loadDataFromFirebase() {
         
         const { get, ref } = await import('https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js');
         
-        // Cargar datos principales
-        const appDataRef = ref(firebaseDB, 'appData');
-        const appDataSnapshot = await get(appDataRef);
+        // Cargar TODOS los datos desde el nodo principal 'premiosData' (para mantener compatibilidad)
+        const mainDataRef = ref(firebaseDB, 'premiosData');
+        const mainDataSnapshot = await get(mainDataRef);
         
-        // Cargar usuarios
+        // También cargar usuarios desde 'users' (estructura nueva)
         const usersRef = ref(firebaseDB, 'users');
         const usersSnapshot = await get(usersRef);
         
-        // Cargar fotos
-        const photosRef = ref(firebaseDB, 'photos');
-        const photosSnapshot = await get(photosRef);
-        
         console.log("📥 Resultados Firebase:");
-        console.log("- appData:", appDataSnapshot.exists() ? "✅" : "❌ Vacío");
+        console.log("- premiosData:", mainDataSnapshot.exists() ? "✅" : "❌ Vacío");
         console.log("- users:", usersSnapshot.exists() ? `✅ ${Object.keys(usersSnapshot.val() || {}).length} usuarios` : "❌ Vacío");
-        console.log("- photos:", photosSnapshot.exists() ? `✅ ${Object.keys(photosSnapshot.val() || {}).length} fotos` : "❌ Vacío");
         
         // ACTUALIZAR appData CON DATOS DE FIREBASE
-        if (appDataSnapshot.exists()) {
-            const firebaseData = appDataSnapshot.val();
+        if (mainDataSnapshot.exists()) {
+            const firebaseData = mainDataSnapshot.val();
             
-            // Importante: Mezclar datos, no reemplazar
-            window.appData.categories = firebaseData.categories || window.appData.categories || [];
-            window.appData.phase = firebaseData.phase || window.appData.phase || 'nominations';
+            // Mezclar datos inteligentemente
+            if (firebaseData.categories && Array.isArray(firebaseData.categories)) {
+                window.appData.categories = mergeCategories(window.appData.categories, firebaseData.categories);
+            }
             
-            // Mezclar photoUrls (Firebase tiene prioridad)
-            const firebasePhotos = firebaseData.photoUrls || {};
-            window.appData.photoUrls = { ...window.appData.photoUrls, ...firebasePhotos };
+            if (firebaseData.phase) {
+                window.appData.phase = firebaseData.phase;
+            }
+            
+            if (firebaseData.photoUrls) {
+                window.appData.photoUrls = { ...window.appData.photoUrls, ...firebaseData.photoUrls };
+            }
             
             console.log("✅ appData actualizado desde Firebase");
             console.log(`   - Categorías: ${window.appData.categories.length}`);
@@ -94,55 +90,21 @@ async function loadDataFromFirebase() {
         }
         
         if (usersSnapshot.exists()) {
-            window.appData.users = usersSnapshot.val() || window.appData.users || [];
+            const firebaseUsers = usersSnapshot.val();
+            // Mezclar usuarios: Firebase tiene prioridad
+            window.appData.users = mergeUsers(window.appData.users, firebaseUsers);
             console.log(`✅ Usuarios cargados: ${window.appData.users.length}`);
         }
-        
-        if (photosSnapshot.exists()) {
-            const firebasePhotos = photosSnapshot.val() || {};
-            // Mezclar fotos específicas de Firebase
-            if (!window.appData.photoUrls) window.appData.photoUrls = {};
-            window.appData.photoUrls = { ...window.appData.photoUrls, ...firebasePhotos };
-            console.log(`✅ Fotos específicas cargadas: ${Object.keys(firebasePhotos).length}`);
-        }
-        
-        // Guardar en localStorage como backup
-        localStorage.setItem('premiosData', JSON.stringify({
-            categories: window.appData.categories,
-            phase: window.appData.phase,
-            photoUrls: window.appData.photoUrls
-        }));
-        
-        localStorage.setItem('premiosUsers', JSON.stringify(window.appData.users || []));
-        
-        console.log("💾 Datos guardados en localStorage como backup");
         
         return true;
         
     } catch (error) {
         console.error("❌ ERROR CARGANDO DE FIREBASE:", error);
-        firebaseError = error.message;
-        
-        // Intentar cargar de localStorage como fallback
-        console.log("🔄 Intentando cargar de localStorage...");
-        const savedData = localStorage.getItem('premiosData');
-        if (savedData) {
-            try {
-                const parsed = JSON.parse(savedData);
-                window.appData.categories = parsed.categories || window.appData.categories || [];
-                window.appData.phase = parsed.phase || window.appData.phase || 'nominations';
-                window.appData.photoUrls = parsed.photoUrls || window.appData.photoUrls || {};
-                console.log("📂 Datos cargados de localStorage");
-            } catch (e) {
-                console.error("Error parseando localStorage:", e);
-            }
-        }
-        
         return false;
     }
 }
 
-// ===== 3. GUARDAR DATOS EN FIREBASE =====
+// ===== 3. GUARDAR DATOS EN FIREBASE (MAIN) =====
 async function saveDataToFirebase() {
     try {
         const ready = await waitForFirebase();
@@ -150,17 +112,22 @@ async function saveDataToFirebase() {
             throw new Error("Firebase no disponible");
         }
         
+        // Preparar datos para Firebase
         const dataToSave = {
             categories: window.appData.categories || [],
             phase: window.appData.phase || 'nominations',
             photoUrls: window.appData.photoUrls || {},
-            lastUpdated: new Date().toISOString()
+            lastUpdated: new Date().toISOString(),
+            totalVotes: getTotalVotes(),
+            totalUsers: window.appData.users?.length || 0
         };
         
         const { set, ref } = await import('https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js');
-        await set(ref(firebaseDB, 'appData'), dataToSave);
         
-        console.log("💾 Datos guardados en Firebase");
+        // Guardar en nodo principal para compatibilidad
+        await set(ref(firebaseDB, 'premiosData'), dataToSave);
+        
+        console.log("💾 Datos principales guardados en Firebase");
         return true;
         
     } catch (error) {
@@ -169,105 +136,156 @@ async function saveDataToFirebase() {
     }
 }
 
-// ===== 4. GUARDAR USUARIOS =====
+// ===== 4. GUARDAR USUARIOS EN FIREBASE =====
 async function saveUsersToFirebase() {
     try {
+        console.log("🔥 Intentando guardar usuarios en Firebase...");
+        
         const ready = await waitForFirebase();
         if (!ready || !firebaseDB) {
             throw new Error("Firebase no disponible");
         }
         
         const { set, ref } = await import('https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js');
-        await set(ref(firebaseDB, 'users'), window.appData.users || []);
         
-        console.log("👥 Usuarios guardados en Firebase");
+        // Preparar usuarios limpios para Firebase
+        const usersToSave = (window.appData.users || []).map(user => ({
+            id: user.id,
+            name: user.name,
+            votes: user.votes || {},
+            votedAt: user.votedAt || new Date().toISOString(),
+            lastUpdated: new Date().toISOString()
+        }));
+        
+        // Guardar en nodo 'users'
+        await set(ref(firebaseDB, 'users'), usersToSave);
+        
+        console.log(`✅ ${usersToSave.length} usuarios guardados en Firebase`);
         return true;
         
     } catch (error) {
-        console.error("❌ Error guardando usuarios:", error);
+        console.error("❌ Error guardando usuarios en Firebase:", error);
         return false;
     }
 }
 
-// ===== 5. SINCRONIZACIÓN EN TIEMPO REAL =====
-async function setupRealtimeListeners() {
-    try {
-        const ready = await waitForFirebase();
-        if (!ready || !firebaseDB) {
-            console.log("🔕 Listeners de Firebase desactivados");
-            return;
+// ===== 5. FUNCIONES AUXILIARES DE MEZCLA =====
+function mergeCategories(localCats, firebaseCats) {
+    if (!localCats || localCats.length === 0) return firebaseCats;
+    if (!firebaseCats || firebaseCats.length === 0) return localCats;
+    
+    const result = [...localCats];
+    
+    firebaseCats.forEach(fbCat => {
+        if (!fbCat || !fbCat.id) return;
+        
+        const existingIndex = result.findIndex(localCat => 
+            localCat && localCat.id === fbCat.id
+        );
+        
+        if (existingIndex !== -1) {
+            // Actualizar categoría existente (Firebase tiene prioridad)
+            result[existingIndex] = fbCat;
+        } else {
+            // Añadir nueva categoría
+            result.push(fbCat);
         }
+    });
+    
+    return result;
+}
+
+function mergeUsers(localUsers, firebaseUsers) {
+    if (!localUsers || localUsers.length === 0) return Array.isArray(firebaseUsers) ? firebaseUsers : [];
+    if (!firebaseUsers) return localUsers;
+    
+    // Convertir a array si es objeto
+    const fbUsersArray = Array.isArray(firebaseUsers) ? firebaseUsers : Object.values(firebaseUsers);
+    
+    const result = [...localUsers];
+    const localUserIds = new Set(localUsers.map(u => u?.id));
+    
+    fbUsersArray.forEach(fbUser => {
+        if (!fbUser || !fbUser.id) return;
         
-        const { onValue, ref } = await import('https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js');
+        if (!localUserIds.has(fbUser.id)) {
+            // Usuario nuevo de Firebase
+            result.push(fbUser);
+        }
+    });
+    
+    return result;
+}
+
+function getTotalVotes() {
+    if (!window.appData || !window.appData.categories) return 0;
+    
+    return window.appData.categories.reduce((total, category) => {
+        const nominees = category.nominees || [];
+        return total + nominees.reduce((catTotal, nominee) => {
+            return catTotal + (nominee.votes || 0);
+        }, 0);
+    }, 0);
+}
+
+// ===== 6. FUNCIÓN PARA GUARDAR VOTO COMPLETO =====
+async function saveCompleteVote() {
+    console.log("💾 Guardando voto completo en Firebase...");
+    
+    try {
+        // Guardar datos principales
+        await saveDataToFirebase();
         
-        // Escuchar cambios en appData
-        onValue(ref(firebaseDB, 'appData'), (snapshot) => {
-            const data = snapshot.val();
-            if (data && window.appData) {
-                console.log("🔄 Datos actualizados desde Firebase en tiempo real");
-                
-                // Solo actualizar si hay cambios reales
-                if (JSON.stringify(window.appData.categories) !== JSON.stringify(data.categories)) {
-                    window.appData.categories = data.categories || window.appData.categories;
-                    if (window.renderCategories) window.renderCategories();
-                }
-                
-                if (window.appData.phase !== data.phase) {
-                    window.appData.phase = data.phase || window.appData.phase;
-                    if (window.updatePhaseBanner) window.updatePhaseBanner();
-                }
-                
-                // Actualizar fotos
-                window.appData.photoUrls = data.photoUrls || window.appData.photoUrls;
-                
-                if (window.updateStats) window.updateStats();
-            }
-        });
+        // Guardar usuarios
+        await saveUsersToFirebase();
         
-        // Escuchar cambios en usuarios
-        onValue(ref(firebaseDB, 'users'), (snapshot) => {
-            const users = snapshot.val();
-            if (users && window.appData) {
-                window.appData.users = users;
-                if (window.updateVotersList) window.updateVotersList();
-                console.log("🔄 Usuarios actualizados desde Firebase");
-            }
-        });
-        
-        console.log("🔔 Listeners de Firebase activados");
+        console.log("✅ Voto completamente guardado en Firebase");
+        return true;
         
     } catch (error) {
-        console.error("❌ Error configurando listeners:", error);
+        console.error("❌ Error guardando voto completo:", error);
+        throw error;
     }
 }
 
-// ===== 6. FORZAR CARGA AL INICIAR =====
-document.addEventListener('firebaseReady', function() {
-    console.log("🚀 Firebase listo, configurando...");
-    
-    // Esperar un momento y configurar listeners
-    setTimeout(() => {
-        setupRealtimeListeners().catch(console.error);
-    }, 1000);
-});
-
-// ===== 7. FUNCIÓN PARA VER ESTADO =====
-window.verificarFirebase = async function() {
+// ===== 7. DIAGNÓSTICO =====
+async function diagnosticarFirebase() {
     console.log("=== 🔍 DIAGNÓSTICO FIREBASE ===");
-    console.log("1. window.firebaseDatabase:", window.firebaseDatabase ? "✅ PRESENTE" : "❌ AUSENTE");
-    console.log("2. firebaseDB:", firebaseDB ? "✅ ASIGNADO" : "❌ NO ASIGNADO");
-    console.log("3. firebaseReady:", firebaseReady);
-    console.log("4. firebaseError:", firebaseError || "Ninguno");
+    console.log("Firebase listo:", firebaseReady);
+    console.log("Firebase DB:", firebaseDB ? "✅ Disponible" : "❌ No disponible");
     
-    if (window.firebaseDatabase) {
-        await testFirebase();
+    if (window.appData) {
+        console.log("=== 📊 DATOS LOCALES ===");
+        console.log("Usuarios:", window.appData.users?.length || 0);
+        console.log("Categorías:", window.appData.categories?.length || 0);
+        
+        if (window.appData.users && window.appData.users.length > 0) {
+            console.log("=== 👥 USUARIOS DETALLADOS ===");
+            window.appData.users.forEach((user, i) => {
+                console.log(`${i+1}. ${user.name} - Votos: ${Object.keys(user.votes || {}).length}`);
+            });
+        }
     }
     
-    console.log("=== 📊 DATOS ACTUALES ===");
-    console.log("appData.categories:", window.appData?.categories?.length || 0);
-    console.log("appData.users:", window.appData?.users?.length || 0);
-    console.log("appData.photoUrls:", Object.keys(window.appData?.photoUrls || {}).length);
+    // Test de conexión
+    if (firebaseDB) {
+        try {
+            const { get, ref } = await import('https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js');
+            const testRef = ref(firebaseDB, 'test');
+            await set(testRef, { timestamp: new Date().toISOString() });
+            console.log("✅ Test de escritura exitoso");
+        } catch (error) {
+            console.error("❌ Test de escritura falló:", error);
+        }
+    }
+    
     console.log("=== 🔚 FIN DIAGNÓSTICO ===");
-};
+}
 
-console.log("🔥 firebase-config.js cargado");
+// ===== 8. EXPORTAR FUNCIONES =====
+window.waitForFirebase = waitForFirebase;
+window.loadDataFromFirebase = loadDataFromFirebase;
+window.saveDataToFirebase = saveDataToFirebase;
+window.saveUsersToFirebase = saveUsersToFirebase;
+window.saveCompleteVote = saveCompleteVote;
+window.diagnosticarFirebase = diagnosticarFirebase;

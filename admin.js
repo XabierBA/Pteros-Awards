@@ -567,6 +567,51 @@ function importData() {
     input.click();
 }
 
+// ===== VERIFICACIÓN DE VOTOS =====
+function verificarVotos() {
+    console.log("=== 🔍 VERIFICANDO VOTOS ===");
+    
+    if (!appData) {
+        console.log("❌ appData no disponible");
+        return;
+    }
+    
+    console.log("📊 ESTADÍSTICAS:");
+    console.log("- Usuarios totales:", appData.users?.length || 0);
+    console.log("- Categorías:", appData.categories?.length || 0);
+    
+    // Verificar usuarios con votos
+    const usuariosConVotos = (appData.users || []).filter(user => {
+        const votes = user.votes || {};
+        return Object.keys(votes).length > 0;
+    });
+    
+    console.log("- Usuarios que han votado:", usuariosConVotos.length);
+    
+    if (usuariosConVotos.length > 0) {
+        console.log("=== 👥 USUARIOS CON VOTOS ===");
+        usuariosConVotos.forEach(user => {
+            console.log(`${user.name}: ${Object.keys(user.votes || {}).length} votos`);
+        });
+    }
+    
+    // Verificar total de votos en categorías
+    let totalVotosCategorias = 0;
+    (appData.categories || []).forEach((cat, index) => {
+        const votesInCategory = (cat.nominees || []).reduce((sum, n) => sum + (n.votes || 0), 0);
+        totalVotosCategorias += votesInCategory;
+        console.log(`Categoría ${index+1} (${cat.name}): ${votesInCategory} votos`);
+    });
+    
+    console.log("- Votos totales en categorías:", totalVotosCategorias);
+    
+    // Verificar Firebase
+    console.log("=== 🔥 ESTADO FIREBASE ===");
+    console.log("Firebase disponible:", typeof saveDataToFirebase === 'function' ? "✅" : "❌");
+    
+    alert(`✅ Verificación completada:\n\nUsuarios: ${appData.users?.length || 0}\nHan votado: ${usuariosConVotos.length}\nVotos totales: ${totalVotosCategorias}`);
+}
+
 function resetVotes() {
     if (!appData) return;
     
