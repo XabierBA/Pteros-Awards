@@ -3246,14 +3246,6 @@ footer {
     position: relative;
 }
 
-/* ==== SEGURIDAD ADMIN - OCULTAR POR DEFECTO ==== */
-#adminPanel {
-    display: none !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
-}
-
 /* Solo mostrar cuando tenga display: block explícito */
 #adminPanel[style*="display: block"] {
     opacity: 1 !important;
