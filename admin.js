@@ -23,29 +23,34 @@ function mostrarDescripcionBotones() {
 
 // ===== FUNCIÓN PRINCIPAL PARA ABRIR PANEL =====
 function openAdminPanel() {
-    console.log("openAdminPanel llamada");
+    console.log("openAdminPanel llamada - VERIFICANDO ACCESO");
     
+    // VERIFICAR QUE EL USUARIO ESTÉ LOGUEADO
     if (!appData || !appData.currentUser) {
-        alert('Debes estar logueado para acceder al panel admin');
+        alert('❌ Debes iniciar sesión para acceder al panel admin');
         return;
     }
     
-    // Mostrar modal de contraseña
+    // VERIFICACIÓN EXTRA: Asegurarnos que no haya acceso directo
+    const adminPanel = document.getElementById('adminPanel');
+    if (adminPanel && adminPanel.style.display === 'block') {
+        closeAdminPanel(); // Si por algún motivo ya está abierto, cerrarlo
+        return;
+    }
+    
+    console.log("Mostrando modal de contraseña...");
+    
+    // Mostrar modal de contraseña (NO el panel directamente)
     const passwordModal = document.getElementById('passwordModal');
     if (passwordModal) {
-        passwordModal.style.display = 'block';
+        passwordModal.style.display = 'flex'; // Usar flex para centrar
+        passwordModal.style.alignItems = 'center';
+        passwordModal.style.justifyContent = 'center';
         document.getElementById('adminPassword').value = '';
         document.getElementById('passwordError').textContent = '';
         document.getElementById('adminPassword').focus();
-        
-        // Cargar lista de personas en el select
-        cargarListaPersonas();
-        // Cargar lista de fotos actuales
-        cargarListaFotos();
-        // Mostrar descripciones de botones en consola
-        mostrarDescripcionBotones();
     } else {
-        console.error("No se encontró el modal de contraseña");
+        console.error("❌ ERROR: No se encontró el modal de contraseña");
     }
 }
 
@@ -75,35 +80,57 @@ function togglePasswordVisibility() {
 }
 
 function checkAdminPassword() {
+    console.log("🔐 Verificando contraseña admin...");
+    
     const passwordInput = document.getElementById('adminPassword');
     const errorElement = document.getElementById('passwordError');
     
-    if (!passwordInput || !errorElement) return;
+    if (!passwordInput || !errorElement) {
+        console.error("❌ Elementos del formulario no encontrados");
+        return;
+    }
     
     const inputPassword = passwordInput.value.trim();
     
     if (!inputPassword) {
-        errorElement.textContent = 'Por favor, introduce la contraseña';
+        errorElement.textContent = '❌ Por favor, introduce la contraseña';
+        errorElement.style.color = '#ff4757';
+        passwordInput.focus();
         return;
     }
     
     if (inputPassword === ADMIN_PASSWORD) {
+        console.log("✅ Contraseña correcta - Acceso concedido");
+        
         // Contraseña correcta
         errorElement.textContent = '✅ Acceso concedido...';
         errorElement.style.color = '#4CAF50';
         
+        // Cerrar modal de contraseña
         setTimeout(() => {
             closePasswordModal();
-            // Abrir panel admin
-            document.getElementById('adminPanel').style.display = 'block';
-            updateStats();
             
-            // Cargar lista de personas y fotos
-            cargarListaPersonas();
-            cargarListaFotos();
-        }, 500);
+            // ABRIR PANEL ADMIN - SOLO AQUÍ
+            const adminPanel = document.getElementById('adminPanel');
+            if (adminPanel) {
+                adminPanel.style.display = 'block';
+                console.log("✅ Panel admin mostrado después de autenticación");
+                
+                // Actualizar estadísticas
+                if (typeof updateStats === 'function') updateStats();
+                
+                // Cargar listas
+                if (typeof cargarListaPersonas === 'function') cargarListaPersonas();
+                if (typeof cargarListaFotos === 'function') cargarListaFotos();
+            } else {
+                console.error("❌ ERROR: No se encontró el panel admin");
+                alert("Error del sistema: No se puede mostrar el panel de administración");
+            }
+        }, 800);
         
     } else {
+        console.log("❌ Contraseña incorrecta - Activando medidas de seguridad");
+        
         // ¡CONTRASEÑA INCORRECTA - RICKROLL ACTIVADO!
         errorElement.textContent = '❌ Contraseña incorrecta. ¡Rickroll en 3... 2... 1...!';
         errorElement.style.color = '#ff4757';
@@ -115,22 +142,35 @@ function checkAdminPassword() {
         }, 500);
         
         // RICKROLL - Abrir en nueva pestaña inmediatamente
-        window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ', '_blank');
+        setTimeout(() => {
+            window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ', '_blank');
+        }, 1000);
         
-        // Mensaje divertido
+        // Mensaje divertido y limpiar campo
         setTimeout(() => {
             errorElement.textContent = '❌ ¡Contraseña incorrecta! Disfruta del Rickroll 🎵';
             
             // Limpiar campo y volver a enfocar
             passwordInput.value = '';
             passwordInput.focus();
-        }, 1000);
+        }, 1500);
     }
 }
 
 // ===== FUNCIONES DEL PANEL ADMIN =====
 function closeAdminPanel() {
-    document.getElementById('adminPanel').style.display = 'none';
+    console.log("🔒 Cerrando panel admin...");
+    
+    const adminPanel = document.getElementById('adminPanel');
+    if (adminPanel) {
+        adminPanel.style.display = 'none';
+        console.log("✅ Panel admin ocultado");
+    } else {
+        console.warn("⚠️ Panel admin no encontrado al intentar cerrar");
+    }
+    
+    // También cerrar modal de contraseña si está abierto
+    closePasswordModal();
 }
 
 function setPhase(phase) {
