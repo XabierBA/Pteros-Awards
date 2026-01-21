@@ -3317,37 +3317,69 @@ function openWinnerCurtain() {
 
 // ===== FUNCIÓN PARA FORZAR SINCRONIZACIÓN =====
 async function forzarSincronizacion() {
-    console.log("🔄 Forzando sincronización con Firebase...");
+    console.log("🔄 Sincronizando (solo descarga desde Firebase)...");
+    
+    if (!confirm('¿Sincronizar datos desde Firebase?\n\nEsto SOLO descargará datos desde Firebase (no subirá nada).\n\n¿Continuar?')) {
+        return;
+    }
+    
+    const boton = event.target;
+    const textoOriginal = boton.innerHTML;
+    boton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Descargando...';
+    boton.disabled = true;
     
     try {
-        // Cargar primero
-        if (typeof loadDataFromFirebase === 'function') {
-            await loadDataFromFirebase();
+        let funcionDescarga;
+        
+        // Intentar usar la nueva función primero
+        if (typeof soloDescargarDesdeFirebase === 'function') {
+            funcionDescarga = soloDescargarDesdeFirebase;
+            console.log("Usando función específica de solo descarga");
+        } else if (typeof loadDataFromFirebase === 'function') {
+            funcionDescarga = loadDataFromFirebase;
+            console.log("Usando función general de carga");
+        } else {
+            throw new Error("No hay funciones de descarga disponibles");
         }
         
-        // Guardar todo
-        if (typeof saveDataToFirebase === 'function') {
-            await saveDataToFirebase();
+        const exito = await funcionDescarga();
+        
+        if (exito) {
+            // Guardar en localStorage
+            try {
+                localStorage.setItem('premiosData', JSON.stringify({
+                    categories: appData.categories,
+                    phase: appData.phase,
+                    photoUrls: appData.photoUrls
+                }));
+                localStorage.setItem('premiosUsers', JSON.stringify(appData.users || []));
+                console.log("💾 Datos guardados en localStorage");
+            } catch (e) {
+                console.warn("⚠️ Error guardando localStorage:", e);
+            }
+            
+            // Actualizar UI
+            if (updateVotersList) updateVotersList();
+            if (renderCategories) renderCategories();
+            if (updateStats) updateStats();
+            if (updatePhaseBanner) updatePhaseBanner();
+            
+            alert("✅ Sincronización completada\n\nDatos descargados desde Firebase:\n• Categorías: " + (appData.categories?.length || 0) + "\n• Usuarios: " + (appData.users?.length || 0));
+            
+        } else {
+            alert("ℹ️ No había datos nuevos en Firebase o ya estaban sincronizados");
         }
-        
-        if (typeof saveUsersToFirebase === 'function') {
-            await saveUsersToFirebase();
-        }
-        
-        // Actualizar UI
-        if (typeof updateVotersList === 'function') updateVotersList();
-        if (typeof renderCategories === 'function') renderCategories();
-        if (typeof updateStats === 'function') updateStats();
-        
-        alert("✅ Sincronización forzada completada");
-        console.log("✅ Sincronización completada");
         
     } catch (error) {
-        console.error("❌ Error en sincronización:", error);
-        alert("⚠️ Error en sincronización: " + error.message);
+        console.error("❌ Error:", error);
+        alert("❌ Error sincronizando: " + error.message);
+        
+    } finally {
+        // Restaurar botón
+        boton.innerHTML = textoOriginal;
+        boton.disabled = false;
     }
 }
-
 // ===== FUNCIÓN PARA LIMPIAR LOCALSTORAGE MANUALMENTE =====
 function limpiarLocalStorage() {
     if (confirm('⚠️ ¿LIMPIAR CACHE LOCAL (localStorage)?\n\nEsto borrará:\n• Datos locales\n• Usuarios locales\n• Fotos locales\n\nLos datos se recargarán desde Firebase.\n\n¿Continuar?')) {

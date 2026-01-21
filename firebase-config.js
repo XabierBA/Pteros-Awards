@@ -248,6 +248,80 @@ async function saveCompleteVote() {
     }
 }
 
+// ===== FUNCIÓN MEJORADA PARA SOLO DESCARGAR =====
+async function soloDescargarDesdeFirebase() {
+    try {
+        const ready = await waitForFirebase();
+        
+        if (!ready || !firebaseDB) {
+            throw new Error("Firebase no disponible");
+        }
+        
+        const { get, ref } = await import('https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js');
+        
+        console.log("📥 DESCARGANDO datos desde Firebase (sin subir)...");
+        
+        // 1. Datos principales
+        const dataRef = ref(firebaseDB, 'premiosData');
+        const dataSnapshot = await get(dataRef);
+        
+        // 2. Usuarios
+        const usersRef = ref(firebaseDB, 'users');
+        const usersSnapshot = await get(usersRef);
+        
+        let cambios = 0;
+        
+        // Actualizar appData con datos de Firebase
+        if (dataSnapshot.exists()) {
+            const firebaseData = dataSnapshot.val();
+            
+            // Reemplazar categorías completamente
+            if (firebaseData.categories) {
+                window.appData.categories = firebaseData.categories;
+                cambios++;
+                console.log(`📋 Categorías: ${firebaseData.categories.length}`);
+            }
+            
+            // Actualizar fase
+            if (firebaseData.phase) {
+                window.appData.phase = firebaseData.phase;
+                cambios++;
+                console.log(`🔄 Fase: ${firebaseData.phase}`);
+            }
+            
+            // Actualizar fotos
+            if (firebaseData.photoUrls) {
+                window.appData.photoUrls = firebaseData.photoUrls;
+                cambios++;
+                console.log(`🖼️ Fotos: ${Object.keys(firebaseData.photoUrls).length}`);
+            }
+        }
+        
+        // Actualizar usuarios
+        if (usersSnapshot.exists()) {
+            const firebaseUsers = usersSnapshot.val();
+            window.appData.users = firebaseUsers;
+            cambios++;
+            console.log(`👥 Usuarios: ${firebaseUsers.length}`);
+        }
+        
+        if (cambios > 0) {
+            console.log(`✅ ${cambios} tipos de datos actualizados desde Firebase`);
+            return true;
+        } else {
+            console.log("ℹ️ No había datos nuevos en Firebase");
+            return false;
+        }
+        
+    } catch (error) {
+        console.error("❌ Error descargando desde Firebase:", error);
+        throw error;
+    }
+}
+
+// Exportar la nueva función
+window.soloDescargarDesdeFirebase = soloDescargarDesdeFirebase;
+
 // ===== 7. DIAGNÓSTICO =====
 async function diagnosticarFirebase() {
     console.log("=== 🔍 DIAGNÓSTICO FIREBASE ===");
