@@ -23,42 +23,60 @@ function mostrarDescripcionBotones() {
 
 // ===== FUNCIÓN PRINCIPAL PARA ABRIR PANEL =====
 function openAdminPanel() {
-    console.log("openAdminPanel llamada - VERIFICANDO ACCESO");
+    console.log("=== DEBUG OPEN ADMIN PANEL ===");
+    console.log("1. Botón clickeado");
     
     // VERIFICAR QUE EL USUARIO ESTÉ LOGUEADO
     if (!appData || !appData.currentUser) {
+        console.log("❌ No hay usuario logueado");
         alert('❌ Debes iniciar sesión para acceder al panel admin');
         return;
     }
+    console.log("2. Usuario logueado:", appData.currentUser.name);
     
     // VERIFICACIÓN EXTRA: Asegurarnos que no haya acceso directo
     const adminPanel = document.getElementById('adminPanel');
-    if (adminPanel && adminPanel.style.display === 'block') {
-        closeAdminPanel(); // Si por algún motivo ya está abierto, cerrarlo
+    const passwordModal = document.getElementById('passwordModal');
+    
+    console.log("3. Panel admin encontrado:", !!adminPanel);
+    console.log("4. Modal contraseña encontrado:", !!passwordModal);
+    
+    if (adminPanel && adminPanel.style.display === 'flex') {
+        console.log("5. Panel ya visible, cerrando...");
+        closeAdminPanel();
         return;
     }
     
-    console.log("Mostrando modal de contraseña...");
+    console.log("6. Mostrando modal de contraseña...");
     
     // Mostrar modal de contraseña (NO el panel directamente)
-    const passwordModal = document.getElementById('passwordModal');
     if (passwordModal) {
-        passwordModal.style.display = 'flex'; // Usar flex para centrar
+        console.log("7. Estilo actual del modal:", passwordModal.style.display);
+        passwordModal.style.display = 'flex';
         passwordModal.style.alignItems = 'center';
         passwordModal.style.justifyContent = 'center';
+        console.log("8. Nuevo estilo del modal:", passwordModal.style.display);
+        
         document.getElementById('adminPassword').value = '';
         document.getElementById('passwordError').textContent = '';
         document.getElementById('adminPassword').focus();
     } else {
         console.error("❌ ERROR: No se encontró el modal de contraseña");
     }
+    
+    console.log("=== FIN DEBUG ===");
 }
 
 // ===== FUNCIONES DEL MODAL DE CONTRASEÑA =====
 function closePasswordModal() {
+    console.log("🔒 Cerrando modal contraseña...");
+    
     const passwordModal = document.getElementById('passwordModal');
     if (passwordModal) {
+        console.log("Modal encontrado, ocultando...");
         passwordModal.style.display = 'none';
+    } else {
+        console.log("Modal no encontrado");
     }
     document.getElementById('adminPassword').value = '';
     document.getElementById('passwordError').textContent = '';
@@ -100,48 +118,65 @@ function checkAdminPassword() {
     }
     
     if (inputPassword === ADMIN_PASSWORD) {
-        console.log("✅ Contraseña correcta - Acceso concedido");
+    console.log("✅ Contraseña correcta - Acceso concedido");
+    
+    // Contraseña correcta
+    errorElement.textContent = '✅ Acceso concedido...';
+    errorElement.style.color = '#4CAF50';
+    
+    // Cerrar modal de contraseña
+    setTimeout(() => {
+        closePasswordModal();
         
-        // Contraseña correcta
-        errorElement.textContent = '✅ Acceso concedido...';
-        errorElement.style.color = '#4CAF50';
-        
-        // Cerrar modal de contraseña
-        setTimeout(() => {
-            closePasswordModal();
+        // ABRIR PANEL ADMIN - SOLO AQUÍ
+        const adminPanel = document.getElementById('adminPanel');
+        if (adminPanel) {
+            console.log("✅ Mostrando panel admin...");
+            console.log("Estilo actual:", adminPanel.style.display);
+            console.log("CSS computed:", window.getComputedStyle(adminPanel).display);
             
-            // ABRIR PANEL ADMIN - SOLO AQUÍ
-            const adminPanel = document.getElementById('adminPanel');
-            if (adminPanel) {
-                // CORRECCIÓN: Usar estilo flex para centrar
-                adminPanel.style.display = 'flex'; // Cambiado de 'block' a 'flex'
-                adminPanel.style.flexDirection = 'column';
-                adminPanel.style.alignItems = 'center';
-                adminPanel.style.justifyContent = 'flex-start';
-                console.log("✅ Panel admin mostrado después de autenticación");
-                
-                // Actualizar estadísticas
-                if (typeof updateStats === 'function') updateStats();
-                
-                // Cargar listas
-                if (typeof cargarListaPersonas === 'function') cargarListaPersonas();
-                if (typeof cargarListaFotos === 'function') cargarListaFotos();
-            } else {
-                console.error("❌ ERROR: No se encontró el panel admin");
-                alert("Error del sistema: No se puede mostrar el panel de administración");
-            }
-        }, 800);
-        
-    } else {
+            // Mostrar el panel
+            adminPanel.style.display = 'flex';
+            adminPanel.style.position = 'fixed';
+            adminPanel.style.top = '50%';
+            adminPanel.style.left = '50%';
+            adminPanel.style.transform = 'translate(-50%, -50%)';
+            adminPanel.style.zIndex = '1000';
+            adminPanel.style.background = 'linear-gradient(135deg, rgba(30, 30, 50, 0.98), rgba(15, 15, 25, 0.99))';
+            adminPanel.style.padding = '30px';
+            adminPanel.style.borderRadius = '20px';
+            adminPanel.style.width = '90%';
+            adminPanel.style.maxWidth = '800px';
+            adminPanel.style.maxHeight = '80vh';
+            adminPanel.style.overflowY = 'auto';
+            adminPanel.style.border = '3px solid var(--gold)';
+            adminPanel.style.boxShadow = '0 0 50px rgba(0, 0, 0, 0.8)';
+            
+            console.log("Nuevo estilo:", adminPanel.style.display);
+            
+            // Actualizar estadísticas
+            if (typeof updateStats === 'function') updateStats();
+            
+            // Cargar listas
+            if (typeof cargarListaPersonas === 'function') cargarListaPersonas();
+            if (typeof cargarListaFotos === 'function') cargarListaFotos();
+        } else {
+            console.error("❌ ERROR: No se encontró el panel admin");
+            alert("Error del sistema: No se puede mostrar el panel de administración");
+        }
+    }, 800);
+} else {
         // ... resto del código del rickroll ...
     }
 }
+
 // ===== FUNCIONES DEL PANEL ADMIN =====
 function closeAdminPanel() {
     console.log("🔒 Cerrando panel admin...");
     
     const adminPanel = document.getElementById('adminPanel');
     if (adminPanel) {
+        console.log("Panel encontrado, ocultando...");
         adminPanel.style.display = 'none';
         console.log("✅ Panel admin ocultado");
     } else {
