@@ -1,6 +1,26 @@
 // ===== CONTRASEÑA DE ADMIN =====
 const ADMIN_PASSWORD = "qawsedrfty123456";
 
+// Añade esta función en admin.js (al final del archivo):
+function mostrarDescripcionBotones() {
+    const descripciones = {
+        'Ver Resultados': 'Muestra los resultados finales de todas las categorías',
+        'Exportar Datos': 'Descarga todos los datos en un archivo JSON',
+        'Importar Datos': 'Carga datos desde un archivo JSON',
+        'Reiniciar Votos': 'Borra todos los votos (cuidado: irreversible)',
+        'Diagnosticar Firebase': 'Verifica el estado de conexión con Firebase',
+        'Sincronizar Firebase': 'Forza la sincronización con Firebase',
+        'Verificar Votos': 'Muestra estadísticas detalladas de votos',
+        'Limpiar Cache Local': 'Borra datos locales y recarga desde Firebase'
+    };
+    
+    console.log("=== 🛠️ DESCRIPCIONES DE BOTONES ===");
+    Object.entries(descripciones).forEach(([boton, desc]) => {
+        console.log(`• ${boton}: ${desc}`);
+    });
+}
+
+
 // ===== FUNCIÓN PRINCIPAL PARA ABRIR PANEL =====
 function openAdminPanel() {
     console.log("openAdminPanel llamada");
@@ -22,6 +42,8 @@ function openAdminPanel() {
         cargarListaPersonas();
         // Cargar lista de fotos actuales
         cargarListaFotos();
+        
+        mostrarDescripcionBotones();
     } else {
         console.error("No se encontró el modal de contraseña");
     }

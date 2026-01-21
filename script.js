@@ -15,9 +15,34 @@ let photoPreviewFile = null;
 
 // ===== CARGAR DATOS Y FOTOS =====
 function loadAppData() {
+    function loadAppData() {
     console.log("🔄 Cargando datos de la aplicación...");
     
+    // ==== NUEVO: FORZAR LIMPIEZA DE LOCALSTORAGE PARA SINCRONIZAR DESDE FIREBASE ====
+    console.log("🧹 Limpiando localStorage para sincronizar desde Firebase...");
+    
+    // Opcional: Guardar el último usuario antes de limpiar
+    const lastUser = localStorage.getItem('lastUserId');
+    const lastUserName = localStorage.getItem('lastUserName');
+    
+    // Limpiar solo los datos de la aplicación, no todo
+    localStorage.removeItem('premiosData');
+    localStorage.removeItem('premiosUsers');
+    localStorage.removeItem('premiosPhotos');
+    
+    // Restaurar el usuario si existe
+    if (lastUser) {
+        localStorage.setItem('lastUserId', lastUser);
+    }
+    if (lastUserName) {
+        localStorage.setItem('lastUserName', lastUserName);
+    }
+    
+    console.log("✅ localStorage limpiado para sincronización forzada");
+    
+    // Continuar con la carga normal...
     try {
+        // ... el resto de tu función existente
         // A. INICIALIZAR ESTRUCTURAS
         if (!appData.photoUrls) appData.photoUrls = {};
         if (!appData.categories) appData.categories = [];
@@ -3320,6 +3345,64 @@ async function forzarSincronizacion() {
     } catch (error) {
         console.error("❌ Error en sincronización:", error);
         alert("⚠️ Error en sincronización: " + error.message);
+    }
+}
+
+// ===== FUNCIÓN PARA LIMPIAR LOCALSTORAGE MANUALMENTE =====
+function limpiarLocalStorage() {
+    if (confirm('⚠️ ¿LIMPIAR CACHE LOCAL (localStorage)?\n\nEsto borrará:\n• Datos locales\n• Usuarios locales\n• Fotos locales\n\nLos datos se recargarán desde Firebase.\n\n¿Continuar?')) {
+        console.log("🧹 Limpiando localStorage manualmente...");
+        
+        // Guardar el usuario actual si existe
+        const currentUser = appData.currentUser;
+        
+        // Limpiar todo excepto la última sesión
+        const keysToKeep = ['lastUserId', 'lastUserName'];
+        const keysToRemove = [];
+        
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (!keysToKeep.includes(key)) {
+                keysToRemove.push(key);
+            }
+        }
+        
+        keysToRemove.forEach(key => {
+            localStorage.removeItem(key);
+            console.log(`🗑️ Eliminado: ${key}`);
+        });
+        
+        // Restablecer appData
+        appData.categories = [];
+        appData.users = [];
+        appData.photoUrls = {};
+        
+        console.log("✅ localStorage limpiado");
+        
+        // Recargar desde Firebase
+        if (typeof loadDataFromFirebase === 'function') {
+            loadDataFromFirebase().then(() => {
+                // Restaurar usuario si estaba logueado
+                if (currentUser) {
+                    appData.currentUser = currentUser;
+                    showUserInfo();
+                }
+                
+                renderCategories();
+                updateVotersList();
+                updateStats();
+                
+                alert("✅ Cache local limpiado. Datos recargados desde Firebase.");
+            }).catch(error => {
+                console.error("Error recargando:", error);
+                alert("⚠️ Cache limpiado pero error al recargar desde Firebase.");
+            });
+        } else {
+            // Crear categorías por defecto si no hay Firebase
+            appData.categories = createDefaultCategories();
+            renderCategories();
+            alert("✅ Cache local limpiado. Usando datos por defecto.");
+        }
     }
 }
 

@@ -68,16 +68,6 @@
                 <i class="fas fa-cog"></i> Panel Admin
             </button>
             
-            <!-- Añade esto en el footer, después del botón de verificar -->
-            <button onclick="forzarSincronizacion()" class="btn-admin" 
-                    style="background: linear-gradient(90deg, #4CAF50, #2E7D32); margin-left: 10px;">
-                <i class="fas fa-sync-alt"></i> Sincronizar Firebase
-            </button>
-
-            <!-- Botón de verificación añadido -->
-            <button onclick="verificarVotos()" class="btn-admin" style="background: linear-gradient(90deg, #FF6B6B, #FF8E53); margin-left: 10px;">
-                <i class="fas fa-bug"></i> Verificar Votos
-            </button>
             <p class="footer-text">© 2024 Pteros Awards - ¡Diversión garantizada!</p>
         </footer>
     </div>
@@ -122,92 +112,39 @@
     </div>
 
     <!-- Panel de administración -->
-    <div id="adminPanel" class="admin-panel">
-        <div class="admin-content">
-            <h2><i class="fas fa-cog"></i> Panel de Administración</h2>
+
+    <div class="admin-section">
+        <h3>Resultados y Datos</h3>
+        <div class="admin-buttons">
+            <button onclick="showResults()" class="btn-results">
+                <i class="fas fa-chart-bar"></i> Ver Resultados
+            </button>
+            <button onclick="exportData()" class="btn-export">
+                <i class="fas fa-download"></i> Exportar Datos
+            </button>
+            <button onclick="importData()" class="btn-import">
+                <i class="fas fa-upload"></i> Importar Datos
+            </button>
+            <button onclick="resetVotes()" class="btn-reset">
+                <i class="fas fa-redo"></i> Reiniciar Votos
+            </button>
+            <button onclick="diagnosticarFirebase()" class="btn-diagnostic" 
+                    style="background: linear-gradient(90deg, #FF6B6B, #FF8E53);">
+                <i class="fas fa-bug"></i> Diagnosticar Firebase
+            </button>
             
-            <div class="admin-section">
-                <h3>Fase Actual</h3>
-                <div class="phase-controls">
-                    <button onclick="setPhase('nominations')" class="btn-phase">
-                        <i class="fas fa-vote-yea"></i> Fase Nominaciones
-                    </button>
-                    <button onclick="setPhase('voting')" class="btn-phase">
-                        <i class="fas fa-star"></i> Fase Votación Final
-                    </button>
-                    <button onclick="setPhase('results')" class="btn-phase">
-                        <i class="fas fa-trophy"></i> Mostrar Resultados
-                    </button>
-                </div>
-            </div>
-
-            <div class="admin-section">
-                <h3>Resultados y Datos</h3>
-                <div class="admin-buttons">
-                    <button onclick="showResults()" class="btn-results">
-                        <i class="fas fa-chart-bar"></i> Ver Resultados
-                    </button>
-                    <button onclick="exportData()" class="btn-export">
-                        <i class="fas fa-download"></i> Exportar Datos
-                    </button>
-                    <button onclick="importData()" class="btn-import">
-                        <i class="fas fa-upload"></i> Importar Datos
-                    </button>
-                    <button onclick="resetVotes()" class="btn-reset">
-                        <i class="fas fa-redo"></i> Reiniciar Votos
-                    </button>
-                    <button onclick="diagnosticarFirebase()" class="btn-diagnostic" 
-                            style="background: linear-gradient(90deg, #FF6B6B, #FF8E53);">
-                        <i class="fas fa-bug"></i> Diagnosticar Firebase
-                    </button>
-                </div>
-            </div>
-
-            <div class="admin-section">
-                <h3><i class="fas fa-images"></i> Gestionar Fotos</h3>
-                <div class="photo-management">
-                    <div class="photo-input-group">
-                        <select id="personSelect" class="photo-select">
-                            <option value="">Seleccionar persona...</option>
-                            <option value="Brais">Brais</option>
-                            <option value="Amalia">Amalia</option>
-                            <option value="Carlita">Carlita</option>
-                            <option value="Daniel">Daniel</option>
-                            <option value="Guille">Guille</option>
-                            <option value="Iker">Iker</option>
-                            <option value="Joel">Joel</option>
-                            <option value="Jose">Jose</option>
-                            <option value="Nico">Nico</option>
-                            <option value="Ruchiti">Ruchiti</option>
-                            <option value="Sara">Sara</option>
-                            <option value="Tiago">Tiago</option>
-                            <option value="Xabi">Xabi</option>
-                        </select>
-                        <input type="text" id="photoUrl" placeholder="URL de GitHub (https://raw.githubusercontent.com/...)" class="photo-url-input">
-                        <button onclick="updateSelectedPhoto()" class="btn-add">
-                            <i class="fas fa-save"></i> Actualizar Foto
-                        </button>
-                    </div>
-                    <div class="current-photos">
-                        <h4>Fotos Actuales:</h4>
-                        <div id="photosList" class="photos-list">
-                            <!-- Lista de fotos se cargará aquí -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="admin-section">
-                <h3>Estadísticas</h3>
-                <div class="stats">
-                    <p>Total votantes: <span id="totalVoters">0</span></p>
-                    <p>Categorías: <span id="totalCategories">0</span></p>
-                    <p>Votos totales: <span id="totalVotes">0</span></p>
-                </div>
-            </div>
-
-            <button onclick="closeAdminPanel()" class="btn-close-admin">
-                Cerrar Panel
+            <!-- AÑADE ESTOS NUEVOS BOTONES AQUÍ -->
+            <button onclick="forzarSincronizacion()" class="btn-diagnostic" 
+                    style="background: linear-gradient(90deg, #4CAF50, #2E7D32);">
+                <i class="fas fa-sync-alt"></i> Sincronizar Firebase
+            </button>
+            <button onclick="verificarVotos()" class="btn-diagnostic" 
+                    style="background: linear-gradient(90deg, #2196F3, #0D47A1);">
+                <i class="fas fa-check-circle"></i> Verificar Votos
+            </button>
+            <button onclick="limpiarLocalStorage()" class="btn-diagnostic" 
+                    style="background: linear-gradient(90deg, #FF5722, #D84315);">
+                <i class="fas fa-trash-alt"></i> Limpiar Cache Local
             </button>
         </div>
     </div>
