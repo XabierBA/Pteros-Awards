@@ -131,40 +131,38 @@ function checkAdminPassword() {
         // ABRIR PANEL ADMIN - SOLO AQUÍ
         const adminPanel = document.getElementById('adminPanel');
         if (adminPanel) {
-        console.log("✅ Mostrando panel admin...");
-        console.log("Estilo actual:", adminPanel.style.display);
-        console.log("CSS computed:", window.getComputedStyle(adminPanel).display);
-        
-        // Mostrar el panel con máxima prioridad
-        adminPanel.style.display = 'flex';
-        adminPanel.style.position = 'fixed';
-        adminPanel.style.top = '50%';
-        adminPanel.style.left = '50%';
-        adminPanel.style.transform = 'translate(-50%, -50%)';
-        adminPanel.style.zIndex = '9999'; // <-- AUMENTADO AL MÁXIMO
-        adminPanel.style.background = 'linear-gradient(135deg, rgba(30, 30, 50, 0.98), rgba(15, 15, 25, 0.99))';
-        adminPanel.style.padding = '30px';
-        adminPanel.style.borderRadius = '20px';
-        adminPanel.style.width = '90%';
-        adminPanel.style.maxWidth = '800px';
-        adminPanel.style.maxHeight = '80vh';
-        adminPanel.style.overflowY = 'auto';
-        adminPanel.style.border = '3px solid var(--gold)';
-        adminPanel.style.boxShadow = '0 0 50px rgba(0, 0, 0, 0.8)';
-        
-        // FORZAR RE-PINTADO
-        adminPanel.offsetHeight;
-        
-        console.log("Nuevo estilo:", adminPanel.style.display);
-        console.log("Computed después:", window.getComputedStyle(adminPanel).display);
-        
-        // Actualizar estadísticas
-        if (typeof updateStats === 'function') updateStats();
-        
-        // Cargar listas
-        if (typeof cargarListaPersonas === 'function') cargarListaPersonas();
-        if (typeof cargarListaFotos === 'function') cargarListaFotos();
-    } else {
+            console.log("✅ Mostrando panel admin...");
+            
+            // RESETEAR COMPLETAMENTE todos los estilos que lo ocultan
+            adminPanel.style.cssText = `
+                display: flex !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                position: fixed !important;
+                top: 50% !important;
+                left: 50% !important;
+                transform: translate(-50%, -50%) !important;
+                z-index: 9999 !important;
+                background: linear-gradient(135deg, rgba(30, 30, 50, 0.98), rgba(15, 15, 25, 0.99)) !important;
+                padding: 30px !important;
+                border-radius: 20px !important;
+                width: 90% !important;
+                max-width: 800px !important;
+                max-height: 80vh !important;
+                overflow-y: auto !important;
+                border: 3px solid var(--gold) !important;
+                box-shadow: 0 0 50px rgba(0, 0, 0, 0.8) !important;
+            `;
+            
+            console.log("Nuevo estilo aplicado");
+            
+            // Actualizar estadísticas
+            if (typeof updateStats === 'function') updateStats();
+            
+            // Cargar listas
+            if (typeof cargarListaPersonas === 'function') cargarListaPersonas();
+            if (typeof cargarListaFotos === 'function') cargarListaFotos();
+        } else {
             console.error("❌ ERROR: No se encontró el panel admin");
             alert("Error del sistema: No se puede mostrar el panel de administración");
         }

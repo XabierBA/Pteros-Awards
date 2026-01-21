@@ -3317,3 +3317,29 @@ footer {
     transform: translateY(-3px);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
+
+/* ESTILOS ESPECÍFICOS PARA PANEL ADMIN VISIBLE */
+.admin-panel-visible {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    z-index: 9999 !important;
+    background: linear-gradient(135deg, rgba(30, 30, 50, 0.98), rgba(15, 15, 25, 0.99)) !important;
+    padding: 30px !important;
+    border-radius: 20px !important;
+    width: 90% !important;
+    max-width: 800px !important;
+    max-height: 80vh !important;
+    overflow-y: auto !important;
+    border: 3px solid var(--gold) !important;
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.8) !important;
+}
+
+/* Remover cualquier regla que pueda estar ocultando el panel */
+#adminPanel:not(.admin-panel-visible) {
+    display: none !important;
+}
