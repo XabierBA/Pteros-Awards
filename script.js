@@ -15,7 +15,6 @@ let photoPreviewFile = null;
 
 // ===== CARGAR DATOS Y FOTOS =====
 function loadAppData() {
-    function loadAppData() {
     console.log("🔄 Cargando datos de la aplicación...");
     
     // ==== NUEVO: FORZAR LIMPIEZA DE LOCALSTORAGE PARA SINCRONIZAR DESDE FIREBASE ====
