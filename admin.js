@@ -42,7 +42,7 @@ function openAdminPanel() {
         cargarListaPersonas();
         // Cargar lista de fotos actuales
         cargarListaFotos();
-        
+        // Mostrar descripciones de botones en consola
         mostrarDescripcionBotones();
     } else {
         console.error("No se encontró el modal de contraseña");
