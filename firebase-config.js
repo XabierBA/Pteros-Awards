@@ -43,8 +43,9 @@ function waitForFirebase() {
 }
 
 // ===== 2. CARGAR DATOS DE FIREBASE =====
+// ===== 2. CARGAR DATOS DE FIREBASE - VERSIÓN CORREGIDA =====
 async function loadDataFromFirebase() {
-    console.log("🔥 CARGANDO DATOS DE FIREBASE...");
+    console.log("🔥 CARGANDO DATOS DE FIREBASE (VERSIÓN CORREGIDA)...");
     
     try {
         const ready = await waitForFirebase();
@@ -55,45 +56,151 @@ async function loadDataFromFirebase() {
         
         const { get, ref } = await import('https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js');
         
-        // Cargar TODOS los datos desde el nodo principal 'premiosData' (para mantener compatibilidad)
-        const mainDataRef = ref(firebaseDB, 'premiosData');
-        const mainDataSnapshot = await get(mainDataRef);
-        
-        // También cargar usuarios desde 'users' (estructura nueva)
+        // 1. PRIMERO: Cargar USUARIOS desde Firebase
         const usersRef = ref(firebaseDB, 'users');
         const usersSnapshot = await get(usersRef);
         
-        console.log("📥 Resultados Firebase:");
-        console.log("- premiosData:", mainDataSnapshot.exists() ? "✅" : "❌ Vacío");
-        console.log("- users:", usersSnapshot.exists() ? `✅ ${Object.keys(usersSnapshot.val() || {}).length} usuarios` : "❌ Vacío");
-        
-        // ACTUALIZAR appData CON DATOS DE FIREBASE
-        if (mainDataSnapshot.exists()) {
-            const firebaseData = mainDataSnapshot.val();
-            
-            // Mezclar datos inteligentemente
-            if (firebaseData.categories && Array.isArray(firebaseData.categories)) {
-                window.appData.categories = mergeCategories(window.appData.categories, firebaseData.categories);
-            }
-            
-            if (firebaseData.phase) {
-                window.appData.phase = firebaseData.phase;
-            }
-            
-            if (firebaseData.photoUrls) {
-                window.appData.photoUrls = { ...window.appData.photoUrls, ...firebaseData.photoUrls };
-            }
-            
-            console.log("✅ appData actualizado desde Firebase");
-            console.log(`   - Categorías: ${window.appData.categories.length}`);
-            console.log(`   - Fotos: ${Object.keys(window.appData.photoUrls || {}).length}`);
+        if (!usersSnapshot.exists()) {
+            console.log("⚠️ No hay usuarios en Firebase");
+            return false;
         }
         
-        if (usersSnapshot.exists()) {
-            const firebaseUsers = usersSnapshot.val();
-            // Mezclar usuarios: Firebase tiene prioridad
-            window.appData.users = mergeUsers(window.appData.users, firebaseUsers);
-            console.log(`✅ Usuarios cargados: ${window.appData.users.length}`);
+        const firebaseUsers = usersSnapshot.val();
+        console.log(`✅ ${firebaseUsers.length} usuarios cargados de Firebase`);
+        
+        // Actualizar usuarios en appData
+        window.appData.users = firebaseUsers;
+        localStorage.setItem('premiosUsers', JSON.stringify(firebaseUsers));
+        
+        // 2. SEGUNDO: Cargar CATEGORÍAS desde Firebase
+        const premiosDataRef = ref(firebaseDB, 'premiosData');
+        const premiosDataSnapshot = await get(premiosDataRef);
+        
+        let firebaseCategories = [];
+        let firebasePhotoUrls = {};
+        let firebasePhase = 'nominations';
+        
+        if (premiosDataSnapshot.exists()) {
+            const premiosData = premiosDataSnapshot.val();
+            firebaseCategories = premiosData.categories || [];
+            firebasePhotoUrls = premiosData.photoUrls || {};
+            firebasePhase = premiosData.phase || 'nominations';
+            console.log(`✅ ${firebaseCategories.length} categorías cargadas de Firebase`);
+        } else {
+            console.log("⚠️ No hay premiosData, creando categorías por defecto");
+            firebaseCategories = createDefaultCategories ? createDefaultCategories() : [];
+        }
+        
+        // 3. TERCERO Y MÁS IMPORTANTE: TRANSFERIR VOTOS DE USUARIOS A CATEGORÍAS
+        console.log("🔄 TRANSFIRIENDO VOTOS DE USUARIOS A CATEGORÍAS...");
+        
+        // A. Primero, limpiar todos los votos existentes en categorías
+        firebaseCategories.forEach(categoria => {
+            if (categoria.nominees) {
+                categoria.nominees.forEach(nominado => {
+                    if (nominado) {
+                        nominado.votes = 0;
+                        nominado.voters = [];
+                        if (!nominado.frases) nominado.frases = {};
+                    }
+                });
+            }
+        });
+        
+        // B. Luego, transferir votos desde usuarios
+        let totalVotosTransferidos = 0;
+        let usuariosConVotos = 0;
+        
+        firebaseUsers.forEach(usuario => {
+            if (!usuario || !usuario.votes || Object.keys(usuario.votes).length === 0) {
+                return; // Usuario sin votos
+            }
+            
+            usuariosConVotos++;
+            
+            Object.entries(usuario.votes).forEach(([categoriaId, voto]) => {
+                // Buscar la categoría
+                const categoria = firebaseCategories.find(c => c && c.id == categoriaId);
+                if (!categoria || !categoria.nominees) return;
+                
+                // Buscar el nominado
+                const nominado = categoria.nominees.find(n => n && n.name === voto.nomineeName);
+                if (!nominado) return;
+                
+                // Inicializar arrays si no existen
+                if (!nominado.voters) nominado.voters = [];
+                if (!nominado.frases) nominado.frases = {};
+                
+                // Agregar voto si no existe
+                if (!nominado.voters.includes(usuario.id)) {
+                    nominado.voters.push(usuario.id);
+                    nominado.votes = (nominado.votes || 0) + 1;
+                    totalVotosTransferidos++;
+                }
+                
+                // Agregar frase si existe
+                if (voto.frase && voto.frase.trim() !== '') {
+                    nominado.frases[usuario.id] = {
+                        frase: voto.frase,
+                        voter: usuario.name,
+                        timestamp: voto.timestamp || new Date().toISOString(),
+                        tipo: categoria.id === 6 ? 'duo' : 'frase'
+                    };
+                }
+            });
+        });
+        
+        console.log(`✅ ${totalVotosTransferidos} votos transferidos de ${usuariosConVotos} usuarios`);
+        
+        // 4. ACTUALIZAR appData CON LOS DATOS COMBINADOS
+        window.appData.categories = firebaseCategories;
+        window.appData.photoUrls = firebasePhotoUrls;
+        window.appData.phase = firebasePhase;
+        
+        // 5. GUARDAR EN LOCALSTORAGE
+        localStorage.setItem('premiosData', JSON.stringify({
+            categories: window.appData.categories,
+            phase: window.appData.phase,
+            photoUrls: window.appData.photoUrls
+        }));
+        
+        console.log("💾 Datos combinados guardados en localStorage");
+        
+        // 6. ACTUALIZAR premiosData EN FIREBASE CON LOS VOTOS CORRECTOS
+        const { set } = await import('https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js');
+        
+        const premiosDataActualizado = {
+            categories: window.appData.categories,
+            phase: window.appData.phase,
+            photoUrls: window.appData.photoUrls,
+            totalUsers: window.appData.users.length,
+            totalVotes: totalVotosTransferidos,
+            lastUpdated: new Date().toISOString()
+        };
+        
+        await set(premiosDataRef, premiosDataActualizado);
+        console.log("✅ premiosData actualizado en Firebase con votos correctos");
+        
+        // 7. MOSTRAR ESTADÍSTICAS
+        console.log("\n=== 📊 ESTADÍSTICAS FINALES ===");
+        console.log("Usuarios:", window.appData.users.length);
+        console.log("Categorías:", window.appData.categories.length);
+        console.log("Votos totales:", totalVotosTransferidos);
+        console.log("Fotos:", Object.keys(window.appData.photoUrls || {}).length);
+        console.log("Fase:", window.appData.phase);
+        
+        // Mostrar ejemplo de categoría con votos
+        const categoriaConVotos = window.appData.categories.find(cat => 
+            cat.nominees?.some(n => n.votes > 0)
+        );
+        
+        if (categoriaConVotos) {
+            console.log(`\nEjemplo - ${categoriaConVotos.name}:`);
+            categoriaConVotos.nominees.forEach(nom => {
+                if (nom.votes > 0) {
+                    console.log(`   ${nom.name}: ${nom.votes} votos`);
+                }
+            });
         }
         
         return true;
@@ -112,22 +219,34 @@ async function saveDataToFirebase() {
             throw new Error("Firebase no disponible");
         }
         
-        // Preparar datos para Firebase
+        const { set, ref } = await import('https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js');
+        
+        // Calcular votos reales
+        let totalVotes = 0;
+        if (window.appData.categories) {
+            window.appData.categories.forEach(categoria => {
+                if (categoria.nominees) {
+                    categoria.nominees.forEach(nominado => {
+                        totalVotes += nominado.votes || 0;
+                    });
+                }
+            });
+        }
+        
+        // Preparar datos para Firebase CON VOTOS REALES
         const dataToSave = {
             categories: window.appData.categories || [],
             phase: window.appData.phase || 'nominations',
             photoUrls: window.appData.photoUrls || {},
             lastUpdated: new Date().toISOString(),
-            totalVotes: getTotalVotes(),
+            totalVotes: totalVotes, // VOTOS REALES, NO 0
             totalUsers: window.appData.users?.length || 0
         };
         
-        const { set, ref } = await import('https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js');
-        
-        // Guardar en nodo principal para compatibilidad
+        // Guardar en nodo principal
         await set(ref(firebaseDB, 'premiosData'), dataToSave);
         
-        console.log("💾 Datos principales guardados en Firebase");
+        console.log(`💾 Datos principales guardados en Firebase (${totalVotes} votos)`);
         return true;
         
     } catch (error) {
@@ -322,41 +441,90 @@ async function soloDescargarDesdeFirebase() {
 // Exportar la nueva función
 window.soloDescargarDesdeFirebase = soloDescargarDesdeFirebase;
 
-// ===== 7. DIAGNÓSTICO =====
-async function diagnosticarFirebase() {
-    console.log("=== 🔍 DIAGNÓSTICO FIREBASE ===");
-    console.log("Firebase listo:", firebaseReady);
-    console.log("Firebase DB:", firebaseDB ? "✅ Disponible" : "❌ No disponible");
+// Función auxiliar para crear categorías por defecto
+function createDefaultCategories() {
+    const people = ["Brais", "Amalia", "Carlita", "Daniel", "Guille", "Iker", "Joel", "Jose", "Nico", "Ruchiti", "Sara", "Tiago", "Xabi"];
     
-    if (window.appData) {
-        console.log("=== 📊 DATOS LOCALES ===");
-        console.log("Usuarios:", window.appData.users?.length || 0);
-        console.log("Categorías:", window.appData.categories?.length || 0);
+    return [
+        { id: 1, name: "👑 Más Putero", description: "Puterismo de manual", nominees: people.map(p => ({ name: p, votes: 0, voters: [], frases: {} })) },
+        { id: 2, name: "👑 Más Putera", description: "No me seais cabrones que nos conocemos", nominees: people.map(p => ({ name: p, votes: 0, voters: [], frases: {} })) },
+        { id: 3, name: "🍻 Peor Borrachera", description: "La locura en persona cuando va borracha", nominees: people.map(p => ({ name: p, votes: 0, voters: [], frases: {} })) },
+        { id: 4, name: "⏰ Más Impuntual", description: "Mmm, me cago en su puta estampa", nominees: people.map(p => ({ name: p, votes: 0, voters: [], frases: {} })) },
+        { id: 5, name: "😂 Más Gracioso/a", description: "La vd es q dais pena todos", nominees: people.map(p => ({ name: p, votes: 0, voters: [], frases: {} })) },
+        { id: 6, name: "👯‍♂️ Mejor Dúo", description: "El duo dinámico, creo q sabemos quienes son", nominees: people.map(p => ({ name: p, votes: 0, voters: [], frases: {} })) },
+        { id: 7, name: "🎉 Mejor Evento del Año", description: "Esto votad persona y el evento", nominees: people.map(p => ({ name: p, votes: 0, voters: [], frases: {} })) },
+        { id: 8, name: "🔊 Más Tocahuevos", description: "El/la que más insiste o molesta", nominees: people.map(p => ({ name: p, votes: 0, voters: [], frases: {} })) },
+        { id: 9, name: "🥴 Más Borracho/a", description: "Quien se pasa más con el alcohol", nominees: people.map(p => ({ name: p, votes: 0, voters: [], frases: {} })) },
+        { id: 10, name: "👀 El/La que más mira por el grupo", description: "Quien más se preocupa por todos", nominees: people.map(p => ({ name: p, votes: 0, voters: [], frases: {} })) },
+        { id: 11, name: "👿 Peor Influencia", description: "Quien te mete en más líos", nominees: people.map(p => ({ name: p, votes: 0, voters: [], frases: {} })) },
+        { id: 12, name: "🎭 El/La que más dramas monta", description: "Quien monta más drama por todo", nominees: people.map(p => ({ name: p, votes: 0, voters: [], frases: {} })) },
+        { id: 13, name: "🏃‍♂️ El/La que más deja tirado al grupo", description: "Quien más falla o desaparece", nominees: people.map(p => ({ name: p, votes: 0, voters: [], frases: {} })) },
+        { id: 14, name: "💀 El/La que suelta más bastadas", description: "Quien dice las cosas más brutales", nominees: people.map(p => ({ name: p, votes: 0, voters: [], frases: {} })) },
+        { id: 15, name: "✅ Más Responsable", description: "Quien más se puede contar para lo importante", nominees: people.map(p => ({ name: p, votes: 0, voters: [], frases: {} })) },
+        { id: 16, name: "😡 Mayor Cabreo del Año", description: "La mejor pataleta/enfado del año", nominees: people.map(p => ({ name: p, votes: 0, voters: [], frases: {} })) },
+        { id: 17, name: "💬 Frase del Año", description: "La mejor frase/momento icónico", nominees: people.map(p => ({ name: p, votes: 0, voters: [], frases: {} })) },
+        { id: 18, name: "🌟 Persona Revelación 2025", description: "Quien más ha sorprendido este año", nominees: people.map(p => ({ name: p, votes: 0, voters: [], frases: {} })) },
+        { id: 19, name: "🏆 Balón de Oro Puteros Awards 2026", description: "El MVP absoluto del grupo", nominees: people.map(p => ({ name: p, votes: 0, voters: [], frases: {} })) },
+        { id: 20, name: "🔒 El Correas", description: "Quien más está atado corto", nominees: people.map(p => ({ name: p, votes: 0, voters: [], frases: {} })) },
+        { id: 21, name: "🔒 El que pone las correas", description: "Quien más controla", nominees: people.map(p => ({ name: p, votes: 0, voters: [], frases: {} })) },
+        { id: 22, name: "👻 El Fantasma de la ESEI", description: "Quien menos se deja ver por la uni", nominees: people.map(p => ({ name: p, votes: 0, voters: [], frases: {} })) },
+        { id: 23, name: "📚 El que menos va a clase", description: "Autodescriptivo", nominees: people.map(p => ({ name: p, votes: 0, voters: [], frases: {} })) },
+        { id: 24, name: "😳 Momento más Humillante", description: "La situación más vergonzosa", nominees: people.map(p => ({ name: p, votes: 0, voters: [], frases: {} })) },
+        { id: 25, name: "😭 Más Lloros", description: "Quien más se emociona o dramatiza", nominees: people.map(p => ({ name: p, votes: 0, voters: [], frases: {} })) },
+        { id: 26, name: "🎲 Datos Random", description: "Quien dice/sabe cosas más random", nominees: people.map(p => ({ name: p, votes: 0, voters: [], frases: {} })) },
+        { id: 27, name: "📉 El/La más Putilla Académicamente", description: "El peor compañero para estudiar", nominees: people.map(p => ({ name: p, votes: 0, voters: [], frases: {} })) },
+        { id: 28, name: "💪 Tu Salvación Académica", description: "El mejor compañero en apuros", nominees: people.map(p => ({ name: p, votes: 0, voters: [], frases: {} })) },
+        { id: 29, name: "🎮 Gamer del Año", description: "Ni pareja ni pollas, total esta jugando", nominees: people.map(p => ({ name: p, votes: 0, voters: [], frases: {} })) },
+        { id: 30, name: "📱 Cerebro dopamínico de niño de tiktok", description: "Si deja el movil 10 segundos, se convierte", nominees: people.map(p => ({ name: p, votes: 0, voters: [], frases: {} })) },
+        { id: 31, name: "🎤 Karaoke Star", description: "Se cree Bisbal o algo así", nominees: people.map(p => ({ name: p, votes: 0, voters: [], frases: {} })) },
+        { id: 32, name: "😴 Narcolepsico", description: "Quien es el subnormal que siempre se duerme", nominees: people.map(p => ({ name: p, votes: 0, voters: [], frases: {} })) }
+    ];
+}
+
+// ===== FUNCIÓN PARA FORZAR SINCRONIZACIÓN COMPLETA =====
+async function forzarSincronizacionCompleta() {
+    console.log("🔄 FORZANDO SINCRONIZACIÓN COMPLETA...");
+    
+    if (!confirm("¿Forzar sincronización completa?\n\nEsto:\n1. Descargará usuarios desde Firebase\n2. Descargará categorías desde Firebase\n3. Transferirá votos de usuarios a categorías\n4. Actualizará Firebase con votos correctos\n\n¿Continuar?")) {
+        return;
+    }
+    
+    try {
+        // Usar la función corregida
+        const exito = await loadDataFromFirebase();
         
-        if (window.appData.users && window.appData.users.length > 0) {
-            console.log("=== 👥 USUARIOS DETALLADOS ===");
-            window.appData.users.forEach((user, i) => {
-                console.log(`${i+1}. ${user.name} - Votos: ${Object.keys(user.votes || {}).length}`);
-            });
+        if (exito) {
+            // Actualizar UI
+            if (typeof window.renderCategories === 'function') window.renderCategories();
+            if (typeof window.updateVotersList === 'function') window.updateVotersList();
+            if (typeof window.updateStats === 'function') window.updateStats();
+            
+            alert(`✅ Sincronización forzada completada\n\n• Usuarios: ${window.appData.users?.length || 0}\n• Categorías: ${window.appData.categories?.length || 0}\n• Votos: ${window.appData.categories?.reduce((total, cat) => total + (cat.nominees?.reduce((sum, nom) => sum + (nom.votes || 0), 0) || 0), 0) || 0}`);
+            
+            // Recargar página
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            alert("❌ No se pudo completar la sincronización");
         }
+        
+    } catch (error) {
+        console.error("❌ Error en sincronización forzada:", error);
+        alert("❌ Error: " + error.message);
     }
-    
-    // Test de conexión
-    if (firebaseDB) {
-        try {
-            const { get, ref } = await import('https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js');
-            const testRef = ref(firebaseDB, 'test');
-            await set(testRef, { timestamp: new Date().toISOString() });
-            console.log("✅ Test de escritura exitoso");
-        } catch (error) {
-            console.error("❌ Test de escritura falló:", error);
-        }
-    }
-    
-    console.log("=== 🔚 FIN DIAGNÓSTICO ===");
+}
+
+// Exportar
+
+
+// Hacerla global si no existe
+if (typeof window.createDefaultCategories === 'undefined') {
+    window.createDefaultCategories = createDefaultCategories;
 }
 
 // ===== 8. EXPORTAR FUNCIONES =====
+window.forzarSincronizacionCompleta = forzarSincronizacionCompleta;
 window.waitForFirebase = waitForFirebase;
 window.loadDataFromFirebase = loadDataFromFirebase;
 window.saveDataToFirebase = saveDataToFirebase;
